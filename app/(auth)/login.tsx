@@ -1,6 +1,7 @@
 /**
  * Zyrix App — Login Screen
  * Phone number input with country code.
+ * TEMP: Bypass OTP for testing
  */
 
 import React, { useState } from 'react';
@@ -26,17 +27,14 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
 
   const handleContinue = () => {
-    // Basic validation
     const cleaned = phone.replace(/\s/g, '');
-    if (cleaned.length < 10) {
+    if (cleaned.length < 7) {
       setError(t('auth.invalidPhone'));
       return;
     }
     setError('');
-    router.push({
-      pathname: '/(auth)/otp',
-      params: { phone: cleaned },
-    });
+    // TEMP: Bypass OTP - go directly to dashboard
+    router.replace('/(merchant)/dashboard');
   };
 
   return (
@@ -92,10 +90,10 @@ export default function LoginScreen() {
 
         {/* Continue button */}
         <TouchableOpacity
-          style={[styles.button, phone.length < 10 && styles.buttonDisabled]}
+          style={[styles.button, phone.length < 7 && styles.buttonDisabled]}
           onPress={handleContinue}
           activeOpacity={0.8}
-          disabled={phone.length < 10}
+          disabled={phone.length < 7}
         >
           <Text style={styles.buttonText}>{t('auth.continue')}</Text>
         </TouchableOpacity>
