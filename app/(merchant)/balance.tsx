@@ -203,7 +203,7 @@ export default function BalanceScreen() {
               </View>
               <View style={styles.settlementRight}>
                 <Text style={styles.settlementNet}>
-                  +{bal.nextSettlement?.dateAmount.toLocaleString('tr-TR', {
+                  +{(bal.nextSettlement?.dateAmount ?? 0).toLocaleString('tr-TR', {
                     minimumFractionDigits: 2,
                   })}{' '}
                   {'TRY'}
@@ -224,12 +224,12 @@ export default function BalanceScreen() {
               />
               <BreakdownItem
                 label={t('settlements.commission')}
-                value={`-${bal.nextSettlement?.commission ?? 0.toFixed(2)} ₺`}
+                value={`-${(bal.nextSettlement?.commission ?? 0).toFixed(2)} ₺`}
                 color={COLORS.danger}
               />
               <BreakdownItem
                 label={t('settlements.net')}
-                value={`${bal.nextSettlement?.dateAmount.toFixed(2)} ₺`}
+                value={`${(bal.nextSettlement?.dateAmount ?? 0).toFixed(2)} ₺`}
                 color={COLORS.success}
               />
             </View>

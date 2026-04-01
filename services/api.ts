@@ -8,7 +8,7 @@ import type { ApiTransaction, ApiSettlement, ApiDispute, ApiRefund, ApiNotificat
 import * as SecureStore from 'expo-secure-store';
 
 // ─── Configuration ───────────────────────────────
-const BASE_URL = 'https://api.zyrix.co'; // Change in production
+const BASE_URL = 'https://zyrix-backend-production.up.railway.app';
 const TOKEN_KEY = 'zyrix_auth_token';
 
 // ─── HTTP Client ─────────────────────────────────
@@ -43,7 +43,7 @@ async function request<T>(
 // ─── Auth API ────────────────────────────────────
 export const authApi = {
   requestOtp: (phone: string) =>
-    request<{ success: boolean; expiresIn: number }>('/api/auth/request-otp', {
+    request<{ success: boolean; expiresIn: number }>('/api/auth/send-otp', {
       method: 'POST',
       body: JSON.stringify({ phone }),
     }),
@@ -76,7 +76,7 @@ export const authApi = {
       company: string;
       language: string;
       iban: string | null;
-    }>('/api/auth/me'),
+    }>('/api/merchant/profile'),
 };
 
 // ─── Transactions API ────────────────────────────
@@ -176,7 +176,7 @@ export const notificationsApi = {
     request<{ notifications: ApiNotification[]; unreadCount: number }>('/api/notifications'),
 
   markAllRead: () =>
-    request<{ success: boolean }>('/api/notifications/mark-read', { method: 'PUT' }),
+    request<{ success: boolean }>('/api/notifications/read-all', { method: 'PUT' }),
 
   markRead: (id: string) =>
     request<{ success: boolean }>(`/api/notifications/${id}/read`, { method: 'PUT' }),

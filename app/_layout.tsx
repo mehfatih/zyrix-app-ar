@@ -1,15 +1,11 @@
 /**
  * Zyrix App — Root Layout
- * Wraps app with AuthProvider, handles init splash.
- * Android 15 (API 35): edge-to-edge display, system bar handling.
  */
-
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, Text, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import * as NavigationBar from 'expo-navigation-bar';
 import * as SystemUI from 'expo-system-ui';
 import * as SplashScreen from 'expo-splash-screen';
 import { COLORS } from '../constants/colors';
@@ -18,7 +14,6 @@ import { AuthProvider } from '../hooks/useAuth';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { OfflineBanner } from '../components/OfflineBanner';
 
-// Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
 function AppInit({ children }: { children: React.ReactNode }) {
@@ -27,18 +22,12 @@ function AppInit({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const init = async () => {
       try {
-        // Set system UI for Android 15 edge-to-edge
         if (Platform.OS === 'android') {
           await SystemUI.setBackgroundColorAsync(COLORS.darkBg);
-          await NavigationBar.setBackgroundColorAsync(COLORS.tabBarBg);
-          await NavigationBar.setButtonStyleAsync('light');
-          // Transparent navigation bar for edge-to-edge
-          await NavigationBar.setPositionAsync('absolute');
         }
-        // Simulate asset loading
-        await new Promise((resolve) => setTimeout(resolve, 1200));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       } catch (e) {
-        console.warn('Init error:', e);
+        // silent
       } finally {
         setIsReady(true);
       }
@@ -46,9 +35,9 @@ function AppInit({ children }: { children: React.ReactNode }) {
     init();
   }, []);
 
-  const onLayoutRootView = useCallback(async () => {
+  useEffect(() => {
     if (isReady) {
-      await SplashScreen.hideAsync();
+      SplashScreen.hideAsync().catch(() => {});
     }
   }, [isReady]);
 
@@ -56,7 +45,6 @@ function AppInit({ children }: { children: React.ReactNode }) {
     return (
       <View style={styles.splash}>
         <StatusBar style="light" />
-        <OfflineBanner />
         <View style={styles.logoCircle}>
           <Text style={styles.logoText}>Z</Text>
         </View>
@@ -70,7 +58,7 @@ function AppInit({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <View style={{ flex: 1 }} onLayout={onLayoutRootView}>{children}</View>;
+  return <View style={{ flex: 1 }}>{children}</View>;
 }
 
 export default function RootLayout() {
@@ -86,7 +74,6 @@ export default function RootLayout() {
                 headerShown: false,
                 contentStyle: { backgroundColor: COLORS.darkBg },
                 animation: 'slide_from_right',
-                // Android 15: enable predictive back gesture
                 ...(Platform.OS === 'android' && { animationMatchesGesture: true }),
               }}
             >

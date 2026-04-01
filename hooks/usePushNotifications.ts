@@ -70,7 +70,7 @@ export function usePushNotifications() {
           try {
             const platform = Platform.OS as 'ios' | 'android';
             await merchantApi.registerPushToken(token, platform);
-          } catch {
+          } catch (_e) {
             // Silent fail — token registration is non-critical
           }
         }

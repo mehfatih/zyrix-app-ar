@@ -67,7 +67,7 @@ export default function PaymentLinksScreen() {
     const url = link.paymentUrl || `https://pay.zyrix.co/${link.linkId}`
     try {
       await Share.share({ message: `${link.title}: ${url}`, url })
-    } catch { /* cancelled */ }
+    } catch (_e) { /* cancelled */ }
   }
 
   const handleCopy = async (link: PaymentLink) => {
@@ -80,7 +80,7 @@ export default function PaymentLinksScreen() {
     try {
       await paymentLinksApi.cancel(linkId)
       fetchLinks()
-    } catch { /* error */ }
+    } catch (_e) { /* error */ }
   }
 
   if (loading) {

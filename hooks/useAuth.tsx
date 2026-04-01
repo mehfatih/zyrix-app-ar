@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           setState((prev) => ({ ...prev, isLoading: false }));
         }
-      } catch {
+      } catch (_e) {
         setState((prev) => ({ ...prev, isLoading: false }));
       }
     };
@@ -112,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await AsyncStorage.setItem(ONBOARDING_DONE_KEY, 'true');
       setState((prev) => ({ ...prev, needsOnboarding: false }));
-    } catch { /* silent */ }
+    } catch (_e) { /* silent */ }
   }, []);
 
   return (

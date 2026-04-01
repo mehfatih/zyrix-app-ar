@@ -86,7 +86,7 @@ export default function OtpScreen() {
       try {
         await signIn('demo-token-' + Date.now(), DEMO_USER);
         router.replace('/(merchant)/dashboard');
-      } catch {
+      } catch (_e) {
         setError(t('auth.invalidOtp'));
       }
     } else {

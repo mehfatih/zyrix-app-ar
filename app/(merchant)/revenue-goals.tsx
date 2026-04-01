@@ -18,7 +18,7 @@ export default function RevenueGoalsScreen() {
   const [form, setForm] = useState({ targetAmount: '', period: 'monthly' })
 
   const fetchData = useCallback(async () => {
-    try { const res = await revenueGoalsApi.list(); setGoals(res.goals) } catch {}
+    try { const res = await revenueGoalsApi.list(); setGoals(res.goals) } catch (_e) {}
     finally { setLoading(false); setRefreshing(false) }
   }, [])
 

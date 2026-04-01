@@ -32,7 +32,7 @@ export function useDeepLinking() {
             setTimeout(() => {
               try {
                 router.push(route as any);
-              } catch {
+              } catch (_e) {
                 // Navigation not ready, silent fail
               }
             }, 300);
@@ -44,7 +44,7 @@ export function useDeepLinking() {
           setTimeout(() => {
             try {
               router.push(`/(merchant)/transaction-detail?id=${data.txId}` as any);
-            } catch {
+            } catch (_e) {
               // Silent fail
             }
           }, 300);
@@ -62,7 +62,7 @@ export function useDeepLinking() {
             setTimeout(() => {
               try {
                 router.push(route as any);
-              } catch {
+              } catch (_e) {
                 // Silent fail
               }
             }, 500);

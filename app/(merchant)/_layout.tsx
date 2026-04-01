@@ -49,7 +49,7 @@ export default function MerchantLayout() {
       try {
         const res = await notificationsApi.list();
         setUnreadCount(res.unreadCount);
-      } catch { /* Silent fail for badge */ }
+      } catch (_e) { /* Silent fail for badge */ }
     };
     fetchUnread();
     const interval = setInterval(fetchUnread, 30000);

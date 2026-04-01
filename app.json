@@ -8,7 +8,7 @@
     "icon": "./assets/icon.png",
     "scheme": "zyrix-ar",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -31,7 +31,7 @@
         "monochromeImage": "./assets/adaptive-icon.png"
       },
       "package": "co.zyrix.app.ar",
-      "versionCode": 7,
+      "versionCode": 6,
       "targetSdkVersion": 35,
       "compileSdkVersion": 35,
       "permissions": [
@@ -50,8 +50,7 @@
         "READ_PHONE_STATE",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"
-      ],
-      "enableEdgeToEdge": true
+      ]
     },
     "plugins": [
       "expo-router",
@@ -77,20 +76,18 @@
           "cameraPermission": "يحتاج زايركس للكاميرا لمسح رموز QR"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "react-native-edge-to-edge"
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
+      "router": {},
       "eas": {
-        "projectId": "YOUR_EAS_PROJECT_ID"
+        "projectId": "98505ce2-763b-41fd-8d63-94a53d4e0958"
       }
     },
-    "updates": {
-      "url": "https://u.expo.dev/YOUR_EAS_PROJECT_ID",
-      "fallbackToCacheTimeout": 30000
-    },
-    "owner": "zyrix"
+    "owner": "fatih77"
   }
 }

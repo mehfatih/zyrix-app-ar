@@ -19,13 +19,13 @@ import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { transactionsApi } from '../../services/api'
 import KpiCard from '../../components/KpiCard'
-import TransactionRow, { TransactionRowProps } from '../../components/TransactionRow'
+import TransactionRow from '../../components/TransactionRow'
+import type { Transaction } from '../../types'
 
 const isRTL = I18nManager.isRTL
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
-type TransactionStatus = 'success' | 'pending' | 'failed'
 
 
 // ─── Filter Tabs ───────────────────────────────────────────────────────────────
@@ -117,13 +117,12 @@ export default function TransactionsScreen() {
         <TouchableOpacity
           style={{ backgroundColor: COLORS.primary, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, marginTop: 8, alignSelf: isRTL ? 'flex-end' : 'flex-start' }}
           onPress={() => {
-            const url = `${require('../../services/api').default?.BASE_URL || 'https://api.zyrix.co'}/api/export/transactions?format=csv`;
+            const url = 'https://api.zyrix.co/api/export/transactions?format=csv';
             Linking.openURL(url).catch(() => {});
           }}
         >
           <Text style={{ color: COLORS.white, fontSize: 12, fontWeight: '600' }}>{t('transactions.export_csv')}</Text>
         </TouchableOpacity>
-        </Text>
       </View>
 
       {/* KPI row */}

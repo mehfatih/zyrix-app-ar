@@ -18,7 +18,7 @@ export default function ExpensesScreen() {
   const [form, setForm] = useState({ amount: '', title: '', category: 'other' })
 
   const fetchData = useCallback(async () => {
-    try { const res = await expensesApi.list(); setData(res) } catch {}
+    try { const res = await expensesApi.list(); setData(res) } catch (_e) {}
     finally { setLoading(false); setRefreshing(false) }
   }, [])
 

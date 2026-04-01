@@ -74,7 +74,7 @@ export default function DashboardScreen() {
         const analytics = await analyticsApi.getData(chartPeriod);
         setChartData(analytics.volume.map((v: { value: number }) => v.value));
         setChartLabels(analytics.volume.map((v: { label: string }) => v.label));
-      } catch { /* chart data is non-critical */ }
+      } catch (_e) { /* chart data is non-critical */ }
       setDashData(data);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t('common.error');

@@ -17,7 +17,7 @@ export default function InvoicesScreen() {
   const [form, setForm] = useState({ customerName: '', itemDesc: '', quantity: '1', unitPrice: '' })
 
   const fetchData = useCallback(async () => {
-    try { const res = await invoicesApi.list(); setInvoices(res.invoices) } catch {}
+    try { const res = await invoicesApi.list(); setInvoices(res.invoices) } catch (_e) {}
     finally { setLoading(false); setRefreshing(false) }
   }, [])
   useEffect(() => { fetchData() }, [fetchData])
@@ -40,7 +40,7 @@ export default function InvoicesScreen() {
       if (action === 'send') await invoicesApi.send(invoiceId)
       else await invoicesApi.markPaid(invoiceId)
       fetchData()
-    } catch {}
+    } catch (_e) {}
   }
 
   if (loading) return <SafeAreaView style={s.safe}><View style={s.center}><ActivityIndicator size="large" color={COLORS.primary} /></View></SafeAreaView>

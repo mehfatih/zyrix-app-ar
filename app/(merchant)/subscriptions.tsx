@@ -29,7 +29,7 @@ export default function SubscriptionsScreen() {
     try {
       const res = await subscriptionsApi.list()
       setSubs(res.subscriptions)
-    } catch { /* error */ }
+    } catch (_e) { /* error */ }
     finally { setLoading(false); setRefreshing(false) }
   }, [])
 
@@ -61,7 +61,7 @@ export default function SubscriptionsScreen() {
       else if (action === 'resume') await subscriptionsApi.resume(subId)
       else await subscriptionsApi.cancel(subId)
       fetchData()
-    } catch { /* error */ }
+    } catch (_e) { /* error */ }
   }
 
   if (loading) {
