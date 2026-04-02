@@ -1,7 +1,9 @@
 import type { ApiTransaction, ApiSettlement, ApiDispute, ApiRefund, ApiNotification, MerchantProfile } from '../types';
+import { USE_DEMO_DATA, demoDashboard, demoBalance, demoTransactionsList, demoAnalytics, demoSettlements, demoDisputes, demoRefunds, demoNotifications, demoProfile, demoPaymentLinks, demoSubscriptions } from './demoData';
 /**
  * Zyrix App — API Service
  * Connects all screens to the real backend.
+ * When USE_DEMO_DATA is true, returns realistic demo data instead.
  * Replace BASE_URL with your production API URL.
  */
 
@@ -89,6 +91,7 @@ export const transactionsApi = {
     from?: string;
     to?: string;
   }) => {
+    if (USE_DEMO_DATA) return Promise.resolve(demoTransactionsList as any);
     const query = new URLSearchParams();
     if (params?.status) query.set('status', params.status);
     if (params?.search) query.set('search', params.search);
@@ -110,8 +113,9 @@ export const transactionsApi = {
 
 // ─── Balance API ─────────────────────────────────
 export const balanceApi = {
-  get: () =>
-    request<{
+  get: () => {
+    if (USE_DEMO_DATA) return Promise.resolve(demoBalance as any);
+    return request<{
       available: number;
       incoming: number;
       outgoing: number;
@@ -123,12 +127,14 @@ export const balanceApi = {
         net: number;
         commission: number;
       } | null;
-    }>('/api/balance'),
+    }>('/api/balance');
+  },
 };
 
 // ─── Settlements API ─────────────────────────────
 export const settlementsApi = {
   list: (params?: { status?: string; days?: number; page?: number }) => {
+    if (USE_DEMO_DATA) return Promise.resolve(demoSettlements as any);
     const query = new URLSearchParams();
     if (params?.status) query.set('status', params.status);
     if (params?.days) query.set('days', String(params.days));
@@ -146,8 +152,10 @@ export const settlementsApi = {
 
 // ─── Disputes API ────────────────────────────────
 export const disputesApi = {
-  list: () =>
-    request<{ disputes: ApiDispute[] }>('/api/disputes'),
+  list: () => {
+    if (USE_DEMO_DATA) return Promise.resolve(demoDisputes as any);
+    return request<{ disputes: ApiDispute[] }>('/api/disputes');
+  },
 
   respond: (disputeId: string, response: string) =>
     request<ApiDispute>(`/api/disputes/${disputeId}/respond`, {
@@ -159,6 +167,7 @@ export const disputesApi = {
 // ─── Refunds API ─────────────────────────────────
 export const refundsApi = {
   list: (status?: string) => {
+    if (USE_DEMO_DATA) return Promise.resolve(demoRefunds as any);
     const qs = status ? `?status=${status}` : '';
     return request<{ refunds: ApiRefund[] }>(`/api/refunds${qs}`);
   },
@@ -172,8 +181,10 @@ export const refundsApi = {
 
 // ─── Notifications API ───────────────────────────
 export const notificationsApi = {
-  list: () =>
-    request<{ notifications: ApiNotification[]; unreadCount: number }>('/api/notifications'),
+  list: () => {
+    if (USE_DEMO_DATA) return Promise.resolve(demoNotifications as any);
+    return request<{ notifications: ApiNotification[]; unreadCount: number }>('/api/notifications');
+  },
 
   markAllRead: () =>
     request<{ success: boolean }>('/api/notifications/read-all', { method: 'PUT' }),
@@ -184,8 +195,10 @@ export const notificationsApi = {
 
 // ─── Merchant API ────────────────────────────────
 export const merchantApi = {
-  getProfile: () =>
-    request<MerchantProfile>('/api/merchant/profile'),
+  getProfile: () => {
+    if (USE_DEMO_DATA) return Promise.resolve(demoProfile as any);
+    return request<MerchantProfile>('/api/merchant/profile');
+  },
 
   updateProfile: (data: { name?: string; email?: string; company?: string; language?: string }) =>
     request<MerchantProfile>('/api/merchant/profile', {
@@ -203,6 +216,8 @@ export const merchantApi = {
 // ─── Dashboard Aggregate ─────────────────────────
 export const dashboardApi = {
   getData: async () => {
+    if (USE_DEMO_DATA) return demoDashboard as any;
+
     const [txData, balance, disputes, notifications] = await Promise.all([
       transactionsApi.list({ limit: 4 }),
       balanceApi.get(),
@@ -230,8 +245,9 @@ export const dashboardApi = {
 
 // ─── Analytics API ───────────────────────────────
 export const analyticsApi = {
-  getData: (range: '7d' | '30d' | '90d' = '30d') =>
-    request<{
+  getData: (range: '7d' | '30d' | '90d' = '30d') => {
+    if (USE_DEMO_DATA) return Promise.resolve(demoAnalytics(range) as any);
+    return request<{
       range: string;
       kpi: {
         volume: number;
@@ -243,12 +259,14 @@ export const analyticsApi = {
       successRate: { label: string; value: number }[];
       methods: { label: string; value: number }[];
       countries: { label: string; value: number }[];
-    }>(`/api/analytics?range=${range}`),
+    }>(`/api/analytics?range=${range}`);
+  },
 };
 
 // ─── Payment Links API ──────────────────────────
 export const paymentLinksApi = {
   list: (status?: string) => {
+    if (USE_DEMO_DATA) return Promise.resolve(demoPaymentLinks as any);
     const qs = status ? `?status=${status}` : '';
     return request<{ links: Array<{
       id: string; linkId: string; amount: string; currency: string;
@@ -274,6 +292,7 @@ export const paymentLinksApi = {
 // ─── Subscriptions API ──────────────────────────
 export const subscriptionsApi = {
   list: (status?: string) => {
+    if (USE_DEMO_DATA) return Promise.resolve(demoSubscriptions as any);
     const qs = status ? `?status=${status}` : '';
     return request<{ subscriptions: Array<{
       id: string; subscriptionId: string; customerName: string;
