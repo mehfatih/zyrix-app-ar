@@ -22,7 +22,7 @@ export function useDeepLinking() {
   useEffect(() => {
     // Handle notification taps when app is open or backgrounded
     const subscription = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
+      (response: any) => {
         const data = response.notification.request.content.data;
 
         if (data?.type && typeof data.type === 'string') {
@@ -53,7 +53,7 @@ export function useDeepLinking() {
     );
 
     // Handle cold start — app opened from killed state via notification
-    Notifications.getLastNotificationResponseAsync().then((response) => {
+    Notifications.getLastNotificationResponseAsync().then((response: any) => {
       if (response) {
         const data = response.notification.request.content.data;
         if (data?.type && typeof data.type === 'string') {

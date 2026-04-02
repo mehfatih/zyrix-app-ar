@@ -13,7 +13,7 @@ import en from '../i18n/en.json';
 
 type TranslationMap = Record<string, any>;
 
-const TRANSLATIONS: Record<AppLanguage, TranslationMap> = { ar, en };
+const TRANSLATIONS: Record<AppLanguage, TranslationMap> = { ar, en, tr: en };
 
 const RTL_LANGUAGES: AppLanguage[] = ['ar'];
 
@@ -21,7 +21,7 @@ function getNestedValue(obj: TranslationMap, path: string): string | undefined {
   return path.split('.').reduce((acc, key) => {
     if (acc && typeof acc === 'object' && key in acc) return acc[key];
     return undefined;
-  }, obj) as string | undefined;
+  }, obj) as unknown as string | undefined;
 }
 
 function interpolate(template: string, params?: Record<string, string | number>): string {
@@ -60,7 +60,7 @@ export function useTranslation() {
 
   const t = useCallback(
     (key: string, params?: Record<string, string | number>): string => {
-      const value = getNestedValue(TRANSLATIONS[language], key);
+      const value = getNestedValue((TRANSLATIONS as any)[language], key);
       if (value === undefined) {
         const fallback = getNestedValue(TRANSLATIONS.en, key);
         if (fallback !== undefined) return interpolate(fallback, params);

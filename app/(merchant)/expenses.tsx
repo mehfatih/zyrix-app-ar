@@ -59,7 +59,7 @@ export default function ExpensesScreen() {
         {/* Category breakdown */}
         {summary?.byCategory && summary.byCategory.length > 0 && (
           <View style={s.catSection}>
-            {summary.byCategory.map((cat, i) => (
+            {summary.byCategory.map((cat: any, i: number) => (
               <View key={i} style={[s.catRow, isRTL && s.catRowRTL]}>
                 <Text style={s.catName}>{t(`expenses.${cat.category}`) || cat.category}</Text>
                 <Text style={s.catAmount}>₺{cat.total.toLocaleString()} ({cat.count})</Text>
@@ -71,7 +71,7 @@ export default function ExpensesScreen() {
         {/* Expenses list */}
         {(!data?.expenses || data.expenses.length === 0) ? (
           <View style={s.center}><Text style={s.emptyText}>{t('expenses.no_expenses')}</Text></View>
-        ) : data.expenses.map(exp => (
+        ) : data.expenses.map((exp: any) => (
           <View key={exp.id} style={s.card}>
             <View style={[s.cardRow, isRTL && s.cardRowRTL]}>
               <View style={{flex:1}}>

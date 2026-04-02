@@ -8,7 +8,7 @@ export function OfflineBanner() {
   const [slideAnim] = useState(new Animated.Value(-50))
 
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener(state => {
+    const unsubscribe = NetInfo.addEventListener((state: any) => {
       const offline = !(state.isConnected && state.isInternetReachable !== false)
       setIsOffline(offline)
       Animated.timing(slideAnim, {

@@ -66,10 +66,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             token,
           });
         } else {
-          setState((prev) => ({ ...prev, isLoading: false }));
+          setState((prev: any) => ({ ...prev, isLoading: false }));
         }
       } catch (_e) {
-        setState((prev) => ({ ...prev, isLoading: false }));
+        setState((prev: any) => ({ ...prev, isLoading: false }));
       }
     };
     loadAuth();
@@ -111,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const completeOnboarding = useCallback(async () => {
     try {
       await AsyncStorage.setItem(ONBOARDING_DONE_KEY, 'true');
-      setState((prev) => ({ ...prev, needsOnboarding: false }));
+      setState((prev: any) => ({ ...prev, needsOnboarding: false }));
     } catch (_e) { /* silent */ }
   }, []);
 

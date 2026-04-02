@@ -9,7 +9,7 @@ import {
   I18nManager,
   SafeAreaView,
   Alert,
-
+  ActivityIndicator,
 } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 import { useRouter, useLocalSearchParams } from 'expo-router'
@@ -79,7 +79,7 @@ function DetailRow({
 }) {
   const handleCopy = () => {
     Clipboard.setStringAsync(value)
-    Alert.alert('✓', `${label} kopyalandı`)
+    Alert.alert('✓', `${label} copied`)
   }
 
   return (
@@ -198,7 +198,7 @@ export default function TransactionDetailScreen() {
     const fetchTx = async () => {
       try {
         const data = await transactionsApi.getById(id ?? '')
-        setTx(data)
+        setTx(data as any)
       } catch (err) {
         console.warn(err)
       } finally {
@@ -232,19 +232,19 @@ export default function TransactionDetailScreen() {
   }
 
   const handleRefund = () =>
-    Alert.alert('İade', `${tx.id} için iade başlatılsın mı?`, [
-      { text: 'İptal', style: 'cancel' },
-      { text: 'İade Et', style: 'destructive', onPress: () => {} },
+    Alert.alert(t('refunds.title'), `${tx.id}`, [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.confirm'), style: 'destructive', onPress: () => {} },
     ])
 
   const handleDispute = () =>
-    Alert.alert('Anlaşmazlık', `${tx.id} için anlaşmazlık açılsın mı?`, [
-      { text: 'İptal', style: 'cancel' },
-      { text: 'Aç', style: 'destructive', onPress: () => {} },
+    Alert.alert(t('disputes.title'), `${tx.id}`, [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.confirm'), style: 'destructive', onPress: () => {} },
     ])
 
   const handleShare = () =>
-    Alert.alert('Paylaş', `${tx.id} makbuz paylaşılacak`)
+    Alert.alert(t('common.export'), `${tx.id}`)
 
   return (
     <SafeAreaView style={styles.safeArea}>

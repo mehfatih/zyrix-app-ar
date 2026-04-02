@@ -57,7 +57,7 @@ export default function InvoicesScreen() {
 
         {invoices.length === 0 ? (
           <View style={s.center}><Text style={s.emptyText}>{t('invoices.no_invoices')}</Text></View>
-        ) : invoices.map(inv => (
+        ) : invoices.map((inv: any) => (
           <View key={inv.id} style={s.card}>
             <View style={[s.cardRow, isRTL && s.cardRowRTL]}>
               <View style={{flex:1}}>

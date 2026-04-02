@@ -114,7 +114,7 @@ export default function PaymentLinksScreen() {
         {links.length === 0 ? (
           <View style={styles.center}><Text style={styles.emptyText}>{t('payment_links.no_links')}</Text></View>
         ) : (
-          links.map(link => (
+          links.map((link: any) => (
             <View key={link.id} style={styles.card}>
               <View style={[styles.cardRow, isRTL && styles.cardRowRTL]}>
                 <View style={{ flex: 1 }}>

@@ -45,14 +45,14 @@ export function useCurrency(defaultCurrency: CurrencyCode = 'TRY') {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });
-      return `${info.symbol}${formatted}`;
+      return `${info!.symbol}${formatted}`;
     },
     [currency],
   );
 
   const convert = useCallback(
     (amount: number, from: CurrencyCode, to?: CurrencyCode): number => {
-      const target = to ?? currency;
+      const target: CurrencyCode = (to ?? currency) as CurrencyCode;
       if (from === target) return amount;
       // Convert: from → TRY → target
       const inTRY = amount / EXCHANGE_RATES[from];

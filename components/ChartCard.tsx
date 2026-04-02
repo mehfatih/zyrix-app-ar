@@ -135,7 +135,7 @@ function LineChart({
                 {/* Connecting line to next point */}
                 {i < normalised.length - 1 && (() => {
                   const n2 = normalised[i + 1]
-                  const dy = (n2 - n) * (CHART_HEIGHT - 12)
+                  const dy = ((n2 ?? 0) - n) * (CHART_HEIGHT - 12)
                   const angle = Math.atan2(-dy, 28) * (180 / Math.PI)
                   const length = Math.sqrt(28 * 28 + dy * dy)
                   return (
@@ -160,7 +160,7 @@ function LineChart({
                   ]}
                 />
                 {/* X label */}
-                <Text style={line.xLabel}>{data[i].label}</Text>
+                <Text style={line?.xLabel}>{data[i]?.label}</Text>
               </View>
             )
           })}

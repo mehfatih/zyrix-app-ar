@@ -40,7 +40,7 @@ export function useApi<T>(
     execute();
   }, [execute]);
 
-  const refresh = useCallback(() => setTrigger((t) => t + 1), []);
+  const refresh = useCallback(() => setTrigger((t: number) => t + 1), []);
   const retry = refresh;
 
   return { data, loading, error, refresh, retry };

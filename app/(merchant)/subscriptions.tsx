@@ -84,7 +84,7 @@ export default function SubscriptionsScreen() {
         {subs.length === 0 ? (
           <View style={s.center}><Text style={s.emptyText}>{t('subscriptions.no_subs')}</Text></View>
         ) : (
-          subs.map(sub => (
+          subs.map((sub: any) => (
             <View key={sub.id} style={s.card}>
               <View style={[s.cardRow, isRTL && s.cardRowRTL]}>
                 <View style={{ flex: 1 }}>

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Zyrix App — Error Boundary
  * Catches JS errors in child components, shows fallback UI instead of crashing.

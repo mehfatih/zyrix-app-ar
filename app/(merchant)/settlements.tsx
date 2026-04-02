@@ -40,7 +40,7 @@ interface FilterTab {
 export default function SettlementsScreen() {
   const { t } = useTranslation()
   const [filter, setFilter] = useState<FilterKey>('all')
-  const [allSettlements, setAllSettlements] = useState<Settlement[]>([])
+  const [allSettlements, setAllSettlements] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -65,14 +65,14 @@ export default function SettlementsScreen() {
     { key: 'settled', label: t('settlements.filter_settled') },
   ]
 
-  const totalGross = allSettlements.reduce((s, x) => s + x.gross, 0)
-  const totalNet   = allSettlements.reduce((s, x) => s + x.net, 0)
-  const totalComm  = allSettlements.reduce((s, x) => s + x.commission, 0)
+  const totalGross = allSettlements.reduce((s: number, x: any) => s + x.gross, 0)
+  const totalNet   = allSettlements.reduce((s: number, x: any) => s + x.net, 0)
+  const totalComm  = allSettlements.reduce((s: number, x: any) => s + x.commission, 0)
 
   const filtered = useMemo(
     () =>
       allSettlements.filter(
-        (s) => filter === 'all' || s.status === filter,
+        (s: any) => filter === 'all' || s.status === filter,
       ),
     [filter, allSettlements],
   )
@@ -87,7 +87,7 @@ export default function SettlementsScreen() {
 
   // ── Render ──
 
-  const renderItem = ({ item }: ListRenderItemInfo<Settlement>) => (
+  const renderItem = ({ item }: any) => (
     <SettlementRow {...item} onPress={() => handleRowPress(item.id)} />
   )
 
@@ -184,7 +184,7 @@ export default function SettlementsScreen() {
     <SafeAreaView style={styles.safeArea}>
       <FlatList
         data={filtered}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: any) => item.id}
         renderItem={renderItem}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}

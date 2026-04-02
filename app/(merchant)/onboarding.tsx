@@ -59,7 +59,7 @@ export default function OnboardingScreen() {
   }
 
   const updateField = (key: string, value: string) => {
-    setForm(prev => ({ ...prev, [key]: value }))
+    setForm((prev: any) => ({ ...prev, [key]: value }))
   }
 
   const renderField = (key: string) => {
@@ -76,7 +76,7 @@ export default function OnboardingScreen() {
         <TextInput
           style={[styles.input, isRTL && styles.inputRTL]}
           value={form[key as keyof typeof form]}
-          onChangeText={(v) => updateField(key, v)}
+          onChangeText={(v: string) => updateField(key, v)}
           placeholderTextColor={COLORS.textMuted}
           placeholder={labels[key]}
           keyboardType={key === 'email' ? 'email-address' : 'default'}
@@ -98,15 +98,15 @@ export default function OnboardingScreen() {
 
         {/* Header */}
         <Text style={[styles.welcomeText, isRTL && styles.rtl]}>
-          {step === 0 ? t('onboarding.welcome') : t(`onboarding.${steps[step].key}`)}
+          {step === 0 ? t('onboarding.welcome') : t(`onboarding.${steps[step]?.key}`)}
         </Text>
         <Text style={[styles.stepTitle, isRTL && styles.rtl]}>
-          {t(`onboarding.${steps[step].key}`)}
+          {t(`onboarding.${steps[step]?.key}`)}
         </Text>
 
         {/* Fields */}
         <View style={styles.fieldsWrap}>
-          {steps[step].fields.map(renderField)}
+          {steps[step]?.fields.map(renderField)}
           {step === steps.length - 1 && (
             <View style={styles.summaryWrap}>
               <Text style={[styles.summaryTitle, isRTL && styles.rtl]}>

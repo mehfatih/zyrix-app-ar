@@ -36,7 +36,7 @@ export default function OtpScreen() {
   // Countdown timer
   useEffect(() => {
     if (timer <= 0) return;
-    const interval = setInterval(() => setTimer((t) => t - 1), 1000);
+    const interval = setInterval(() => setTimer((t: number) => t - 1), 1000);
     return () => clearInterval(interval);
   }, [timer]);
 
@@ -125,18 +125,18 @@ export default function OtpScreen() {
 
         {/* OTP Cells */}
         <View style={styles.otpRow}>
-          {code.map((digit, index) => (
+          {code.map((digit: string, index: number) => (
             <TextInput
               key={index}
-              ref={(ref) => { inputRefs.current[index] = ref; }}
+              ref={(ref: any) => { inputRefs.current[index] = ref; }}
               style={[
                 styles.otpCell,
                 digit && styles.otpCellFilled,
                 error && styles.otpCellError,
               ]}
               value={digit}
-              onChangeText={(text) => handleChange(text, index)}
-              onKeyPress={({ nativeEvent }) =>
+              onChangeText={(text: string) => handleChange(text, index)}
+              onKeyPress={({ nativeEvent }: any) =>
                 handleKeyPress(nativeEvent.key, index)
               }
               keyboardType="number-pad"

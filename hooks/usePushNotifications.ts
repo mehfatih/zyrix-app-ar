@@ -80,12 +80,12 @@ export function usePushNotifications() {
       });
 
     // Listen for incoming notifications while app is open
-    notificationListener.current = Notifications.addNotificationReceivedListener((_notification) => {
+    notificationListener.current = Notifications.addNotificationReceivedListener((_notification: any) => {
       // Can be used to update badge count or show in-app notification
     });
 
     // Listen for notification taps (deep linking)
-    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
+    responseListener.current = Notifications.addNotificationResponseReceivedListener((response: any) => {
       const data = response.notification.request.content.data;
       if (data?.screen) {
         // Deep link handled by useDeepLinking hook

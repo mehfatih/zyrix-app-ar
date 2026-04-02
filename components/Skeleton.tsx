@@ -3,13 +3,14 @@ import { View, Animated, StyleSheet, ViewStyle } from 'react-native';
 import { COLORS } from '../constants/colors';
 
 interface SkeletonProps {
+  key?: number;
   width?: number | string;
   height?: number;
   borderRadius?: number;
   style?: ViewStyle;
 }
 
-export function Skeleton({ width = '100%', height = 16, borderRadius = 8, style }: SkeletonProps) {
+export function Skeleton({ width = '100%', height = 16, borderRadius = 8, style }: any) {
   const shimmer = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -35,7 +36,7 @@ export function Skeleton({ width = '100%', height = 16, borderRadius = 8, style 
   );
 }
 
-export function SkeletonCard({ lines = 3 }: { lines?: number }) {
+export function SkeletonCard({ lines = 3 }: { key?: number; lines?: number }) {
   return (
     <View style={skStyles.card}>
       <View style={skStyles.header}>

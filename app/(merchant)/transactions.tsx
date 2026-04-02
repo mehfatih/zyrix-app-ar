@@ -1,4 +1,5 @@
 // app/(merchant)/transactions.tsx
+import type { TransactionStatus } from '../../types'
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   View,
@@ -87,7 +88,7 @@ export default function TransactionsScreen() {
 
   // Filtered + searched list
   const filtered = useMemo(() => {
-    return allTx.filter((tx) => {
+    return allTx.filter((tx: any) => {
       const matchesFilter = filter === 'all' || tx.status === filter
       const query = search.toLowerCase()
       const matchesSearch =
@@ -197,7 +198,7 @@ export default function TransactionsScreen() {
     <SafeAreaView style={styles.safeArea}>
       <FlatList
         data={filtered}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: any) => item.id}
         renderItem={renderItem}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}

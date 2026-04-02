@@ -182,7 +182,7 @@ export default function BalanceScreen() {
                 minimumFractionDigits: 2,
               })} ₺`}
               valueColor={item.color}
-              style={styles.kpiCard}
+              style={styles.kpiCard as any}
             />
           ))}
         </View>
@@ -204,7 +204,7 @@ export default function BalanceScreen() {
               </View>
               <View style={styles.settlementRight}>
                 <Text style={styles.settlementNet}>
-                  +{(bal.nextSettlement?.dateAmount ?? 0).toLocaleString('tr-TR', {
+                  +{(bal.nextSettlement?.net ?? 0).toLocaleString('tr-TR', {
                     minimumFractionDigits: 2,
                   })}{' '}
                   {'TRY'}
@@ -230,7 +230,7 @@ export default function BalanceScreen() {
               />
               <BreakdownItem
                 label={t('settlements.net')}
-                value={`${(bal.nextSettlement?.dateAmount ?? 0).toFixed(2)} ₺`}
+                value={`${(bal.nextSettlement?.net ?? 0).toFixed(2)} ₺`}
                 color={COLORS.success}
               />
             </View>
@@ -239,7 +239,7 @@ export default function BalanceScreen() {
 
         {/* ── Account Info ── */}
         <View style={styles.section}>
-          <SectionTitle text="Merchant ID" />
+          <SectionTitle text={t('profile.merchantId')} />
           <View style={styles.infoCard}>
             <InfoRow label={t('profile.merchantId')} value="ZRX-10042" />
             <InfoRow label={t('profile.company')} value={bal.company} />

@@ -150,7 +150,7 @@ export default function ProfileScreen() {
   React.useEffect(() => { fetchProfile() }, [])
 
   const set = (key: keyof ProfileData) => (val: string) =>
-    setDraft((prev) => ({ ...prev, [key]: val }))
+    setDraft((prev: any) => ({ ...prev, [key]: val }))
 
   const handleEdit = () => {
     setDraft(profile)
@@ -165,11 +165,11 @@ export default function ProfileScreen() {
   const handleSave = () => {
     // Basic validation
     if (!draft.firstName.trim() || !draft.lastName.trim()) {
-      Alert.alert('Hata', 'Ad ve soyad boş bırakılamaz.')
+      Alert.alert('✗', t('profile.validation_name'))
       return
     }
     if (!draft.email.includes('@')) {
-      Alert.alert('Hata', 'Geçerli bir e-posta girin.')
+      Alert.alert('✗', t('profile.validation_email'))
       return
     }
 
@@ -179,7 +179,7 @@ export default function ProfileScreen() {
       setProfile(draft)
       setEditing(false)
       setSaving(false)
-      Alert.alert('✓', 'Profil güncellendi.')
+      Alert.alert('✓', t('profile.updated'))
     }, 800)
   }
 
@@ -203,7 +203,7 @@ export default function ProfileScreen() {
               </Text>
               {!editing ? (
                 <TouchableOpacity style={styles.editBtn} onPress={handleEdit}>
-                  <Text style={styles.editBtnText}>✎  Düzenle</Text>
+                  <Text style={styles.editBtnText}>✎  {t('profile.edit')}</Text>
                 </TouchableOpacity>
               ) : (
                 <View style={[styles.editActions, isRTL && styles.editActionsRTL]}>
@@ -240,7 +240,7 @@ export default function ProfileScreen() {
             </View>
 
             {/* ── Personal info — editable ── */}
-            <SectionHeader title="Kişisel Bilgiler" />
+            <SectionHeader title={t('profile.personal_info')} />
             <View style={styles.card}>
               <Field
                 label={t('profile.first_name')}
@@ -276,11 +276,11 @@ export default function ProfileScreen() {
             </View>
 
             {/* ── Merchant info — read-only ── */}
-            <SectionHeader title="Merchant Bilgileri" />
+            <SectionHeader title={t('profile.merchant_info')} />
             <View style={styles.infoCard}>
               <InfoRow label={t('profile.merchantId')} value={profile.merchantId} mono />
               <View style={styles.fieldDivider} />
-              <InfoRow label="Şirket"      value={profile.company} />
+              <InfoRow label={t('profile.company_label')}      value={profile.company} />
               <View style={styles.fieldDivider} />
               <InfoRow label={t('profile.country')}        value={profile.country} />
               <View style={styles.fieldDivider} />
@@ -288,18 +288,18 @@ export default function ProfileScreen() {
             </View>
 
             {/* ── Danger zone ── */}
-            <SectionHeader title="Hesap" />
+            <SectionHeader title={t('profile.account')} />
             <View style={styles.dangerCard}>
               <TouchableOpacity
                 style={[styles.dangerRow, isRTL && styles.dangerRowRTL]}
-                onPress={() => Alert.alert('Hesabı Kapat', 'Coming soon')}
+                onPress={() => Alert.alert(t('profile.close_account'), t('common.coming_soon'))}
                 activeOpacity={0.7}
               >
                 <Text style={styles.dangerIcon}>⚠</Text>
                 <View style={{ flex: 1, alignItems: isRTL ? 'flex-end' : 'flex-start' }}>
-                  <Text style={styles.dangerLabel}>Hesabı Kapat</Text>
+                  <Text style={styles.dangerLabel}>{t('profile.close_account')}</Text>
                   <Text style={styles.dangerSublabel}>
-                    Bu işlem geri alınamaz
+                    {t('profile.close_account_sub')}
                   </Text>
                 </View>
                 <Text style={[styles.dangerChevron, isRTL && { transform: [{ scaleX: -1 }] }]}>

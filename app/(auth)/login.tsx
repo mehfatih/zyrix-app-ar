@@ -74,7 +74,7 @@ export default function LoginScreen() {
               placeholder={t('auth.phonePlaceholder')}
               placeholderTextColor={COLORS.inputPlaceholder}
               value={phone}
-              onChangeText={(text) => {
+              onChangeText={(text: string) => {
                 setPhone(text);
                 if (error) setError('');
               }}

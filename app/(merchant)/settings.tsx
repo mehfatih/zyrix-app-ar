@@ -165,7 +165,7 @@ export default function SettingsScreen() {
   })
 
   const setToggle = (key: keyof ToggleState) => (val: boolean) =>
-    setToggles((prev) => ({ ...prev, [key]: val }))
+    setToggles((prev: any) => ({ ...prev, [key]: val }))
 
   const handleLanguageChange = async (lang: Language) => {
     setLanguage(lang)
@@ -208,7 +208,7 @@ export default function SettingsScreen() {
     Alert.alert(t('settings.webhooks'), t('common.coming_soon'))
 
   const handleSupport = () =>
-    Alert.alert('Support', 'info@zyrix.co · +90 545 221 0888')
+    Alert.alert(t('settings.support'), 'info@zyrix.co · +90 545 221 0888')
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -267,7 +267,7 @@ export default function SettingsScreen() {
             <Divider />
             <SettingRow
               iconName="mail"
-              label="E-posta Raporları"
+              label={t('settings.email_reports')}
               sublabel={t('notifications.settlement')}
               showChevron={false}
               rightElement={
@@ -282,8 +282,8 @@ export default function SettingsScreen() {
             <Divider />
             <SettingRow
               iconName="message-square"
-              label="SMS Uyarıları"
-              sublabel="Büyük işlemler için SMS"
+              label={t('settings.sms_alerts')}
+              sublabel={t('settings.sms_alerts_sub')}
               showChevron={false}
               rightElement={
                 <Switch
@@ -301,8 +301,8 @@ export default function SettingsScreen() {
           <SettingsGroup>
             <SettingRow
               iconName="shield"
-              label="İki Faktörlü Doğrulama"
-              sublabel={toggles.twoFactor ? 'Aktif' : 'Devre dışı'}
+              label={t('settings.two_factor')}
+              sublabel={toggles.twoFactor ? t('settings.two_factor_active') : t('settings.two_factor_inactive')}
               showChevron={false}
               rightElement={
                 <Switch
@@ -331,8 +331,8 @@ export default function SettingsScreen() {
             <Divider />
             <SettingRow
               iconName="clock"
-              label={t('settings.logout')}
-              sublabel="15 dakika hareketsizlik"
+              label={t('settings.auto_logout')}
+              sublabel={t('settings.auto_logout_sub')}
               showChevron={false}
               rightElement={
                 <Switch
@@ -346,17 +346,17 @@ export default function SettingsScreen() {
             <Divider />
             <SettingRow
               iconName="key"
-              label="Şifre Değiştir"
+              label={t('settings.change_password')}
               onPress={handleChangePassword}
             />
           </SettingsGroup>
 
           {/* ── Developer / Integration ── */}
-          <SectionHeader title="Entegrasyon" />
+          <SectionHeader title={t('settings.integration')} />
           <SettingsGroup>
             <SettingRow
               iconName="settings"
-              label="API Anahtarları"
+              label={t('settings.apiKeys')}
               sublabel={t('settings.apiKeys')}
               onPress={handleApiKeys}
             />
@@ -370,7 +370,7 @@ export default function SettingsScreen() {
           </SettingsGroup>
 
           {/* ── About / Support ── */}
-          <SectionHeader title="Destek" />
+          <SectionHeader title={t('settings.support')} />
           <SettingsGroup>
             <SettingRow
               iconName="message-square"
@@ -381,7 +381,7 @@ export default function SettingsScreen() {
             <Divider />
             <SettingRow
               iconName="clipboard"
-              label="Sürüm"
+              label={t('settings.version_label')}
               sublabel="1.0.0 (build 42)"
               showChevron={false}
             />

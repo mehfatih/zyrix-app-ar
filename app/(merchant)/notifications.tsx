@@ -134,7 +134,7 @@ export default function NotificationsScreen() {
   React.useEffect(() => { fetchData() }, [])
   const onRefresh = () => { setRefreshing(true); fetchData() }
 
-  const unreadCount = notifications.filter((n) => !n.read).length
+  const unreadCount = notifications.filter((n: any) => !n.read).length
 
   const FILTERS: { key: FilterKey; label: string; iconName: string }[] = [
     { key: 'all',        label: t('notifications.filter_all'),        iconName: 'bell' },
@@ -146,28 +146,28 @@ export default function NotificationsScreen() {
   ]
 
   const filtered = useMemo(
-    () => notifications.filter((n) => filter === 'all' || n.type === filter),
+    () => notifications.filter((n: any) => filter === 'all' || n.type === filter),
     [notifications, filter],
   )
 
   const handlePress = (id: string) => {
     // Mark as read on open
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
+    setNotifications((prev: any) =>
+      prev.map((n: any) => (n.id === id ? { ...n, read: true } : n)),
     )
-    const notif = notifications.find((n) => n.id === id)
+    const notif = notifications.find((n: any) => n.id === id)
     if (notif) Alert.alert(notif.title, notif.body)
   }
 
   const handleMarkRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
+    setNotifications((prev: any) =>
+      prev.map((n: any) => (n.id === id ? { ...n, read: true } : n)),
     )
   }
 
   const handleMarkAllRead = () => {
     notificationsApi.markAllRead().catch(() => {})
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+    setNotifications((prev: any) => prev.map((n: any) => ({ ...n, read: true })))
   }
 
   // ── Render ──
@@ -233,8 +233,8 @@ export default function NotificationsScreen() {
   )
 
   // Group into unread / earlier
-  const unread  = filtered.filter((n) => !n.read)
-  const read    = filtered.filter((n) =>  n.read)
+  const unread  = filtered.filter((n: any) => !n.read)
+  const read    = filtered.filter((n: any) =>  n.read)
 
   const renderGrouped = () => (
     <>
@@ -244,8 +244,8 @@ export default function NotificationsScreen() {
           <Text style={[styles.groupLabel, isRTL && styles.groupLabelRTL]}>
             {t('notifications.unread')} ({unread.length})
           </Text>
-          {unread.map((n) => (
-            <NotifCard key={n.id} notif={n} onPress={handlePress} onMarkRead={handleMarkRead} />
+          {unread.map((n: any) => (
+            <NotifCard key={n.id} notif={n as any} onPress={handlePress} onMarkRead={handleMarkRead} />
           ))}
         </>
       )}
@@ -254,8 +254,8 @@ export default function NotificationsScreen() {
           <Text style={[styles.groupLabel, isRTL && styles.groupLabelRTL]}>
             {t('notifications.earlier')}
           </Text>
-          {read.map((n) => (
-            <NotifCard key={n.id} notif={n} onPress={handlePress} onMarkRead={handleMarkRead} />
+          {read.map((n: any) => (
+            <NotifCard key={n.id} notif={n as any} onPress={handlePress} onMarkRead={handleMarkRead} />
           ))}
         </>
       )}

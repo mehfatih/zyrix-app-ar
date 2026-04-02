@@ -39,7 +39,10 @@ type FilterKey = 'all' | DisputeStatus
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function daysUntil(dateStr: string): number {
-  const [d, m, y] = dateStr.split('.').map(Number)
+  const parts = dateStr.split('.').map(Number)
+  const d = parts[0] ?? 1
+  const m = parts[1] ?? 1
+  const y = parts[2] ?? 2026
   const target = new Date(y, m - 1, d)
   const today  = new Date(2026, 2, 23) // fixed to brief date
   const diff   = Math.ceil((target.getTime() - today.getTime()) / 86_400_000)
@@ -122,7 +125,7 @@ function DisputeCard({
 
         {/* Amount */}
         <View style={card.footerCell}>
-          <Text style={card.footerCellLabel}>{	('disputes.amount_label')}</Text>
+          <Text style={card.footerCellLabel}>{t('disputes.amount_label')}</Text>
           <Text style={card.footerAmount}>
             {dispute.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
           </Text>
@@ -135,7 +138,7 @@ function DisputeCard({
             {dispute.deadline}
             {isPending && (
               <Text style={[card.daysLeft, { color: deadlineColor }]}>
-                {' '}({days > 0 ? `${days}g` : 'Bugün'})
+                {' '}({days > 0 ? `${days}d` : '—'})
               </Text>
             )}
           </Text>
@@ -143,7 +146,7 @@ function DisputeCard({
 
         {/* Opened */}
         <View style={card.footerCell}>
-          <Text style={card.footerCellLabel}>Açılış</Text>
+          <Text style={card.footerCellLabel}>{t('disputes.opened')}</Text>
           <Text style={card.footerOpened}>{dispute.opened}</Text>
         </View>
 
@@ -192,14 +195,14 @@ export default function DisputesScreen() {
     { key: 'lost',    label: t('disputes.filter_lost') },
   ]
 
-  const pendingCount = allDisputes.filter((d) => d.status === 'pending').length
-  const urgentCount  = allDisputes.filter((d) => d.urgent).length
+  const pendingCount = allDisputes.filter((d: any) => d.status === 'pending').length
+  const urgentCount  = allDisputes.filter((d: any) => d.urgent).length
   const totalAmount  = allDisputes
-    .filter((d) => d.status === 'pending')
-    .reduce((s, d) => s + d.amount, 0)
+    .filter((d: any) => d.status === 'pending')
+    .reduce((s: number, d: any) => s + d.amount, 0)
 
   const filtered = useMemo(
-    () => allDisputes.filter((d) => filter === 'all' || d.status === filter),
+    () => allDisputes.filter((d: any) => filter === 'all' || d.status === filter),
     [filter, allDisputes],
   )
 
@@ -209,7 +212,7 @@ export default function DisputesScreen() {
 
   // ── Render ──
 
-  const renderItem = ({ item }: ListRenderItemInfo<Dispute>) => (
+  const renderItem = ({ item }: any) => (
     <DisputeCard dispute={item} onRespond={handleRespond} />
   )
 
@@ -289,7 +292,7 @@ export default function DisputesScreen() {
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyIcon}>🎉</Text>
-      <Text style={styles.emptyText}>Anlaşmazlık yok</Text>
+      <Text style={styles.emptyText}>{t('disputes.no_disputes')}</Text>
     </View>
   )
 
@@ -298,7 +301,7 @@ export default function DisputesScreen() {
       <FlatList
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} colors={[COLORS.primary]} />}
         data={filtered}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: any) => item.id}
         renderItem={renderItem}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}

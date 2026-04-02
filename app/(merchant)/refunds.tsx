@@ -152,15 +152,15 @@ export default function RefundsScreen() {
 
   // KPIs
   const totalRefunded  = allRefunds
-    .filter((r) => r.status === 'completed')
-    .reduce((s, r) => s + r.amount, 0)
+    .filter((r: any) => r.status === 'completed')
+    .reduce((s: number, r: any) => s + r.amount, 0)
   const processingAmt  = allRefunds
-    .filter((r) => r.status === 'processing')
-    .reduce((s, r) => s + r.amount, 0)
-  const processingCount = allRefunds.filter((r) => r.status === 'processing').length
+    .filter((r: any) => r.status === 'processing')
+    .reduce((s: number, r: any) => s + r.amount, 0)
+  const processingCount = allRefunds.filter((r: any) => r.status === 'processing').length
 
   const filtered = useMemo(
-    () => allRefunds.filter((r) => filter === 'all' || r.status === filter),
+    () => allRefunds.filter((r: any) => filter === 'all' || r.status === filter),
     [filter, allRefunds],
   )
 
@@ -174,7 +174,7 @@ export default function RefundsScreen() {
 
   // ── Render ──
 
-  const renderItem = ({ item }: ListRenderItemInfo<Refund>) => (
+  const renderItem = ({ item }: any) => (
     <RefundCard refund={item} onPress={handlePress} />
   )
 
@@ -269,7 +269,7 @@ export default function RefundsScreen() {
       <FlatList
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} colors={[COLORS.primary]} />}
         data={filtered}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: any) => item.id}
         renderItem={renderItem}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}

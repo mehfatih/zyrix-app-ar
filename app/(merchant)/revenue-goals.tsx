@@ -55,7 +55,7 @@ export default function RevenueGoalsScreen() {
 
         {goals.length === 0 ? (
           <View style={s.center}><Text style={s.emptyText}>{t('revenue_goals.no_goals')}</Text></View>
-        ) : goals.map(goal => (
+        ) : goals.map((goal: any) => (
           <View key={goal.id} style={s.card}>
             <View style={[s.cardRow, isRTL && s.cardRowRTL]}>
               <View style={{ flex: 1 }}>

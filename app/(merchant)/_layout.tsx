@@ -87,7 +87,7 @@ export default function MerchantLayout() {
       <Tabs.Screen
         name="dashboard"
         options={{
-          tabBarIcon: ({ focused }) => (
+          tabBarIcon: ({ focused }: { focused: boolean }) => (
             <TabIcon iconName="home" label={t('tabs.dashboard')} focused={focused} />
           ),
         }}
@@ -95,7 +95,7 @@ export default function MerchantLayout() {
       <Tabs.Screen
         name="transactions"
         options={{
-          tabBarIcon: ({ focused }) => (
+          tabBarIcon: ({ focused }: { focused: boolean }) => (
             <TabIcon iconName="credit-card" label={t('tabs.transactions')} focused={focused} />
           ),
         }}
@@ -103,7 +103,7 @@ export default function MerchantLayout() {
       <Tabs.Screen
         name="balance"
         options={{
-          tabBarIcon: ({ focused }) => (
+          tabBarIcon: ({ focused }: { focused: boolean }) => (
             <TabIcon iconName="wallet" label={t('tabs.balance')} focused={focused} />
           ),
         }}
@@ -111,7 +111,7 @@ export default function MerchantLayout() {
       <Tabs.Screen
         name="analytics"
         options={{
-          tabBarIcon: ({ focused }) => (
+          tabBarIcon: ({ focused }: { focused: boolean }) => (
             <TabIcon iconName="bar-chart" label={t('tabs.analytics')} focused={focused} />
           ),
         }}
@@ -119,7 +119,7 @@ export default function MerchantLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          tabBarIcon: ({ focused }) => (
+          tabBarIcon: ({ focused }: { focused: boolean }) => (
             <TabIcon iconName="settings" label={t('tabs.settings')} focused={focused} />
           ),
         }}
