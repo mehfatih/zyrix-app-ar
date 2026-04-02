@@ -74,7 +74,13 @@ export default function BalanceScreen() {
       const data = await balanceApi.get()
       setBalanceData(data)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err) || t('common.error'))
+      if (err instanceof Error) {
+        setError(err.message || t('common.error'))
+      } else if (typeof err === 'string') {
+        setError(err || t('common.error'))
+      } else {
+        setError(t('common.error'))
+      }
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -310,9 +316,9 @@ const styles = StyleSheet.create({
   // Header
   pageHeader: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-    backgroundColor: COLORS.white,
+    paddingTop: 12,
+    paddingBottom: 12,
+    backgroundColor: COLORS.darkBg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -453,7 +459,7 @@ const styles = StyleSheet.create({
 
   // Settlement card
   settlementCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.cardBgLight,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
@@ -521,7 +527,7 @@ const styles = StyleSheet.create({
 
   // Info card
   infoCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.cardBgLight,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: COLORS.border,

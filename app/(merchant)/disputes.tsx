@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.darkBg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
     gap: 12,
@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     gap: 8,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.darkBg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -471,7 +471,7 @@ const styles = StyleSheet.create({
 
 const card = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.cardBgLight,
     marginHorizontal: 16,
     marginTop: 12,
     borderRadius: 14,
@@ -642,7 +642,7 @@ const card = StyleSheet.create({
 const mini = StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.cardBgLight,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: COLORS.border,

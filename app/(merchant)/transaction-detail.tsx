@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.cardBgLight,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
 
   // Hero
   hero: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.cardBgLight,
     alignItems: 'center',
     paddingTop: 32,
     paddingBottom: 24,
@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     gap: 10,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.cardBgLight,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -494,7 +494,7 @@ const section = StyleSheet.create({
     marginRight: 4,
   },
   card: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.cardBgLight,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: COLORS.border,

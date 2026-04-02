@@ -196,7 +196,17 @@
     "logout": "تسجيل الخروج",
     "logoutConfirm": "هل أنت متأكد من تسجيل الخروج؟",
     "version": "الإصدار",
-    "webhooks": "ويب هوكس"
+    "webhooks": "ويب هوكس",
+    "emailReports": "تقارير البريد الإلكتروني",
+    "smsAlerts": "تنبيهات SMS",
+    "smsAlertsSub": "رسائل SMS للمعاملات الكبيرة",
+    "active": "مفعّل",
+    "disabled": "معطّل",
+    "autoLogout": "تسجيل الخروج التلقائي",
+    "autoLogoutSub": "15 دقيقة من عدم النشاط",
+    "changePassword": "تغيير كلمة المرور",
+    "integration": "التكامل",
+    "support": "الدعم"
   },
   "profile": {
     "title": "الملف الشخصي",

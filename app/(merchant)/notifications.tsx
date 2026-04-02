@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.darkBg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
 
   // Filters
   filterWrapper: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.cardBgLight,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
     paddingVertical: 10,
@@ -420,7 +420,7 @@ const card = StyleSheet.create({
     alignItems: 'flex-start',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.cardBgLight,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
     gap: 12,

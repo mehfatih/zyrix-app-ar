@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.darkBg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
 
   // Cards
   card: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.cardBgLight,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   infoCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.cardBgLight,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
 
   // Danger zone
   dangerCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.cardBgLight,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: COLORS.dangerBg,
@@ -516,7 +516,7 @@ const avatar = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.cardBgLight,
     borderWidth: 2,
     borderColor: COLORS.border,
     alignItems: 'center',

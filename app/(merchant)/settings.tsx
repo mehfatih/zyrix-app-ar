@@ -201,7 +201,7 @@ export default function SettingsScreen() {
     Alert.alert(t('settings.webhooks'), t('common.coming_soon'))
 
   const handleSupport = () =>
-    Alert.alert('Support', 'info@zyrix.co · +90 545 221 0888')
+    Alert.alert(t('settings.support'), 'info@zyrix.co · +90 545 221 0888')
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -260,7 +260,7 @@ export default function SettingsScreen() {
             <Divider />
             <SettingRow
               icon="📧"
-              label="E-posta Raporları"
+              label={t('settings.emailReports')}
               sublabel={t('notifications.settlement')}
               showChevron={false}
               rightElement={
@@ -275,8 +275,8 @@ export default function SettingsScreen() {
             <Divider />
             <SettingRow
               icon="💬"
-              label="SMS Uyarıları"
-              sublabel="Büyük işlemler için SMS"
+              label={t('settings.smsAlerts')}
+              sublabel={t('settings.smsAlertsSub')}
               showChevron={false}
               rightElement={
                 <Switch
@@ -294,8 +294,8 @@ export default function SettingsScreen() {
           <SettingsGroup>
             <SettingRow
               icon="🔐"
-              label="İki Faktörlü Doğrulama"
-              sublabel={toggles.twoFactor ? 'Aktif' : 'Devre dışı'}
+              label={t('settings.twoFactor')}
+              sublabel={toggles.twoFactor ? t('settings.active') : t('settings.disabled')}
               showChevron={false}
               rightElement={
                 <Switch
@@ -324,8 +324,8 @@ export default function SettingsScreen() {
             <Divider />
             <SettingRow
               icon="⏱"
-              label={t('settings.logout')}
-              sublabel="15 dakika hareketsizlik"
+              label={t('settings.autoLogout')}
+              sublabel={t('settings.autoLogoutSub')}
               showChevron={false}
               rightElement={
                 <Switch
@@ -339,17 +339,17 @@ export default function SettingsScreen() {
             <Divider />
             <SettingRow
               icon="🔑"
-              label="Şifre Değiştir"
+              label={t('settings.changePassword')}
               onPress={handleChangePassword}
             />
           </SettingsGroup>
 
           {/* ── Developer / Integration ── */}
-          <SectionHeader title="Entegrasyon" />
+          <SectionHeader title={t('settings.integration')} />
           <SettingsGroup>
             <SettingRow
               icon="⚙️"
-              label="API Anahtarları"
+              label={t('settings.apiKeys')}
               sublabel={t('settings.apiKeys')}
               onPress={handleApiKeys}
             />
@@ -363,7 +363,7 @@ export default function SettingsScreen() {
           </SettingsGroup>
 
           {/* ── About / Support ── */}
-          <SectionHeader title="Destek" />
+          <SectionHeader title={t('settings.support')} />
           <SettingsGroup>
             <SettingRow
               icon="💬"
@@ -374,7 +374,7 @@ export default function SettingsScreen() {
             <Divider />
             <SettingRow
               icon="📋"
-              label="Sürüm"
+              label={t('settings.version')}
               sublabel="1.0.0 (build 42)"
               showChevron={false}
             />
@@ -409,9 +409,9 @@ const styles = StyleSheet.create({
   },
   pageHeader: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-    backgroundColor: COLORS.white,
+    paddingTop: 12,
+    paddingBottom: 12,
+    backgroundColor: COLORS.darkBg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
     gap: 4,
@@ -458,7 +458,7 @@ const sectionHeader = StyleSheet.create({
 
 const group = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.cardBgLight,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: COLORS.border,

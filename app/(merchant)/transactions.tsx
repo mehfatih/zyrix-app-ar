@@ -65,7 +65,13 @@ export default function TransactionsScreen() {
       setAllTx(data.transactions)
       setStats(data.stats)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err) || t('common.error'))
+      if (err instanceof Error) {
+        setError(err.message || t('common.error'))
+      } else if (typeof err === 'string') {
+        setError(err || t('common.error'))
+      } else {
+        setError(t('common.error'))
+      }
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -216,9 +222,9 @@ const styles = StyleSheet.create({
   // Header
   header: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-    backgroundColor: COLORS.white,
+    paddingTop: 12,
+    paddingBottom: 12,
+    backgroundColor: COLORS.darkBg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -252,7 +258,7 @@ const styles = StyleSheet.create({
   searchWrapper: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.darkBg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -276,7 +282,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     gap: 8,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.darkBg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },

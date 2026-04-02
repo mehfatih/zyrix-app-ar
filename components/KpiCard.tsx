@@ -46,13 +46,18 @@ export function KpiCard({
         ) : (
           <View style={[styles.accentDot, { backgroundColor: color }]} />
         )}
-        <Text style={styles.label} numberOfLines={1}>
+        <Text style={styles.label} numberOfLines={2}>
           {label}
         </Text>
       </View>
 
       {/* Value */}
-      <Text style={[styles.value, compact && styles.valueCompact, valueColor ? { color: valueColor } : null]} numberOfLines={1}>
+      <Text
+        style={[styles.value, compact && styles.valueCompact, valueColor ? { color: valueColor } : null]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.6}
+      >
         {value}
       </Text>
 

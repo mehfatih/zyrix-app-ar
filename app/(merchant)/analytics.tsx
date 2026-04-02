@@ -131,7 +131,13 @@ export default function AnalyticsScreen() {
       const result = await analyticsApi.getData(selectedRange)
       setData(result)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err) || t('common.error'))
+      if (err instanceof Error) {
+        setError(err.message || t('common.error'))
+      } else if (typeof err === 'string') {
+        setError(err || t('common.error'))
+      } else {
+        setError(t('common.error'))
+      }
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -324,9 +330,9 @@ const styles = StyleSheet.create({
   },
   pageHeader: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-    backgroundColor: COLORS.white,
+    paddingTop: 12,
+    paddingBottom: 12,
+    backgroundColor: COLORS.darkBg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -367,7 +373,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   card: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.cardBgLight,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: COLORS.border,

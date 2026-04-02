@@ -196,7 +196,17 @@
     "logout": "Log Out",
     "logoutConfirm": "Are you sure you want to log out?",
     "version": "Version",
-    "webhooks": "Webhooks"
+    "webhooks": "Webhooks",
+    "emailReports": "Email Reports",
+    "smsAlerts": "SMS Alerts",
+    "smsAlertsSub": "SMS for large transactions",
+    "active": "Active",
+    "disabled": "Disabled",
+    "autoLogout": "Auto Logout",
+    "autoLogoutSub": "15 minutes of inactivity",
+    "changePassword": "Change Password",
+    "integration": "Integration",
+    "support": "Support"
   },
   "profile": {
     "title": "Profile",
