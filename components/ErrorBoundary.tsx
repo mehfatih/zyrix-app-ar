@@ -7,6 +7,7 @@ import React, { Component, ErrorInfo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { COLORS } from '../constants/colors';
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../constants/theme';
+import { Icon } from './Icon';
 
 interface Props {
   children: React.ReactNode;
@@ -42,7 +43,7 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <View style={styles.container}>
           <View style={styles.iconCircle}>
-            <Text style={styles.icon}>⚠️</Text>
+            <Icon name="alert-triangle" size={40} color={COLORS.warning} />
           </View>
           <Text style={styles.title}>
             {this.props.fallbackMessage ?? 'Something went wrong'}

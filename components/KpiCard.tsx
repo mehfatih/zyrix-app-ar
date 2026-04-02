@@ -1,12 +1,13 @@
 /**
- * Zyrix App — KPI Card Component
- * Displays a metric with optional change indicator.
+ * Zyrix App — KPI Card Component v2
+ * Glass-style card with SVG icons and premium feel.
  */
 
 import React from 'react';
 import { View, Text, StyleSheet, I18nManager } from 'react-native';
 import { COLORS } from '../constants/colors';
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../constants/theme';
+import { Icon } from './Icon';
 
 interface KpiCardProps {
   label: string;
@@ -33,18 +34,29 @@ export function KpiCard({
 }: KpiCardProps) {
   const isPositive = change !== undefined && change >= 0;
   const changeColor = isPositive ? COLORS.success : COLORS.danger;
-  const changeArrow = isPositive ? '▲' : '▼';
+
+  // Map old emoji icons to SVG icon names
+  const iconNameMap: Record<string, string> = {
+    '💳': 'credit-card',
+    '✅': 'check-circle',
+    '📋': 'clipboard',
+    '⚠️': 'alert-triangle',
+    '💰': 'wallet',
+    '📊': 'bar-chart',
+  };
+
+  const iconName = icon ? (iconNameMap[icon] || 'target') : undefined;
 
   return (
     <View style={[styles.card, compact && styles.cardCompact, style]}>
       {/* Header row: icon + label */}
       <View style={styles.headerRow}>
-        {icon ? (
-          <View style={[styles.iconCircle, { backgroundColor: `${color}20` }]}>
-            <Text style={styles.iconText}>{icon}</Text>
+        {iconName ? (
+          <View style={[styles.iconCircle, { backgroundColor: `${color}18` }]}>
+            <Icon name={iconName} size={16} color={color} strokeWidth={2} />
           </View>
         ) : (
-          <View style={[styles.accentDot, { backgroundColor: color }]} />
+          <View style={[styles.accentBar, { backgroundColor: color }]} />
         )}
         <Text style={styles.label} numberOfLines={2}>
           {label}
@@ -53,7 +65,11 @@ export function KpiCard({
 
       {/* Value */}
       <Text
-        style={[styles.value, compact && styles.valueCompact, valueColor ? { color: valueColor } : null]}
+        style={[
+          styles.value,
+          compact && styles.valueCompact,
+          valueColor ? { color: valueColor } : null,
+        ]}
         numberOfLines={1}
         adjustsFontSizeToFit
         minimumFontScale={0.6}
@@ -64,17 +80,27 @@ export function KpiCard({
       {/* Change indicator */}
       {change !== undefined && (
         <View style={styles.changeRow}>
-          <Text style={[styles.changeText, { color: changeColor }]}>
-            {changeArrow} {Math.abs(change)}%
-          </Text>
+          <View style={[styles.changePill, { backgroundColor: isPositive ? COLORS.successBg : COLORS.dangerBg }]}>
+            <Icon
+              name={isPositive ? 'trending-up' : 'trending-up'}
+              size={11}
+              color={changeColor}
+              strokeWidth={2.5}
+            />
+            <Text style={[styles.changeText, { color: changeColor }]}>
+              {Math.abs(change)}%
+            </Text>
+          </View>
           {changeLabel && (
-            <Text style={styles.changePeriod}> {changeLabel}</Text>
+            <Text style={styles.changePeriod}>{changeLabel}</Text>
           )}
         </View>
       )}
     </View>
   );
 }
+
+const isRTL = I18nManager.isRTL;
 
 const styles = StyleSheet.create({
   card: {
@@ -89,45 +115,52 @@ const styles = StyleSheet.create({
     padding: SPACING.md,
   },
   headerRow: {
-    flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
+    flexDirection: isRTL ? 'row-reverse' : 'row',
     alignItems: 'center',
     marginBottom: SPACING.sm,
+    gap: SPACING.sm,
   },
   iconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 30,
+    height: 30,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    marginEnd: SPACING.sm,
   },
-  iconText: {
-    fontSize: 14,
-  },
-  accentDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginEnd: SPACING.sm,
+  accentBar: {
+    width: 3,
+    height: 18,
+    borderRadius: 2,
   },
   label: {
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.medium,
     color: COLORS.textSecondary,
     flex: 1,
+    textAlign: isRTL ? 'right' : 'left',
   },
   value: {
     fontSize: FONT_SIZE['2xl'],
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
+    textAlign: isRTL ? 'right' : 'left',
   },
   valueCompact: {
     fontSize: FONT_SIZE.xl,
   },
   changeRow: {
-    flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
+    flexDirection: isRTL ? 'row-reverse' : 'row',
     alignItems: 'center',
+    gap: SPACING.xs,
+  },
+  changePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    gap: 3,
   },
   changeText: {
     fontSize: FONT_SIZE.xs,

@@ -16,6 +16,7 @@ import {
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { notificationsApi } from '../../services/api'
+import { Icon } from '../../components/Icon'
 
 const isRTL = I18nManager.isRTL
 
@@ -38,14 +39,14 @@ interface Notification {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function typeConfig(type: NotifType): { icon: string; color: string; bg: string } {
+function typeConfig(type: NotifType): { iconName: string; color: string; bg: string } {
   switch (type) {
-    case 'payment':    return { icon: '💳', color: COLORS.primary,      bg: COLORS.primaryLight }
-    case 'settlement': return { icon: '🏦', color: COLORS.success,      bg: COLORS.successBg }
-    case 'dispute':    return { icon: '⚠️',  color: COLORS.warning,      bg: COLORS.warningBg }
-    case 'refund':     return { icon: '↩',  color: COLORS.danger,       bg: COLORS.dangerBg  }
-    case 'security':   return { icon: '🔐', color: COLORS.products.crypto, bg: COLORS.infoBg           }
-    case 'system':     return { icon: '⚙️',  color: COLORS.textMuted,    bg: COLORS.cardBg      }
+    case 'payment':    return { iconName: 'credit-card', color: COLORS.primary,      bg: COLORS.primaryMuted }
+    case 'settlement': return { iconName: 'bank',        color: COLORS.success,      bg: COLORS.successBg }
+    case 'dispute':    return { iconName: 'alert-triangle', color: COLORS.warning,   bg: COLORS.warningBg }
+    case 'refund':     return { iconName: 'undo',        color: COLORS.danger,       bg: COLORS.dangerBg  }
+    case 'security':   return { iconName: 'shield',      color: COLORS.products.crypto, bg: COLORS.infoBg }
+    case 'system':     return { iconName: 'settings',    color: COLORS.textMuted,    bg: COLORS.cardBg      }
   }
 }
 
@@ -74,7 +75,7 @@ function NotifCard({
 
       {/* Icon bubble */}
       <View style={[card.iconBubble, { backgroundColor: cfg.bg }]}>
-        <Text style={card.iconText}>{cfg.icon}</Text>
+        <Icon name={cfg.iconName} size={18} color={cfg.color} strokeWidth={1.8} />
       </View>
 
       {/* Content */}
@@ -135,13 +136,13 @@ export default function NotificationsScreen() {
 
   const unreadCount = notifications.filter((n) => !n.read).length
 
-  const FILTERS: { key: FilterKey; label: string; icon: string }[] = [
-    { key: 'all',        label: t('notifications.filter_all'),        icon: '🔔' },
-    { key: 'payment',    label: t('notifications.filter_payment'),    icon: '💳' },
-    { key: 'settlement', label: t('notifications.filter_settlement'), icon: '🏦' },
-    { key: 'dispute',    label: t('notifications.filter_dispute'),    icon: '⚠️'  },
-    { key: 'refund',     label: t('notifications.filter_refund'),     icon: '↩'  },
-    { key: 'security',   label: t('notifications.filter_security'),   icon: '🔐' },
+  const FILTERS: { key: FilterKey; label: string; iconName: string }[] = [
+    { key: 'all',        label: t('notifications.filter_all'),        iconName: 'bell' },
+    { key: 'payment',    label: t('notifications.filter_payment'),    iconName: 'credit-card' },
+    { key: 'settlement', label: t('notifications.filter_settlement'), iconName: 'bank' },
+    { key: 'dispute',    label: t('notifications.filter_dispute'),    iconName: 'alert-triangle' },
+    { key: 'refund',     label: t('notifications.filter_refund'),     iconName: 'undo' },
+    { key: 'security',   label: t('notifications.filter_security'),   iconName: 'shield' },
   ]
 
   const filtered = useMemo(
@@ -208,7 +209,7 @@ export default function NotificationsScreen() {
               ]}
               onPress={() => setFilter(f.key)}
             >
-              <Text style={styles.filterIcon}>{f.icon}</Text>
+              <Icon name={f.iconName} size={14} color={filter === f.key ? COLORS.primary : COLORS.textMuted} strokeWidth={1.8} />
               <Text
                 style={[
                   styles.filterTabText,
@@ -292,7 +293,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
-    backgroundColor: COLORS.darkBg,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -339,7 +340,7 @@ const styles = StyleSheet.create({
 
   // Filters
   filterWrapper: {
-    backgroundColor: COLORS.cardBgLight,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
     paddingVertical: 10,
@@ -420,7 +421,7 @@ const card = StyleSheet.create({
     alignItems: 'flex-start',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: COLORS.cardBgLight,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
     gap: 12,

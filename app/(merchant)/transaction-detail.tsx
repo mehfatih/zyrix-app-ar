@@ -17,6 +17,7 @@ import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { transactionsApi } from '../../services/api'
 import StatusBadge from '../../components/StatusBadge'
+import { Icon } from '../../components/Icon'
 
 const isRTL = I18nManager.isRTL
 
@@ -160,12 +161,12 @@ function Timeline({ events }: { events: TimelineEvent[] }) {
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
 function ActionButton({
-  icon,
+  iconName,
   label,
   onPress,
   variant = 'default',
 }: {
-  icon: string
+  iconName: string
   label: string
   onPress: () => void
   variant?: 'default' | 'danger'
@@ -176,7 +177,7 @@ function ActionButton({
       onPress={onPress}
       activeOpacity={0.75}
     >
-      <Text style={action.icon}>{icon}</Text>
+      <Icon name={iconName} size={16} color={variant === 'danger' ? COLORS.danger : COLORS.primary} strokeWidth={2} />
       <Text style={[action.label, variant === 'danger' && action.labelDanger]}>
         {label}
       </Text>
@@ -290,9 +291,9 @@ export default function TransactionDetailScreen() {
 
         {/* ── Actions ── */}
         <View style={[styles.actionsRow, isRTL && styles.actionsRowRTL]}>
-          <ActionButton icon="↩" label={t('refunds.title')}      onPress={handleRefund}  variant={tx.status === 'success' ? 'danger' : 'default'} />
-          <ActionButton icon="⚡" label={t('disputes.title')} onPress={handleDispute} />
-          <ActionButton icon="↑" label={t('common.export')}    onPress={handleShare}   />
+          <ActionButton iconName="undo" label={t('refunds.title')}      onPress={handleRefund}  variant={tx.status === 'success' ? 'danger' : 'default'} />
+          <ActionButton iconName="alert-triangle" label={t('disputes.title')} onPress={handleDispute} />
+          <ActionButton iconName="share" label={t('common.export')}    onPress={handleShare}   />
         </View>
 
         {/* ── Fee breakdown ── */}
@@ -389,7 +390,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: COLORS.cardBgLight,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -412,7 +413,7 @@ const styles = StyleSheet.create({
 
   // Hero
   hero: {
-    backgroundColor: COLORS.cardBgLight,
+    backgroundColor: COLORS.white,
     alignItems: 'center',
     paddingTop: 32,
     paddingBottom: 24,
@@ -448,7 +449,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     gap: 10,
-    backgroundColor: COLORS.cardBgLight,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -494,7 +495,7 @@ const section = StyleSheet.create({
     marginRight: 4,
   },
   card: {
-    backgroundColor: COLORS.cardBgLight,
+    backgroundColor: COLORS.white,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: COLORS.border,

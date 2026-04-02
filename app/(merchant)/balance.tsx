@@ -19,6 +19,7 @@ import { useTranslation } from '../../hooks/useTranslation'
 import { balanceApi } from '../../services/api'
 import KpiCard from '../../components/KpiCard'
 import { QRCodeModal } from '../../components/QRCodeModal'
+import { Icon } from '../../components/Icon'
 
 const isRTL = I18nManager.isRTL
 
@@ -33,12 +34,12 @@ function SectionTitle({ text }: { text: string }) {
 }
 
 function ActionButton({
-  icon,
+  iconName,
   label,
   onPress,
   variant = 'default',
 }: {
-  icon: string
+  iconName: string
   label: string
   onPress: () => void
   variant?: 'default' | 'primary'
@@ -49,7 +50,7 @@ function ActionButton({
       onPress={onPress}
       activeOpacity={0.75}
     >
-      <Text style={styles.actionIcon}>{icon}</Text>
+      <Icon name={iconName} size={18} color={variant === 'primary' ? COLORS.white : COLORS.textSecondary} strokeWidth={2} />
       <Text style={[styles.actionLabel, variant === 'primary' && styles.actionLabelPrimary]}>
         {label}
       </Text>
@@ -74,13 +75,7 @@ export default function BalanceScreen() {
       const data = await balanceApi.get()
       setBalanceData(data)
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || t('common.error'))
-      } else if (typeof err === 'string') {
-        setError(err || t('common.error'))
-      } else {
-        setError(t('common.error'))
-      }
+      setError(err instanceof Error ? err.message : String(err) || t('common.error'))
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -146,18 +141,18 @@ export default function BalanceScreen() {
           {/* Action Buttons */}
           <View style={[styles.actionRow, isRTL && styles.actionRowRTL]}>
             <ActionButton
-              icon="↑"
+              iconName="arrow-up"
               label={t('balance.transfer')}
               onPress={handleTransfer}
               variant="primary"
             />
             <ActionButton
-              icon="⧉"
+              iconName="copy"
               label={t('balance.copy_iban')}
               onPress={handleCopyIban}
             />
             <ActionButton
-              icon="▦"
+              iconName="qr-code"
               label={t('balance.qr_code')}
               onPress={handleQr}
             />
@@ -201,7 +196,7 @@ export default function BalanceScreen() {
             <View style={[styles.settlementRow, isRTL && styles.settlementRowRTL]}>
               <View style={styles.settlementLeft}>
                 <Text style={styles.settlementDate}>
-                  📅  {bal.nextSettlement?.date}
+                  {bal.nextSettlement?.date}
                 </Text>
                 <Text style={styles.settlementCompany}>
                   {bal.company}
@@ -316,9 +311,9 @@ const styles = StyleSheet.create({
   // Header
   pageHeader: {
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 12,
-    backgroundColor: COLORS.darkBg,
+    paddingTop: 20,
+    paddingBottom: 16,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -388,10 +383,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
-  actionIcon: {
-    fontSize: 18,
-    color: COLORS.white,
-  },
   actionLabel: {
     fontSize: 11,
     color: COLORS.textSecondary,
@@ -459,7 +450,7 @@ const styles = StyleSheet.create({
 
   // Settlement card
   settlementCard: {
-    backgroundColor: COLORS.cardBgLight,
+    backgroundColor: COLORS.white,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
@@ -527,7 +518,7 @@ const styles = StyleSheet.create({
 
   // Info card
   infoCard: {
-    backgroundColor: COLORS.cardBgLight,
+    backgroundColor: COLORS.white,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: COLORS.border,

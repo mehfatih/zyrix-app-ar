@@ -1,6 +1,6 @@
 /**
- * Zyrix App — Merchant Tab Layout
- * Bottom tab navigation with Android 15 edge-to-edge safe areas.
+ * Zyrix App — Merchant Tab Layout v2
+ * Premium tab bar with SVG icons and accent glow.
  */
 
 import React, { useEffect, useState } from 'react';
@@ -13,14 +13,20 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useDeepLinking } from '../../hooks/useDeepLinking';
 import { notificationsApi } from '../../services/api';
+import { Icon } from '../../components/Icon';
 
-function TabIcon({ icon, label, focused, badge }: { icon: string; label: string; focused: boolean; badge?: number }) {
+function TabIcon({ iconName, label, focused, badge }: { iconName: string; label: string; focused: boolean; badge?: number }) {
   return (
     <View style={styles.tabItem}>
       <View>
-        <Text style={[styles.tabIcon, focused && styles.tabIconActive]}>
-          {icon}
-        </Text>
+        {/* Glow dot behind active icon */}
+        {focused && <View style={styles.activeGlow} />}
+        <Icon
+          name={iconName}
+          size={22}
+          color={focused ? COLORS.tabActive : COLORS.tabInactive}
+          strokeWidth={focused ? 2.2 : 1.6}
+        />
         {badge !== undefined && badge > 0 && (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{badge > 9 ? '9+' : badge}</Text>
@@ -56,7 +62,6 @@ export default function MerchantLayout() {
     return () => clearInterval(interval);
   }, []);
 
-  // Android 15: account for navigation bar inset in edge-to-edge mode
   const tabBarHeight = Platform.select({
     ios: 84,
     android: 64 + insets.bottom,
@@ -83,7 +88,7 @@ export default function MerchantLayout() {
         name="dashboard"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="🏠" label={t('tabs.dashboard')} focused={focused} />
+            <TabIcon iconName="home" label={t('tabs.dashboard')} focused={focused} />
           ),
         }}
       />
@@ -91,7 +96,7 @@ export default function MerchantLayout() {
         name="transactions"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="💳" label={t('tabs.transactions')} focused={focused} />
+            <TabIcon iconName="credit-card" label={t('tabs.transactions')} focused={focused} />
           ),
         }}
       />
@@ -99,7 +104,7 @@ export default function MerchantLayout() {
         name="balance"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="💰" label={t('tabs.balance')} focused={focused} />
+            <TabIcon iconName="wallet" label={t('tabs.balance')} focused={focused} />
           ),
         }}
       />
@@ -107,7 +112,7 @@ export default function MerchantLayout() {
         name="analytics"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="📊" label={t('tabs.analytics')} focused={focused} />
+            <TabIcon iconName="bar-chart" label={t('tabs.analytics')} focused={focused} />
           ),
         }}
       />
@@ -115,7 +120,7 @@ export default function MerchantLayout() {
         name="settings"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="⚙️" label={t('tabs.settings')} focused={focused} />
+            <TabIcon iconName="settings" label={t('tabs.settings')} focused={focused} />
           ),
         }}
       />
@@ -142,28 +147,30 @@ const styles = StyleSheet.create({
     borderTopColor: COLORS.border,
     borderTopWidth: 1,
     paddingTop: SPACING.sm,
-    // Android 15: no elevation shadow in edge-to-edge
     elevation: 0,
   },
   tabItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 2,
+    gap: 3,
   },
-  tabIcon: {
-    fontSize: 22,
-    opacity: 0.5,
-  },
-  tabIconActive: {
-    opacity: 1,
+  activeGlow: {
+    position: 'absolute',
+    top: -4,
+    left: -4,
+    right: -4,
+    bottom: -4,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 212, 170, 0.12)',
   },
   tabLabel: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: 10,
     fontWeight: FONT_WEIGHT.medium,
     color: COLORS.tabInactive,
+    marginTop: 1,
   },
   tabLabelActive: {
-    color: COLORS.primaryLight,
+    color: COLORS.tabActive,
     fontWeight: FONT_WEIGHT.semibold,
   },
   badge: {

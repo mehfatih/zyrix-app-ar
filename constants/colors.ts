@@ -1,67 +1,79 @@
 /**
- * Zyrix App — Color System
+ * Zyrix App — Color System v2
+ * Premium fintech identity: Deep space + electric cyan accents
+ * Designed for WCAG AA contrast compliance on dark backgrounds.
  * All colors must be referenced from this file.
  * NEVER use hardcoded hex values in components.
  */
 
 export const COLORS = {
   // ─── Brand ───────────────────────────────────
-  primary: '#1A56DB',
-  primaryLight: '#3B82F6',
-  primaryDark: '#1E40AF',
+  // Signature: Electric Cyan — distinguishes Zyrix from PayPal (blue),
+  // Stripe (purple), Wise (green). Unique in MENA fintech.
+  primary: '#00D4AA',
+  primaryLight: '#33DFBE',
+  primaryDark: '#00A888',
+  primaryMuted: 'rgba(0, 212, 170, 0.15)',
 
   // ─── Backgrounds ─────────────────────────────
-  darkBg: '#112044',
-  deepBg: '#0A1628',
-  cardBg: '#0D1E3A',
-  cardBgLight: '#132D5E',
-  surfaceBg: '#162A4A',
+  darkBg: '#0B0F1A',
+  deepBg: '#060A12',
+  cardBg: '#111827',
+  cardBgLight: '#1A2332',
+  surfaceBg: '#1F2937',
+
+  // ─── Glass Effect ────────────────────────────
+  glassBg: 'rgba(17, 24, 39, 0.75)',
+  glassBorder: 'rgba(255, 255, 255, 0.08)',
+  glassHighlight: 'rgba(255, 255, 255, 0.04)',
 
   // ─── Text ────────────────────────────────────
-  textPrimary: '#FFFFFF',
-  textSecondary: '#94A3B8',
-  textMuted: '#64748B',
-  textInverse: '#0F172A',
+  textPrimary: '#F9FAFB',
+  textSecondary: '#9CA3AF',
+  textMuted: '#6B7280',
+  textInverse: '#0B0F1A',
+  textAccent: '#00D4AA',
 
   // ─── Status ──────────────────────────────────
-  success: '#059669',
-  successLight: '#10B981',
-  successBg: 'rgba(5, 150, 105, 0.15)',
+  success: '#10B981',
+  successLight: '#34D399',
+  successBg: 'rgba(16, 185, 129, 0.12)',
 
-  warning: '#D97706',
-  warningLight: '#F59E0B',
-  warningBg: 'rgba(217, 119, 6, 0.15)',
+  warning: '#F59E0B',
+  warningLight: '#FBBF24',
+  warningBg: 'rgba(245, 158, 11, 0.12)',
 
-  danger: '#DC2626',
-  dangerLight: '#EF4444',
-  dangerBg: 'rgba(220, 38, 38, 0.15)',
+  danger: '#EF4444',
+  dangerLight: '#F87171',
+  dangerBg: 'rgba(239, 68, 68, 0.12)',
 
-  pending: '#D97706',
-  pendingBg: 'rgba(217, 119, 6, 0.15)',
+  pending: '#F59E0B',
+  pendingBg: 'rgba(245, 158, 11, 0.12)',
 
-  info: '#0891B2',
-  infoBg: 'rgba(8, 145, 178, 0.15)',
+  info: '#06B6D4',
+  infoBg: 'rgba(6, 182, 212, 0.12)',
 
   // ─── Borders & Dividers ──────────────────────
-  border: '#1E3A5F',
-  borderLight: '#2A4A6B',
-  divider: 'rgba(255, 255, 255, 0.08)',
+  border: 'rgba(255, 255, 255, 0.08)',
+  borderLight: 'rgba(255, 255, 255, 0.12)',
+  borderAccent: 'rgba(0, 212, 170, 0.25)',
+  divider: 'rgba(255, 255, 255, 0.06)',
 
   // ─── Overlay ─────────────────────────────────
-  overlay: 'rgba(0, 0, 0, 0.5)',
-  overlayLight: 'rgba(0, 0, 0, 0.3)',
+  overlay: 'rgba(0, 0, 0, 0.6)',
+  overlayLight: 'rgba(0, 0, 0, 0.4)',
 
   // ─── Product Colors ──────────────────────────
   products: {
-    paymentGateway: '#1A56DB',
-    crypto: '#7C3AED',
-    cod: '#EA580C',
-    dashboard: '#059669',
-    plugins: '#DB2777',
-    api: '#0891B2',
-    risk: '#DC2626',
-    recurring: '#D97706',
-    reports: '#0D9488',
+    paymentGateway: '#00D4AA',
+    crypto: '#8B5CF6',
+    cod: '#F59E0B',
+    dashboard: '#10B981',
+    plugins: '#EC4899',
+    api: '#06B6D4',
+    risk: '#EF4444',
+    recurring: '#F59E0B',
+    reports: '#14B8A6',
   },
 
   // ─── Solution Colors ─────────────────────────
@@ -78,25 +90,25 @@ export const COLORS = {
 
   // ─── Chart Palette ───────────────────────────
   chart: {
+    cyan: '#00D4AA',
     blue: '#3B82F6',
     green: '#10B981',
     orange: '#F59E0B',
     purple: '#8B5CF6',
     red: '#EF4444',
-    cyan: '#06B6D4',
     pink: '#EC4899',
   },
 
   // ─── Tab Bar ─────────────────────────────────
-  tabActive: '#1A56DB',
-  tabInactive: '#64748B',
-  tabBarBg: '#0A1628',
+  tabActive: '#00D4AA',
+  tabInactive: '#4B5563',
+  tabBarBg: '#060A12',
 
   // ─── Input ───────────────────────────────────
-  inputBg: '#0D1E3A',
-  inputBorder: '#1E3A5F',
-  inputFocusBorder: '#1A56DB',
-  inputPlaceholder: '#64748B',
+  inputBg: '#1A2332',
+  inputBorder: 'rgba(255, 255, 255, 0.10)',
+  inputFocusBorder: '#00D4AA',
+  inputPlaceholder: '#6B7280',
 
   // ─── Misc ────────────────────────────────────
   white: '#FFFFFF',

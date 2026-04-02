@@ -26,6 +26,7 @@ import { dashboardApi, analyticsApi } from '../../services/api';
 import { KpiCard } from '../../components/KpiCard';
 import { StatusBadge } from '../../components/StatusBadge';
 import { CurrencyPicker } from '../../components/CurrencyPicker';
+import { Icon } from '../../components/Icon';
 import type { ChartPeriod, ApiTransaction } from '../../types';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -118,10 +119,10 @@ export default function DashboardScreen() {
   const periods: ChartPeriod[] = ['7d', '30d', '90d'];
 
   const quickActions = [
-    { icon: '🔗', label: t('dashboard.payment_links'), route: '/(merchant)/payment-links' },
-    { icon: '🔔', label: t('dashboard.notifications_action'), route: '/(merchant)/notifications' },
-    { icon: '⚠️', label: t('dashboard.disputes_action'), route: '/(merchant)/disputes' },
-    { icon: '🔄', label: t('dashboard.subscriptions'), route: '/(merchant)/subscriptions' },
+    { iconName: 'link', label: t('dashboard.payment_links'), route: '/(merchant)/payment-links' },
+    { iconName: 'bell', label: t('dashboard.notifications_action'), route: '/(merchant)/notifications' },
+    { iconName: 'alert-triangle', label: t('dashboard.disputes_action'), route: '/(merchant)/disputes' },
+    { iconName: 'refresh', label: t('dashboard.subscriptions'), route: '/(merchant)/subscriptions' },
   ];
 
   if (loading && !dashData) {
@@ -159,7 +160,7 @@ export default function DashboardScreen() {
           style={styles.notifButton}
           onPress={() => router.push('/(merchant)/notifications')}
         >
-          <Text style={styles.notifIcon}>🔔</Text>
+          <Icon name="bell" size={20} color={COLORS.textSecondary} />
         </TouchableOpacity>
       </View>
 
@@ -215,7 +216,7 @@ export default function DashboardScreen() {
               onPress={() => router.push(qa.route as any)}
               activeOpacity={0.7}
             >
-              <Text style={styles.quickIcon}>{qa.icon}</Text>
+              <Icon name={qa.iconName} size={20} color={COLORS.primary} />
               <Text style={styles.quickLabel} numberOfLines={1}>{qa.label}</Text>
             </TouchableOpacity>
           ))}
@@ -369,9 +370,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  notifIcon: {
-    fontSize: 18,
-  },
   textRTL: {
     textAlign: 'right',
     writingDirection: 'rtl',
@@ -408,9 +406,6 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
     alignItems: 'center',
     gap: 4,
-  },
-  quickIcon: {
-    fontSize: 22,
   },
   quickLabel: {
     fontSize: FONT_SIZE.xs,
