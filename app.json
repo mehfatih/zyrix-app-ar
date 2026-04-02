@@ -31,7 +31,7 @@
         "monochromeImage": "./assets/adaptive-icon.png"
       },
       "package": "co.zyrix.app.ar",
-      "versionCode": 12,
+      "versionCode": 13,
       "targetSdkVersion": 35,
       "compileSdkVersion": 35,
       "permissions": [
@@ -44,16 +44,15 @@
         "CAMERA",
         "ACCESS_NETWORK_STATE",
         "FOREGROUND_SERVICE",
-        "FOREGROUND_SERVICE_DATA_SYNC",
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT",
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.CAMERA"
       ],
       "blockedPermissions": [
         "READ_PHONE_STATE",
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "WRITE_EXTERNAL_STORAGE",
+        "RECORD_AUDIO"
       ]
     },
     "plugins": [
