@@ -1,7 +1,8 @@
 /**
  * Zyrix App — Root Layout
- * TEMP: Auth disabled — app opens directly to merchant dashboard.
- * TODO: Restore AuthProvider when login system is ready.
+ * TEMP: Auth routing disabled — app opens directly to merchant dashboard.
+ * AuthProvider kept active because merchant screens use useAuth() hook.
+ * TODO: Restore auth routing when login system is ready.
  * Android 15 (API 35): edge-to-edge display, system bar handling.
  */
 
@@ -15,7 +16,7 @@ import * as SystemUI from 'expo-system-ui';
 import * as SplashScreen from 'expo-splash-screen';
 import { COLORS } from '../constants/colors';
 import { FONT_WEIGHT, SPACING } from '../constants/theme';
-// import { AuthProvider } from '../hooks/useAuth';  // TEMP: disabled
+import { AuthProvider } from '../hooks/useAuth';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { OfflineBanner } from '../components/OfflineBanner';
 
@@ -82,10 +83,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
-        {/* ============================================================ */}
-        {/* ORIGINAL: Restore AuthProvider when login system is ready    */}
-        {/* <AuthProvider>                                               */}
-        {/* ============================================================ */}
+        <AuthProvider>
           <AppInit>
             <StatusBar style="light" translucent backgroundColor="transparent" />
             <OfflineBanner />
@@ -99,15 +97,12 @@ export default function RootLayout() {
               }}
             >
               <Stack.Screen name="index" />
-              {/* TEMP: auth screens disabled */}
+              {/* TEMP: auth screens disabled — direct to dashboard */}
               {/* <Stack.Screen name="(auth)" /> */}
               <Stack.Screen name="(merchant)" />
             </Stack>
           </AppInit>
-        {/* ============================================================ */}
-        {/* ORIGINAL: Close AuthProvider                                 */}
-        {/* </AuthProvider>                                              */}
-        {/* ============================================================ */}
+        </AuthProvider>
       </ErrorBoundary>
     </SafeAreaProvider>
   );
