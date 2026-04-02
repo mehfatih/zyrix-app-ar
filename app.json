@@ -1,0 +1,97 @@
+{
+  "expo": {
+    "name": "Zyrix - زايركس",
+    "slug": "zyrix-app-ar",
+    "version": "1.0.0",
+    "runtimeVersion": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "zyrix-ar",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#112044"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "co.zyrix.app.ar",
+      "buildNumber": "1",
+      "infoPlist": {
+        "CFBundleAllowMixedLocalizations": true,
+        "NSFaceIDUsageDescription": "يستخدم زايركس Face ID لتسجيل الدخول الآمن",
+        "NSCameraUsageDescription": "يحتاج زايركس للكاميرا لمسح رموز QR"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#112044",
+        "monochromeImage": "./assets/adaptive-icon.png"
+      },
+      "package": "co.zyrix.app.ar",
+      "versionCode": 10,
+      "targetSdkVersion": 35,
+      "compileSdkVersion": 35,
+      "permissions": [
+        "INTERNET",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "POST_NOTIFICATIONS",
+        "CAMERA",
+        "ACCESS_NETWORK_STATE",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_DATA_SYNC",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "blockedPermissions": [
+        "READ_PHONE_STATE",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-localization",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/adaptive-icon.png",
+          "color": "#1A56DB",
+          "defaultChannel": "payments",
+          "enableBackgroundRemoteNotifications": true
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "يستخدم زايركس Face ID لتسجيل الدخول الآمن"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "يحتاج زايركس للكاميرا لمسح رموز QR"
+        }
+      ],
+      "expo-secure-store",
+      "react-native-edge-to-edge"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ebdbafb4-e39c-4f20-8325-51d0e28827ce"
+      }
+    },
+    "owner": "aboud1977"
+  }
+}
