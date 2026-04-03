@@ -19,8 +19,8 @@ export const COLORS = {
 
   // ─── Text ────────────────────────────────────
   textPrimary: '#FFFFFF',
-  textSecondary: '#94A3B8',
-  textMuted: '#64748B',
+  textSecondary: '#CBD5E1',
+  textMuted: '#94A3B8',
   textInverse: '#0F172A',
 
   // ─── Status ──────────────────────────────────
@@ -89,14 +89,14 @@ export const COLORS = {
 
   // ─── Tab Bar ─────────────────────────────────
   tabActive: '#1A56DB',
-  tabInactive: '#64748B',
+  tabInactive: '#94A3B8',
   tabBarBg: '#0A1628',
 
   // ─── Input ───────────────────────────────────
   inputBg: '#0D1E3A',
   inputBorder: '#1E3A5F',
   inputFocusBorder: '#1A56DB',
-  inputPlaceholder: '#64748B',
+  inputPlaceholder: '#94A3B8',
 
   // ─── Misc ────────────────────────────────────
   white: '#FFFFFF',

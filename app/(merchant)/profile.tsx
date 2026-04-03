@@ -150,7 +150,7 @@ export default function ProfileScreen() {
   React.useEffect(() => { fetchProfile() }, [])
 
   const set = (key: keyof ProfileData) => (val: string) =>
-    setDraft((prev: any) => ({ ...prev, [key]: val }))
+    setDraft((prev) => ({ ...prev, [key]: val }))
 
   const handleEdit = () => {
     setDraft(profile)
@@ -165,11 +165,11 @@ export default function ProfileScreen() {
   const handleSave = () => {
     // Basic validation
     if (!draft.firstName.trim() || !draft.lastName.trim()) {
-      Alert.alert('✗', t('profile.validation_name'))
+      Alert.alert('Hata', 'Ad ve soyad boş bırakılamaz.')
       return
     }
     if (!draft.email.includes('@')) {
-      Alert.alert('✗', t('profile.validation_email'))
+      Alert.alert('Hata', 'Geçerli bir e-posta girin.')
       return
     }
 
@@ -179,7 +179,7 @@ export default function ProfileScreen() {
       setProfile(draft)
       setEditing(false)
       setSaving(false)
-      Alert.alert('✓', t('profile.updated'))
+      Alert.alert('✓', 'Profil güncellendi.')
     }, 800)
   }
 
@@ -203,7 +203,7 @@ export default function ProfileScreen() {
               </Text>
               {!editing ? (
                 <TouchableOpacity style={styles.editBtn} onPress={handleEdit}>
-                  <Text style={styles.editBtnText}>✎  {t('profile.edit')}</Text>
+                  <Text style={styles.editBtnText}>✎  Düzenle</Text>
                 </TouchableOpacity>
               ) : (
                 <View style={[styles.editActions, isRTL && styles.editActionsRTL]}>
@@ -240,7 +240,7 @@ export default function ProfileScreen() {
             </View>
 
             {/* ── Personal info — editable ── */}
-            <SectionHeader title={t('profile.personal_info')} />
+            <SectionHeader title="Kişisel Bilgiler" />
             <View style={styles.card}>
               <Field
                 label={t('profile.first_name')}
@@ -276,11 +276,11 @@ export default function ProfileScreen() {
             </View>
 
             {/* ── Merchant info — read-only ── */}
-            <SectionHeader title={t('profile.merchant_info')} />
+            <SectionHeader title="Merchant Bilgileri" />
             <View style={styles.infoCard}>
               <InfoRow label={t('profile.merchantId')} value={profile.merchantId} mono />
               <View style={styles.fieldDivider} />
-              <InfoRow label={t('profile.company_label')}      value={profile.company} />
+              <InfoRow label="Şirket"      value={profile.company} />
               <View style={styles.fieldDivider} />
               <InfoRow label={t('profile.country')}        value={profile.country} />
               <View style={styles.fieldDivider} />
@@ -288,18 +288,18 @@ export default function ProfileScreen() {
             </View>
 
             {/* ── Danger zone ── */}
-            <SectionHeader title={t('profile.account')} />
+            <SectionHeader title="Hesap" />
             <View style={styles.dangerCard}>
               <TouchableOpacity
                 style={[styles.dangerRow, isRTL && styles.dangerRowRTL]}
-                onPress={() => Alert.alert(t('profile.close_account'), t('common.coming_soon'))}
+                onPress={() => Alert.alert('Hesabı Kapat', 'Coming soon')}
                 activeOpacity={0.7}
               >
                 <Text style={styles.dangerIcon}>⚠</Text>
                 <View style={{ flex: 1, alignItems: isRTL ? 'flex-end' : 'flex-start' }}>
-                  <Text style={styles.dangerLabel}>{t('profile.close_account')}</Text>
+                  <Text style={styles.dangerLabel}>Hesabı Kapat</Text>
                   <Text style={styles.dangerSublabel}>
-                    {t('profile.close_account_sub')}
+                    Bu işlem geri alınamaz
                   </Text>
                 </View>
                 <Text style={[styles.dangerChevron, isRTL && { transform: [{ scaleX: -1 }] }]}>
@@ -329,9 +329,9 @@ const styles = StyleSheet.create({
   // Header
   pageHeader: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-    backgroundColor: COLORS.darkBg,
+    paddingTop: 12,
+    paddingBottom: 10,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
 
   // Cards
   card: {
-    backgroundColor: COLORS.cardBgLight,
+    backgroundColor: COLORS.white,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   infoCard: {
-    backgroundColor: COLORS.cardBgLight,
+    backgroundColor: COLORS.white,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
 
   // Danger zone
   dangerCard: {
-    backgroundColor: COLORS.cardBgLight,
+    backgroundColor: COLORS.white,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: COLORS.dangerBg,
@@ -516,7 +516,7 @@ const avatar = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: COLORS.cardBgLight,
+    backgroundColor: COLORS.white,
     borderWidth: 2,
     borderColor: COLORS.border,
     alignItems: 'center',

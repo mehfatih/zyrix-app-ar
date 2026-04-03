@@ -342,8 +342,8 @@ const styles = StyleSheet.create({
   // Header
   pageHeader: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+    paddingTop: 12,
+    paddingBottom: 10,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
@@ -428,19 +428,19 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   filterTabActive: {
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: `${COLORS.primary}20`,
     borderColor: COLORS.primary,
   },
   filterTabPending: {
-    backgroundColor: COLORS.warningBg,
+    backgroundColor: `${COLORS.warning}20`,
     borderColor: COLORS.warning,
   },
   filterTabWon: {
-    backgroundColor: COLORS.successBg,
+    backgroundColor: `${COLORS.success}20`,
     borderColor: COLORS.success,
   },
   filterTabLost: {
-    backgroundColor: COLORS.dangerBg,
+    backgroundColor: `${COLORS.danger}20`,
     borderColor: COLORS.danger,
   },
   filterTabText: {
