@@ -387,8 +387,15 @@ export default function SettingsScreen() {
           <SectionHeader title={t('settings.support')} />
           <SettingsGroup>
             <SettingRow
+              icon="🎧"
+              label={t('settings.help_support')}
+              sublabel={t('settings.help_support_sub')}
+              onPress={() => router.push('/(merchant)/help')}
+            />
+            <Divider />
+            <SettingRow
               icon="💬"
-              label={t('common.coming_soon')}
+              label={t('settings.contact_support')}
               sublabel="info@zyrix.co"
               onPress={handleSupport}
             />

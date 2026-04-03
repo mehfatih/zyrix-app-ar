@@ -205,7 +205,10 @@
         "version": "Version",
         "webhooks": "Webhooks",
         "manage_2fa": "Manage 2FA",
-        "manage_2fa_sub": "Set up multiple verification methods"
+        "manage_2fa_sub": "Set up multiple verification methods",
+        "help_support": "Help & Support",
+        "help_support_sub": "FAQ and contact options",
+        "contact_support": "Contact Support"
     },
     "profile": {
         "title": "Profile",
@@ -434,5 +437,34 @@
         "regenerate_title": "Regenerate Codes",
         "regenerate_desc": "All previous codes will be invalidated and new ones generated. Are you sure?",
         "info_tip": "We recommend enabling at least two methods for maximum security. Authenticator app is the most secure option."
+    },
+    "help": {
+        "title": "Help & Support",
+        "hero_title": "How can we help?",
+        "hero_subtitle": "Browse FAQ or reach out to our support team",
+        "contact_title": "Contact Us",
+        "contact_email": "Email",
+        "contact_email_sub": "info@zyrix.co",
+        "contact_phone": "Call",
+        "contact_phone_sub": "+90 545 221 0888",
+        "contact_whatsapp": "WhatsApp",
+        "contact_whatsapp_sub": "Quick response",
+        "faq_title": "Frequently Asked Questions",
+        "faq1_q": "How do I get started with Zyrix?",
+        "faq1_a": "After logging in, you'll see the main dashboard with transaction summaries and balance. You can set up your payment gateway from the Settings section.",
+        "faq2_q": "How do I track my transactions?",
+        "faq2_a": "Go to the \"Transactions\" section to see all your operations. You can filter by status (success, pending, failed) and search by name or transaction ID.",
+        "faq3_q": "When will my funds be deposited?",
+        "faq3_a": "Settlements are processed periodically. You can track the next settlement from the \"Balance\" section and view past settlements in the \"Settlements\" section.",
+        "faq4_q": "How do I handle disputes?",
+        "faq4_a": "When a dispute is opened, you'll receive a notification. Go to the \"Disputes\" section to view details and respond with required documents before the deadline.",
+        "faq5_q": "Can I change the default currency?",
+        "faq5_a": "The default currency for the Arabic app is US Dollar (USD). You can view amounts in other supported currencies.",
+        "faq6_q": "How do I enable two-factor authentication?",
+        "faq6_a": "Go to Settings > Security > Manage 2FA. You can enable SMS, Email, Authenticator app, or Backup codes.",
+        "faq7_q": "How do I request a refund?",
+        "faq7_a": "Go to the transaction details and tap \"Request Refund\". Enter the amount and reason, and the request will be processed within 3-5 business days.",
+        "still_need_help": "Didn't find your answer?",
+        "contact_us": "Contact Us"
     }
 }
