@@ -300,7 +300,7 @@ export default function DisputesScreen() {
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyIcon}>🎉</Text>
-      <Text style={styles.emptyText}>Anlaşmazlık yok</Text>
+      <Text style={styles.emptyText}>{t('disputes.noDisputes')}</Text>
     </View>
   )
 

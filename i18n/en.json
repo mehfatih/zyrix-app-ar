@@ -99,7 +99,16 @@
     "card": "Card",
     "transaction_flow": "Transaction Flow",
     "risk_amount": "Risk Amount",
-    "export_csv": "Export CSV"
+    "export_csv": "Export CSV",
+    "copied": "Copied",
+    "refund_title": "Refund",
+    "refund_confirm": "Start a refund for this transaction?",
+    "refund_action": "Refund",
+    "dispute_title": "Dispute",
+    "dispute_confirm": "Open a dispute for this transaction?",
+    "dispute_action": "Open Dispute",
+    "share_title": "Share",
+    "share_receipt": "Share receipt"
   },
   "balance": {
     "title": "Balance",
@@ -228,7 +237,11 @@
     "last_name": "Last Name",
     "save": "Save",
     "cancel": "Cancel",
-    "country": "Country"
+    "country": "Country",
+    "name_required": "First and last name are required",
+    "email_invalid": "Enter a valid email",
+    "updated": "Profile updated",
+    "close_account": "Close Account"
   },
   "notifications": {
     "title": "Notifications",

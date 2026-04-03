@@ -17,6 +17,7 @@ import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { transactionsApi } from '../../services/api'
 import StatusBadge from '../../components/StatusBadge'
+import { useToast } from '../../components/Toast'
 
 const isRTL = I18nManager.isRTL
 
@@ -78,7 +79,7 @@ function DetailRow({
 }) {
   const handleCopy = () => {
     Clipboard.setStringAsync(value)
-    Alert.alert('✓', `${label} kopyalandı`)
+    Alert.alert('✓', 'تم النسخ')
   }
 
   return (
@@ -189,6 +190,7 @@ function ActionButton({
 export default function TransactionDetailScreen() {
   const { t }  = useTranslation()
   const router = useRouter()
+  const { showToast } = useToast()
   const { id } = useLocalSearchParams<{ id: string }>()
   const [tx, setTx] = useState<TransactionDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -231,19 +233,19 @@ export default function TransactionDetailScreen() {
   }
 
   const handleRefund = () =>
-    Alert.alert('İade', `${tx.id} için iade başlatılsın mı?`, [
-      { text: 'İptal', style: 'cancel' },
-      { text: 'İade Et', style: 'destructive', onPress: () => {} },
+    Alert.alert(t('transactions.refund_title'), t('transactions.refund_confirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('transactions.refund_action'), style: 'destructive', onPress: () => {} },
     ])
 
   const handleDispute = () =>
-    Alert.alert('Anlaşmazlık', `${tx.id} için anlaşmazlık açılsın mı?`, [
-      { text: 'İptal', style: 'cancel' },
-      { text: 'Aç', style: 'destructive', onPress: () => {} },
+    Alert.alert(t('transactions.dispute_title'), t('transactions.dispute_confirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('transactions.dispute_action'), style: 'destructive', onPress: () => {} },
     ])
 
   const handleShare = () =>
-    Alert.alert('Paylaş', `${tx.id} makbuz paylaşılacak`)
+    showToast(t('transactions.share_receipt'), 'info')
 
   return (
     <SafeAreaView style={styles.safeArea}>

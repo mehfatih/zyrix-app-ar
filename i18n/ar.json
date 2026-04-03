@@ -99,7 +99,16 @@
     "card": "البطاقة",
     "transaction_flow": "مسار المعاملة",
     "risk_amount": "مبلغ المخاطر",
-    "export_csv": "تصدير CSV"
+    "export_csv": "تصدير CSV",
+    "copied": "تم النسخ",
+    "refund_title": "استرداد",
+    "refund_confirm": "هل تريد بدء استرداد لهذه المعاملة؟",
+    "refund_action": "استرداد",
+    "dispute_title": "نزاع",
+    "dispute_confirm": "هل تريد فتح نزاع على هذه المعاملة؟",
+    "dispute_action": "فتح نزاع",
+    "share_title": "مشاركة",
+    "share_receipt": "مشاركة الإيصال"
   },
   "balance": {
     "title": "الرصيد",
@@ -228,7 +237,11 @@
     "last_name": "اسم العائلة",
     "save": "حفظ",
     "cancel": "إلغاء",
-    "country": "الدولة"
+    "country": "الدولة",
+    "name_required": "الاسم مطلوب",
+    "email_invalid": "أدخل بريد إلكتروني صحيح",
+    "updated": "تم تحديث الملف الشخصي",
+    "close_account": "إغلاق الحساب"
   },
   "notifications": {
     "title": "الإشعارات",

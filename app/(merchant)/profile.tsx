@@ -16,6 +16,7 @@ import {
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { merchantApi } from '../../services/api'
+import { useToast } from '../../components/Toast'
 
 const isRTL = I18nManager.isRTL
 
@@ -39,7 +40,7 @@ const INITIAL_PROFILE: ProfileData = {
   lastName:    'Kaya',
   email:       'ahmet.kaya@zyrix.co',
   phone:       '+90 545 221 0888',
-  company:     'Zyrix Global Teknoloji A.Ş.',
+  company:     'Zyrix Global Technology',
   merchantId:  'ZRX-10042',
   country:     'Türkiye',
   timezone:    'Europe/Istanbul (UTC+3)',
@@ -121,6 +122,7 @@ function SectionHeader({ title }: { title: string }) {
 
 export default function ProfileScreen() {
   const { t } = useTranslation()
+  const { showToast } = useToast()
 
   const [profile, setProfile] = useState<ProfileData>(INITIAL_PROFILE)
   const [editing, setEditing]   = useState(false)
@@ -165,11 +167,11 @@ export default function ProfileScreen() {
   const handleSave = () => {
     // Basic validation
     if (!draft.firstName.trim() || !draft.lastName.trim()) {
-      Alert.alert('Hata', 'Ad ve soyad boş bırakılamaz.')
+      showToast(t('profile.name_required'), 'error')
       return
     }
     if (!draft.email.includes('@')) {
-      Alert.alert('Hata', 'Geçerli bir e-posta girin.')
+      showToast(t('profile.email_invalid'), 'error')
       return
     }
 
@@ -179,7 +181,7 @@ export default function ProfileScreen() {
       setProfile(draft)
       setEditing(false)
       setSaving(false)
-      Alert.alert('✓', 'Profil güncellendi.')
+      showToast(t('profile.updated'), 'success')
     }, 800)
   }
 
@@ -292,12 +294,12 @@ export default function ProfileScreen() {
             <View style={styles.dangerCard}>
               <TouchableOpacity
                 style={[styles.dangerRow, isRTL && styles.dangerRowRTL]}
-                onPress={() => Alert.alert('Hesabı Kapat', 'Coming soon')}
+                onPress={() => showToast(t('common.coming_soon'), 'info')}
                 activeOpacity={0.7}
               >
                 <Text style={styles.dangerIcon}>⚠</Text>
                 <View style={{ flex: 1, alignItems: isRTL ? 'flex-end' : 'flex-start' }}>
-                  <Text style={styles.dangerLabel}>Hesabı Kapat</Text>
+                  <Text style={styles.dangerLabel}>{t('profile.close_account')}</Text>
                   <Text style={styles.dangerSublabel}>
                     Bu işlem geri alınamaz
                   </Text>
