@@ -38,10 +38,10 @@ interface FilterTab {
 }
 
 const FILTERS: FilterTab[] = [
-  { key: 'all',     labelKey: 'transactions.filter_all' },
   { key: 'success', labelKey: 'transactions.filter_success' },
   { key: 'pending', labelKey: 'transactions.filter_pending' },
   { key: 'failed',  labelKey: 'transactions.filter_failed' },
+  { key: 'all',     labelKey: 'transactions.filter_all' },
 ]
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -97,9 +97,10 @@ export default function TransactionsScreen() {
     router.push({ pathname: '/(merchant)/transaction-detail', params: { id } })
   }
 
-  const renderItem = ({ item }: ListRenderItemInfo<Transaction>) => (
+  const renderItem = ({ item, index }: ListRenderItemInfo<Transaction>) => (
     <TransactionRow
       {...item}
+      index={index}
       onPress={() => handleRowPress(item.id)}
     />
   )

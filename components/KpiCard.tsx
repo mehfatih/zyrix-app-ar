@@ -46,13 +46,13 @@ export function KpiCard({
         ) : (
           <View style={[styles.accentDot, { backgroundColor: color }]} />
         )}
-        <Text style={styles.label} numberOfLines={1}>
+        <Text style={styles.label} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
           {label}
         </Text>
       </View>
 
       {/* Value */}
-      <Text style={[styles.value, compact && styles.valueCompact, valueColor ? { color: valueColor } : null]} numberOfLines={1}>
+      <Text style={[styles.value, compact && styles.valueCompact, valueColor ? { color: valueColor } : null]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
         {value}
       </Text>
 
@@ -106,19 +106,19 @@ const styles = StyleSheet.create({
     marginEnd: SPACING.sm,
   },
   label: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: FONT_SIZE.xs,
     fontWeight: FONT_WEIGHT.medium,
     color: COLORS.textSecondary,
     flex: 1,
   },
   value: {
-    fontSize: FONT_SIZE['2xl'],
+    fontSize: FONT_SIZE.xl,
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
   },
   valueCompact: {
-    fontSize: FONT_SIZE.xl,
+    fontSize: FONT_SIZE.lg,
   },
   changeRow: {
     flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',

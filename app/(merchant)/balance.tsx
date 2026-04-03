@@ -191,58 +191,55 @@ export default function BalanceScreen() {
           <SectionTitle text={t('balance.next_settlement')} />
 
           <View style={styles.settlementCard}>
-            {/* Date row */}
-            <View style={[styles.settlementRow, isRTL && styles.settlementRowRTL]}>
-              <View style={styles.settlementLeft}>
-                <Text style={styles.settlementDate}>
-                  📅  {bal.nextSettlement?.date}
-                </Text>
-                <Text style={styles.settlementCompany}>
-                  {bal.company}
-                </Text>
-              </View>
-              <View style={styles.settlementRight}>
-                <Text style={styles.settlementNet}>
-                  +{(bal.nextSettlement?.dateAmount ?? 0).toLocaleString('en-US', {
-                    minimumFractionDigits: 2,
-                  })}{' '}
-                  {'USD'}
-                </Text>
-                <Text style={styles.settlementNetLabel}>Net</Text>
-              </View>
+            {/* Header row */}
+            <View style={styles.settlementHeader}>
+              <Text style={styles.settlementHeaderText}>{t('balance.next_settlement')}</Text>
             </View>
 
-            {/* Divider */}
-            <View style={styles.divider} />
+            {/* Date & Company row */}
+            <View style={[styles.tableRow, styles.tableRowShaded]}>
+              <Text style={styles.tableLabel}>📅  {t('settlements.date')}</Text>
+              <Text style={styles.tableValue}>{bal.nextSettlement?.date}</Text>
+            </View>
+            <View style={styles.tableRow}>
+              <Text style={styles.tableLabel}>{t('profile.company')}</Text>
+              <Text style={styles.tableValue}>{bal.company}</Text>
+            </View>
 
-            {/* Breakdown */}
-            <View style={[styles.breakdownRow, isRTL && styles.breakdownRowRTL]}>
-              <BreakdownItem
-                label={t('settlements.pending')}
-                value={`$${bal.available.toFixed(2)}`}
-                color={COLORS.textPrimary}
-              />
-              <BreakdownItem
-                label={t('settlements.commission')}
-                value={`-$${(bal.nextSettlement?.commission ?? 0).toFixed(2)}`}
-                color={COLORS.danger}
-              />
-              <BreakdownItem
-                label={t('settlements.net')}
-                value={`$${(bal.nextSettlement?.dateAmount ?? 0).toFixed(2)}`}
-                color={COLORS.success}
-              />
+            {/* Financial breakdown */}
+            <View style={[styles.tableRow, styles.tableRowShaded]}>
+              <Text style={styles.tableLabel}>{t('settlements.gross')}</Text>
+              <Text style={styles.tableValue}>${bal.available.toFixed(2)}</Text>
+            </View>
+            <View style={styles.tableRow}>
+              <Text style={styles.tableLabel}>{t('settlements.commission')}</Text>
+              <Text style={[styles.tableValue, { color: COLORS.danger }]}>-${(bal.nextSettlement?.commission ?? 0).toFixed(2)}</Text>
+            </View>
+            <View style={[styles.tableRow, styles.tableRowShaded, styles.tableRowLast]}>
+              <Text style={[styles.tableLabel, { fontWeight: '700' }]}>{t('settlements.net')}</Text>
+              <Text style={[styles.tableValue, { color: COLORS.success, fontWeight: '700', fontSize: 16 }]}>
+                +${(bal.nextSettlement?.dateAmount ?? 0).toFixed(2)}
+              </Text>
             </View>
           </View>
         </View>
 
         {/* ── Account Info ── */}
         <View style={styles.section}>
-          <SectionTitle text="Merchant ID" />
+          <SectionTitle text={t('profile.title')} />
           <View style={styles.infoCard}>
-            <InfoRow label={t('profile.merchantId')} value="ZRX-10042" />
-            <InfoRow label={t('profile.company')} value={bal.company} />
-            <InfoRow label="IBAN" value={bal.iban} mono />
+            <View style={[styles.tableRow, styles.tableRowShaded]}>
+              <Text style={styles.tableLabel}>{t('profile.merchantId')}</Text>
+              <Text style={[styles.tableValue, { fontFamily: 'monospace' }]}>ZRX-10042</Text>
+            </View>
+            <View style={styles.tableRow}>
+              <Text style={styles.tableLabel}>{t('profile.company')}</Text>
+              <Text style={styles.tableValue}>{bal.company}</Text>
+            </View>
+            <View style={[styles.tableRow, styles.tableRowShaded, styles.tableRowLast]}>
+              <Text style={styles.tableLabel}>IBAN</Text>
+              <Text style={[styles.tableValue, { fontFamily: 'monospace', fontSize: 11 }]}>{bal.iban}</Text>
+            </View>
           </View>
         </View>
 
@@ -453,106 +450,65 @@ const styles = StyleSheet.create({
 
   // Settlement card
   settlementCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  settlementRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  settlementRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  settlementLeft: {
-    flex: 1,
-  },
-  settlementDate: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
-  settlementCompany: {
-    fontSize: 12,
-    color: COLORS.textMuted,
-  },
-  settlementRight: {
-    alignItems: 'flex-end',
-  },
-  settlementNet: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.success,
-  },
-  settlementNetLabel: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    marginTop: 2,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: COLORS.border,
-    marginVertical: 14,
-  },
-  breakdownRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  breakdownRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  breakdownItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  breakdownLabel: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    marginBottom: 4,
-  },
-  breakdownValue: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-
-  // Info card
-  infoCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.cardBg,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: COLORS.border,
     overflow: 'hidden',
   },
-  infoRow: {
-    flexDirection: 'row',
+  settlementHeader: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  settlementHeaderText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.white,
+    textAlign: isRTL ? 'right' : 'left',
+  },
+
+  // Shared table row styles
+  tableRow: {
+    flexDirection: isRTL ? 'row-reverse' : 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 13,
+    paddingVertical: 11,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: COLORS.divider,
   },
-  infoRowRTL: {
-    flexDirection: 'row-reverse',
+  tableRowShaded: {
+    backgroundColor: COLORS.surfaceBg,
   },
-  infoLabel: {
-    fontSize: 13,
+  tableRowLast: {
+    borderBottomWidth: 0,
+  },
+  tableLabel: {
+    fontSize: 12,
     color: COLORS.textSecondary,
     fontWeight: '500',
   },
-  infoValue: {
+  tableValue: {
     fontSize: 13,
     color: COLORS.textPrimary,
     fontWeight: '600',
     maxWidth: '60%',
     textAlign: isRTL ? 'left' : 'right',
   },
-  infoValueMono: {
-    fontFamily: 'monospace',
-    fontSize: 11,
+
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginVertical: 14,
+  },
+
+  // Info card
+  infoCard: {
+    backgroundColor: COLORS.cardBg,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
   },
 })

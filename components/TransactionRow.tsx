@@ -24,6 +24,7 @@ export interface TransactionRowProps {
   currency: string
   isCredit: boolean
   status: 'success' | 'pending' | 'failed'
+  index?: number
   onPress?: () => void
 }
 
@@ -38,13 +39,18 @@ export default function TransactionRow({
   currency,
   isCredit,
   status,
+  index = 0,
   onPress,
 }: TransactionRowProps) {
   const { t } = useTranslation()
+  const isEven = index % 2 === 0
 
   return (
     <TouchableOpacity
-      style={styles.container}
+      style={[
+        styles.container,
+        isEven ? styles.rowEven : styles.rowOdd,
+      ]}
       onPress={onPress}
       activeOpacity={0.7}
     >
@@ -58,14 +64,13 @@ export default function TransactionRow({
           <Text style={styles.name} numberOfLines={1}>
             {name}
           </Text>
-          <Text style={styles.method} numberOfLines={1}>
-            {method}
+          <Text style={styles.meta} numberOfLines={1}>
+            {method} · {id}
           </Text>
-          <Text style={styles.idText}>{id}</Text>
         </View>
       </View>
 
-      {/* Right: Amount + Status */}
+      {/* Right: Amount + Status + Date */}
       <View style={[styles.rightSection, isRTL && styles.rightSectionRTL]}>
         <Text
           style={[
@@ -80,8 +85,10 @@ export default function TransactionRow({
           })}{' '}
           {currency}
         </Text>
-        <StatusBadge status={status} />
-        <Text style={styles.date}>{date}</Text>
+        <View style={styles.statusDateRow}>
+          <StatusBadge status={status} />
+          <Text style={styles.date}>{date}</Text>
+        </View>
       </View>
     </TouchableOpacity>
   )
@@ -93,10 +100,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: COLORS.white,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: COLORS.divider,
+  },
+  rowEven: {
+    backgroundColor: COLORS.cardBg,
+  },
+  rowOdd: {
+    backgroundColor: COLORS.surfaceBg,
   },
   leftSection: {
     flexDirection: 'row',
@@ -110,48 +122,42 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   flagContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.cardBg,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.divider,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: isRTL ? 0 : 12,
-    marginLeft: isRTL ? 12 : 0,
+    marginRight: isRTL ? 0 : 10,
+    marginLeft: isRTL ? 10 : 0,
   },
   flag: {
-    fontSize: 20,
+    fontSize: 18,
   },
   info: {
     flex: 1,
     alignItems: isRTL ? 'flex-end' : 'flex-start',
   },
   name: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: COLORS.textPrimary,
     marginBottom: 2,
   },
-  method: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginBottom: 2,
-  },
-  idText: {
+  meta: {
     fontSize: 11,
     color: COLORS.textMuted,
-    fontFamily: 'monospace',
   },
   rightSection: {
     alignItems: 'flex-end',
+    gap: 4,
   },
   rightSectionRTL: {
     alignItems: 'flex-start',
   },
   amount: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
-    marginBottom: 4,
   },
   amountCredit: {
     color: COLORS.success,
@@ -159,9 +165,13 @@ const styles = StyleSheet.create({
   amountDebit: {
     color: COLORS.danger,
   },
+  statusDateRow: {
+    flexDirection: isRTL ? 'row-reverse' : 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   date: {
-    fontSize: 11,
+    fontSize: 10,
     color: COLORS.textMuted,
-    marginTop: 4,
   },
 })
