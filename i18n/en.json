@@ -355,6 +355,21 @@
         "call_support": "Call Support",
         "messages": "Messages",
         "call_error_title": "Call Error",
-        "call_error_message": "Unable to make a call. Please contact support at +966500000000"
+        "call_error_message": "Unable to make a call. Please contact support at +966500000000",
+        "search": "Search"
+    },
+    "search": {
+        "placeholder": "Search transactions, sections...",
+        "searching": "Searching...",
+        "no_results": "No results found",
+        "no_results_hint": "Try different keywords or check your spelling",
+        "start_typing": "Start searching",
+        "start_typing_hint": "Search transactions, settlements, disputes, refunds, and sections",
+        "go_to_section": "Go to section",
+        "type_section": "Section",
+        "type_transaction": "Transaction",
+        "type_settlement": "Settlement",
+        "type_dispute": "Dispute",
+        "type_refund": "Refund"
     }
 }

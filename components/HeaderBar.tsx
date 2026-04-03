@@ -67,11 +67,22 @@ function MenuIcon({ size = 22, color = COLORS.white }: { size?: number; color?: 
   );
 }
 
+function SearchHeaderIcon({ size = 20, color = COLORS.white }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="11" cy="11" r="8" stroke={color} strokeWidth={2} />
+      <Line x1="21" y1="21" x2="16.65" y2="16.65" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
 // ─── Props ────────────────────────────────────────
 
 interface HeaderBarProps {
   /** Callback when menu/hamburger icon is pressed */
   onMenuPress?: () => void;
+  /** Callback when search icon is pressed */
+  onSearchPress?: () => void;
   /** Callback when messages icon is pressed */
   onMessagesPress?: () => void;
   /** Number of unread messages (shows badge) */
@@ -82,6 +93,7 @@ interface HeaderBarProps {
 
 export function HeaderBar({
   onMenuPress,
+  onSearchPress,
   onMessagesPress,
   unreadMessages = 0,
 }: HeaderBarProps) {
@@ -148,8 +160,18 @@ export function HeaderBar({
           <Text style={styles.titleText}>Zyrix</Text>
         </View>
 
-        {/* Right side: Phone + Messages */}
+        {/* Right side: Search + Phone + Messages */}
         <View style={[styles.rightIcons, isRTL && styles.rightIconsRTL]}>
+          <TouchableOpacity
+            onPress={onSearchPress}
+            style={styles.iconButton}
+            activeOpacity={0.7}
+            accessibilityLabel={t('header.search')}
+            accessibilityRole="button"
+          >
+            <SearchHeaderIcon size={20} color={COLORS.primaryLight} />
+          </TouchableOpacity>
+
           <TouchableOpacity
             onPress={handleCallSupport}
             style={styles.iconButton}
@@ -229,8 +251,8 @@ const styles = StyleSheet.create({
   },
   // ─── Icons ──────────
   iconButton: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     borderRadius: RADIUS.full,
     alignItems: 'center',
     justifyContent: 'center',
@@ -239,7 +261,7 @@ const styles = StyleSheet.create({
   rightIcons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.sm,
+    gap: SPACING.xs,
   },
   rightIconsRTL: {
     flexDirection: 'row-reverse',

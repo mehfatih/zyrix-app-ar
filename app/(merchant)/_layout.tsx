@@ -76,11 +76,16 @@ export default function MerchantLayout() {
     router.push('/(merchant)/notifications');
   };
 
+  const handleSearchPress = () => {
+    router.push('/(merchant)/search');
+  };
+
   return (
     <View style={styles.rootContainer}>
       {/* Fixed Header Bar — Phase 6 Task 6.1 */}
       <HeaderBar
         onMenuPress={handleMenuPress}
+        onSearchPress={handleSearchPress}
         onMessagesPress={handleMessagesPress}
         unreadMessages={unreadCount}
       />
@@ -141,6 +146,7 @@ export default function MerchantLayout() {
         }}
       />
       {/* Hidden screens */}
+      <Tabs.Screen name="search" options={{ href: null }} />
       <Tabs.Screen name="transaction-detail" options={{ href: null }} />
       <Tabs.Screen name="settlements" options={{ href: null }} />
       <Tabs.Screen name="refunds" options={{ href: null }} />

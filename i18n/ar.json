@@ -355,6 +355,21 @@
         "call_support": "اتصل بالدعم",
         "messages": "الرسائل",
         "call_error_title": "خطأ في الاتصال",
-        "call_error_message": "لا يمكن إجراء المكالمة. يرجى الاتصال بالدعم على +966500000000"
+        "call_error_message": "لا يمكن إجراء المكالمة. يرجى الاتصال بالدعم على +966500000000",
+        "search": "بحث"
+    },
+    "search": {
+        "placeholder": "ابحث في المعاملات، الأقسام...",
+        "searching": "جاري البحث...",
+        "no_results": "لا توجد نتائج",
+        "no_results_hint": "جرب كلمات بحث مختلفة أو تحقق من الإملاء",
+        "start_typing": "ابدأ البحث",
+        "start_typing_hint": "ابحث في المعاملات، التسويات، النزاعات، المستردات، والأقسام",
+        "go_to_section": "انتقل إلى القسم",
+        "type_section": "قسم",
+        "type_transaction": "معاملة",
+        "type_settlement": "تسوية",
+        "type_dispute": "نزاع",
+        "type_refund": "استرداد"
     }
 }
