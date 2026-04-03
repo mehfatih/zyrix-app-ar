@@ -30,6 +30,24 @@ import type { ChartPeriod, ApiTransaction } from '../../types';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
+// ─── Arabic day label fix ─────────────────────────────────────────────────────
+// react-native-chart-kit renders SVG text which breaks Arabic letter shaping.
+// We use short, pre-shaped Arabic labels that render correctly as isolated glyphs.
+const AR_DAY_MAP: Record<string, string> = {
+  // English -> Arabic abbreviations
+  'Sat': 'سبت', 'Sun': 'أحد', 'Mon': 'اثن', 'Tue': 'ثلا',
+  'Wed': 'أرب', 'Thu': 'خمي', 'Fri': 'جمع',
+  'Saturday': 'سبت', 'Sunday': 'أحد', 'Monday': 'اثن', 'Tuesday': 'ثلا',
+  'Wednesday': 'أرب', 'Thursday': 'خمي', 'Friday': 'جمع',
+  // Already Arabic but possibly malformed
+  'السبت': 'سبت', 'الأحد': 'أحد', 'الاثنين': 'اثن', 'الثلاثاء': 'ثلا',
+  'الأربعاء': 'أرب', 'الخميس': 'خمي', 'الجمعة': 'جمع',
+};
+
+function fixChartLabel(label: string): string {
+  return AR_DAY_MAP[label] || AR_DAY_MAP[label.trim()] || label;
+}
+
 function getGreetingKey(): string {
   const h = new Date().getHours();
   if (h < 12) return 'dashboard.greeting';
@@ -73,7 +91,7 @@ export default function DashboardScreen() {
       try {
         const analytics = await analyticsApi.getData(chartPeriod);
         setChartData(analytics.volume.map((v: { value: number }) => v.value));
-        setChartLabels(analytics.volume.map((v: { label: string }) => v.label));
+        setChartLabels(analytics.volume.map((v: { label: string }) => fixChartLabel(v.label)));
       } catch (_e) { /* chart data is non-critical */ }
       setDashData(data);
     } catch (err: unknown) {
@@ -149,7 +167,7 @@ export default function DashboardScreen() {
       <View style={[styles.header, isRTL && styles.headerRTL]}>
         <View style={{ flex: 1 }}>
           <Text style={[styles.greeting, isRTL && styles.textRTL]}>
-            {t(getGreetingKey(), { name: user?.name?.split(' ')[0] ?? 'Merchant' })}
+            {t(getGreetingKey(), { name: user?.name?.split(' ')[0] ?? t('common.appName') })}
           </Text>
           <Text style={[styles.merchantId, isRTL && styles.textRTL]}>
             {user?.merchantId ?? 'ZRX-10042'}
@@ -163,11 +181,11 @@ export default function DashboardScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* ── Currency Picker (Gulf + USD) ── */}
+      {/* ── Currency Picker ── */}
       <CurrencyPicker
         selected={currency}
         onSelect={setCurrency}
-        codes={['USD', 'SAR', 'AED', 'KWD', 'QAR']}
+        codes={['SAR', 'AED', 'KWD', 'QAR', 'USD']}
       />
 
       {/* ── KPI Cards (2x2 grid) ── */}

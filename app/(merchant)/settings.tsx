@@ -109,24 +109,33 @@ function LanguagePicker({
   current: Language
   onChange: (lang: Language) => void
 }) {
+  const langs: { key: Language; label: string; flag: string }[] = [
+    { key: 'ar', label: 'العربية', flag: '🇸🇦' },
+    { key: 'en', label: 'English', flag: '🇬🇧' },
+  ]
+
   return (
     <View style={[langPicker.row, isRTL && langPicker.rowRTL]}>
-      <TouchableOpacity
-        style={[langPicker.btn, current === 'ar' && langPicker.btnActive]}
-        onPress={() => onChange('ar')}
-      >
-        <Text style={[langPicker.label, current === 'ar' && langPicker.labelActive]}>
-          🇸🇦 العربية
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[langPicker.btn, current === 'en' && langPicker.btnActive]}
-        onPress={() => onChange('en')}
-      >
-        <Text style={[langPicker.label, current === 'en' && langPicker.labelActive]}>
-          🇬🇧 EN
-        </Text>
-      </TouchableOpacity>
+      {langs.map((l) => (
+        <TouchableOpacity
+          key={l.key}
+          style={[
+            langPicker.btn,
+            current === l.key && langPicker.btnActive,
+          ]}
+          onPress={() => onChange(l.key)}
+        >
+          <Text style={langPicker.flag}>{l.flag}</Text>
+          <Text
+            style={[
+              langPicker.label,
+              current === l.key && langPicker.labelActive,
+            ]}
+          >
+            {l.label}
+          </Text>
+        </TouchableOpacity>
+      ))}
     </View>
   )
 }
@@ -139,7 +148,6 @@ export default function SettingsScreen() {
   const { signOut } = useAuth()
 
   const [language, setLanguage] = useState<Language>('ar')
-  const [darkMode, setDarkMode] = useState(true)
   const [toggles, setToggles] = useState<ToggleState>({
     pushNotifications: true,
     emailReports:      true,
@@ -159,10 +167,6 @@ export default function SettingsScreen() {
     } catch (err) {
       console.warn('Failed to update language:', err)
     }
-    Alert.alert(
-      t('settings.language'),
-      t('common.coming_soon'),
-    )
   }
 
   const handleLogout = () => {
@@ -184,7 +188,7 @@ export default function SettingsScreen() {
   }
 
   const handleChangePassword = () =>
-    router.push('/(merchant)/change-password')
+    Alert.alert(t('settings.security'), t('common.coming_soon'))
 
   const handleApiKeys = () =>
     Alert.alert(t('settings.apiKeys'), t('common.coming_soon'))
@@ -202,28 +206,28 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
 
-        {/* Page header — compact with logo */}
+        {/* Page header */}
         <View style={styles.pageHeader}>
-          <View style={[styles.headerRow, isRTL && styles.headerRowRTL]}>
-            <View style={styles.logoCircle}>
-              <Text style={styles.logoText}>Z</Text>
-            </View>
-            <View style={styles.headerInfo}>
-              <Text style={[styles.pageTitle, isRTL && styles.textRight]}>
-                {t('settings.title')}
-              </Text>
-              <Text style={[styles.merchantId, isRTL && styles.textRight]}>
-                ZRX-10042 · Zyrix Global Technology
-              </Text>
-            </View>
-          </View>
+          <Text style={[styles.pageTitle, isRTL && styles.textRight]}>
+            {t('settings.title')}
+          </Text>
+          <Text style={[styles.merchantId, isRTL && styles.textRight]}>
+            ZRX-10042 · Zyrix Global Technology
+          </Text>
         </View>
 
         <View style={styles.body}>
 
-          {/* ── Language (compact toggle) ── */}
+          {/* ── Language ── */}
           <SectionHeader title={t('settings.language')} />
           <SettingsGroup>
+            <SettingRow
+              icon="🌐"
+              label={t('settings.language')}
+              sublabel={language === 'ar' ? 'العربية' : 'English'}
+              showChevron={false}
+              rightElement={null}
+            />
             <View style={styles.langPickerWrapper}>
               <LanguagePicker
                 current={language}
@@ -232,23 +236,22 @@ export default function SettingsScreen() {
             </View>
           </SettingsGroup>
 
-          {/* ── Appearance ── */}
-          <SectionHeader title="🎨" />
+          {/* ── Dark Mode ── */}
           <SettingsGroup>
             <SettingRow
               icon="🌙"
-              label={darkMode ? 'Dark Mode' : 'Light Mode'}
+              label={t('settings.dark_mode')}
               sublabel={t('common.coming_soon')}
               showChevron={false}
               rightElement={
                 <Switch
-                  value={darkMode}
-                  onValueChange={(val) => {
-                    setDarkMode(val)
-                    Alert.alert('Theme', t('common.coming_soon'))
+                  value={false}
+                  onValueChange={() => {
+                    // Dark mode is coming soon — no ugly Alert
                   }}
                   trackColor={{ false: COLORS.border, true: COLORS.primary }}
                   thumbColor={COLORS.white}
+                  disabled
                 />
               }
             />
@@ -260,7 +263,7 @@ export default function SettingsScreen() {
             <SettingRow
               icon="🔔"
               label={t('settings.notifications')}
-              sublabel={t('notifications.payment')}
+              sublabel={t('settings.notifications_sub')}
               showChevron={false}
               rightElement={
                 <Switch
@@ -309,7 +312,7 @@ export default function SettingsScreen() {
             <SettingRow
               icon="🔐"
               label={t('settings.twoFactor')}
-              sublabel={toggles.twoFactor ? t('settings.twoFactor_active') : t('settings.twoFactor_inactive')}
+              sublabel={toggles.twoFactor ? t('settings.twofactor_active') : t('settings.twofactor_inactive')}
               showChevron={false}
               rightElement={
                 <Switch
@@ -319,13 +322,6 @@ export default function SettingsScreen() {
                   thumbColor={COLORS.white}
                 />
               }
-            />
-            <Divider />
-            <SettingRow
-              icon="🛡️"
-              label={t('settings.manage_2fa')}
-              sublabel={t('settings.manage_2fa_sub')}
-              onPress={() => router.push('/(merchant)/2fa-setup')}
             />
             <Divider />
             <SettingRow
@@ -371,14 +367,14 @@ export default function SettingsScreen() {
             <SettingRow
               icon="⚙️"
               label={t('settings.apiKeys')}
-              sublabel={t('settings.apiKeys')}
+              sublabel={t('settings.api_keys_sub')}
               onPress={handleApiKeys}
             />
             <Divider />
             <SettingRow
               icon="🔗"
               label={t('settings.webhooks')}
-              sublabel={t('notifications.title')}
+              sublabel={t('settings.webhooks_sub')}
               onPress={handleWebhooks}
             />
           </SettingsGroup>
@@ -387,22 +383,15 @@ export default function SettingsScreen() {
           <SectionHeader title={t('settings.support')} />
           <SettingsGroup>
             <SettingRow
-              icon="🎧"
-              label={t('settings.help_support')}
-              sublabel={t('settings.help_support_sub')}
-              onPress={() => router.push('/(merchant)/help')}
-            />
-            <Divider />
-            <SettingRow
               icon="💬"
-              label={t('settings.contact_support')}
-              sublabel="info@zyrix.co"
+              label={t('settings.support_chat')}
+              sublabel={t('settings.support_sub')}
               onPress={handleSupport}
             />
             <Divider />
             <SettingRow
               icon="📋"
-              label={t('settings.version_label')}
+              label={t('settings.version')}
               sublabel="1.0.0 (build 42)"
               showChevron={false}
             />
@@ -430,52 +419,28 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.darkBg,
+    backgroundColor: COLORS.cardBg,
   },
   scrollContent: {
     paddingBottom: 48,
   },
   pageHeader: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 10,
-    backgroundColor: COLORS.cardBg,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  headerRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  logoCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoText: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: COLORS.white,
-  },
-  headerInfo: {
-    flex: 1,
+    gap: 4,
   },
   pageTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: '700',
     color: COLORS.textPrimary,
   },
   merchantId: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textMuted,
-    marginTop: 1,
   },
   textRight: {
     textAlign: 'right',
@@ -485,8 +450,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   langPickerWrapper: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingBottom: 14,
   },
 })
 
@@ -497,7 +462,7 @@ const sectionHeader = StyleSheet.create({
     color: COLORS.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
-    marginTop: 16,
+    marginTop: 20,
     marginBottom: 6,
     marginLeft: 4,
   },
@@ -510,7 +475,7 @@ const sectionHeader = StyleSheet.create({
 
 const group = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.cardBg,
+    backgroundColor: COLORS.white,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -523,17 +488,17 @@ const row = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
+    paddingVertical: 13,
+    gap: 14,
   },
   containerRTL: {
     flexDirection: 'row-reverse',
   },
   iconBubble: {
-    width: 34,
-    height: 34,
-    borderRadius: 8,
-    backgroundColor: COLORS.surfaceBg,
+    width: 36,
+    height: 36,
+    borderRadius: 9,
+    backgroundColor: COLORS.cardBg,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -544,17 +509,17 @@ const row = StyleSheet.create({
     borderColor: COLORS.dangerBg,
   },
   icon: {
-    fontSize: 16,
+    fontSize: 18,
   },
   labels: {
     flex: 1,
-    gap: 1,
+    gap: 2,
   },
   labelsRTL: {
     alignItems: 'flex-end',
   },
   label: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
     color: COLORS.textPrimary,
   },
@@ -563,7 +528,7 @@ const row = StyleSheet.create({
     fontWeight: '600',
   },
   sublabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textMuted,
   },
   right: {
@@ -585,8 +550,8 @@ const row = StyleSheet.create({
 const dividerStyle = StyleSheet.create({
   line: {
     height: 1,
-    backgroundColor: COLORS.divider,
-    marginLeft: 62,
+    backgroundColor: COLORS.border,
+    marginLeft: 66,
   },
 })
 
@@ -594,33 +559,36 @@ const langPicker = StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap: 8,
+    marginTop: 4,
   },
   rowRTL: {
     flexDirection: 'row-reverse',
   },
   btn: {
     flex: 1,
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 10,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: COLORS.border,
-    backgroundColor: COLORS.surfaceBg,
-    gap: 6,
+    backgroundColor: COLORS.cardBg,
+    gap: 4,
   },
   btnActive: {
     borderColor: COLORS.primary,
-    backgroundColor: `${COLORS.primary}20`,
+    backgroundColor: COLORS.primaryLight,
+  },
+  flag: {
+    fontSize: 20,
   },
   label: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
     color: COLORS.textSecondary,
   },
   labelActive: {
-    color: COLORS.primaryLight,
+    color: COLORS.primary,
     fontWeight: '700',
   },
 })
