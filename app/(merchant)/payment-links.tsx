@@ -8,6 +8,7 @@ import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { paymentLinksApi } from '../../services/api'
 import { StatusBadge } from '../../components/StatusBadge'
+import { useToast } from '../../components/Toast'
 
 const isRTL = I18nManager.isRTL
 
@@ -19,6 +20,7 @@ interface PaymentLink {
 
 export default function PaymentLinksScreen() {
   const { t } = useTranslation()
+  const { showToast } = useToast()
   const [links, setLinks] = useState<PaymentLink[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -73,7 +75,7 @@ export default function PaymentLinksScreen() {
   const handleCopy = async (link: PaymentLink) => {
     const url = link.paymentUrl || `https://pay.zyrix.co/${link.linkId}`
     await Clipboard.setStringAsync(url)
-    Alert.alert(t('payment_links.copied'))
+    showToast(t('payment_links.copied'), 'success')
   }
 
   const handleCancel = async (linkId: string) => {

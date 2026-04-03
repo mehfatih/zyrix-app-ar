@@ -19,6 +19,7 @@ import { FONT_WEIGHT, SPACING } from '../constants/theme';
 import { AuthProvider } from '../hooks/useAuth';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { OfflineBanner } from '../components/OfflineBanner';
+import { ToastProvider } from '../components/Toast';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -84,6 +85,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ErrorBoundary>
         <AuthProvider>
+          <ToastProvider>
           <AppInit>
             <StatusBar style="light" translucent backgroundColor="transparent" />
             <OfflineBanner />
@@ -102,6 +104,7 @@ export default function RootLayout() {
               <Stack.Screen name="(merchant)" />
             </Stack>
           </AppInit>
+          </ToastProvider>
         </AuthProvider>
       </ErrorBoundary>
     </SafeAreaProvider>

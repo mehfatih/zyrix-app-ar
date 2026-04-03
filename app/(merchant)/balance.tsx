@@ -8,8 +8,8 @@ import {
   ScrollView,
   I18nManager,
   SafeAreaView,
-  Alert,
-
+  Modal,
+  Linking,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native'
@@ -19,6 +19,7 @@ import { useTranslation } from '../../hooks/useTranslation'
 import { balanceApi } from '../../services/api'
 import KpiCard from '../../components/KpiCard'
 import { QRCodeModal } from '../../components/QRCodeModal'
+import { useToast } from '../../components/Toast'
 
 const isRTL = I18nManager.isRTL
 
@@ -61,6 +62,7 @@ function ActionButton({
 
 export default function BalanceScreen() {
   const { t } = useTranslation()
+  const { showToast } = useToast()
   const [ibanCopied, setIbanCopied] = useState(false)
   const [balanceData, setBalanceData] = useState<{ available: number; incoming: number; outgoing: number; iban: string; company: string; nextSettlement: { id: string; date: string; net: number; commission: number } | null } | null>(null)
   const [loading, setLoading] = useState(true)
@@ -91,11 +93,14 @@ export default function BalanceScreen() {
   const handleCopyIban = () => {
     Clipboard.setStringAsync(bal.iban)
     setIbanCopied(true)
+    showToast(t('common.copied'), 'success')
     setTimeout(() => setIbanCopied(false), 2000)
   }
 
+  const [showTransfer, setShowTransfer] = useState(false)
+
   const handleTransfer = () => {
-    Alert.alert(t('balance.transfer'), bal.iban)
+    setShowTransfer(true)
   }
 
   const handleQr = () => {
@@ -244,6 +249,65 @@ export default function BalanceScreen() {
         </View>
 
       </ScrollView>
+
+      {/* ── Transfer Bottom Sheet ── */}
+      <Modal
+        visible={showTransfer}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowTransfer(false)}
+      >
+        <TouchableOpacity
+          style={transferStyles.overlay}
+          activeOpacity={1}
+          onPress={() => setShowTransfer(false)}
+        >
+          <View style={transferStyles.sheet}>
+            <View style={transferStyles.handle} />
+            <Text style={[transferStyles.title, isRTL && styles.textRight]}>
+              {t('balance.transfer')}
+            </Text>
+
+            {/* IBAN display */}
+            <TouchableOpacity
+              style={transferStyles.ibanBox}
+              onPress={() => {
+                Clipboard.setStringAsync(bal.iban)
+                showToast(t('common.copied'), 'success')
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={transferStyles.ibanLabel}>IBAN</Text>
+              <Text style={transferStyles.ibanText}>{bal.iban}</Text>
+              <Text style={transferStyles.copyHint}>{t('common.copy')} 📋</Text>
+            </TouchableOpacity>
+
+            {/* Open bank app button */}
+            <TouchableOpacity
+              style={transferStyles.bankBtn}
+              onPress={() => {
+                setShowTransfer(false)
+                // Try to open banking app with IBAN
+                Linking.openURL(`https://pay.zyrix.co/transfer?iban=${encodeURIComponent(bal.iban)}`).catch(() => {
+                  showToast(t('common.coming_soon'), 'info')
+                })
+              }}
+              activeOpacity={0.75}
+            >
+              <Text style={transferStyles.bankBtnText}>{t('balance.transfer')} →</Text>
+            </TouchableOpacity>
+
+            {/* Close */}
+            <TouchableOpacity
+              style={transferStyles.closeBtn}
+              onPress={() => setShowTransfer(false)}
+            >
+              <Text style={transferStyles.closeBtnText}>{t('common.close')}</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       <QRCodeModal
         visible={showQR}
         onClose={() => setShowQR(false)}
@@ -510,5 +574,89 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     overflow: 'hidden',
+  },
+})
+
+// ─── Transfer Bottom Sheet Styles ─────────────────────────────────────────────
+
+const transferStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: COLORS.cardBg,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 24,
+    paddingBottom: 36,
+    paddingTop: 12,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS.border,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 16,
+    textAlign: isRTL ? 'right' : 'left',
+  },
+  ibanBox: {
+    backgroundColor: COLORS.darkBg,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  ibanLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+  ibanText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.white,
+    fontFamily: 'monospace',
+    letterSpacing: 1,
+    marginBottom: 8,
+    textAlign: isRTL ? 'right' : 'left',
+  },
+  copyHint: {
+    fontSize: 11,
+    color: COLORS.primary,
+    fontWeight: '600',
+    textAlign: isRTL ? 'right' : 'left',
+  },
+  bankBtn: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  bankBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+  closeBtn: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  closeBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
   },
 })

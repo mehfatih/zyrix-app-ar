@@ -16,6 +16,7 @@ import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { useAuth } from '../../hooks/useAuth'
 import { merchantApi } from '../../services/api'
+import { useToast } from '../../components/Toast'
 
 const isRTL = I18nManager.isRTL
 
@@ -146,6 +147,7 @@ export default function SettingsScreen() {
   const { t } = useTranslation()
   const router = useRouter()
   const { signOut } = useAuth()
+  const { showToast } = useToast()
 
   const [language, setLanguage] = useState<Language>('ar')
   const [toggles, setToggles] = useState<ToggleState>({
@@ -188,16 +190,16 @@ export default function SettingsScreen() {
   }
 
   const handleChangePassword = () =>
-    Alert.alert(t('settings.security'), t('common.coming_soon'))
+    showToast(t('common.coming_soon'), 'info')
 
   const handleApiKeys = () =>
-    Alert.alert(t('settings.apiKeys'), t('common.coming_soon'))
+    showToast(t('common.coming_soon'), 'info')
 
   const handleWebhooks = () =>
-    Alert.alert(t('settings.webhooks'), t('common.coming_soon'))
+    showToast(t('common.coming_soon'), 'info')
 
   const handleSupport = () =>
-    Alert.alert('Support', 'info@zyrix.co · +90 545 221 0888')
+    showToast('info@zyrix.co · +90 545 221 0888', 'info', 3000)
 
   return (
     <SafeAreaView style={styles.safeArea}>
