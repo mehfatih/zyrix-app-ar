@@ -33,7 +33,14 @@
         "resend": "Resend code",
         "resendIn": "Resend in {{seconds}} seconds",
         "invalidPhone": "Enter a valid phone number",
-        "invalidOtp": "Invalid verification code"
+        "invalidOtp": "Invalid verification code",
+        "phoneTab": "Phone",
+        "emailTab": "Email",
+        "emailLabel": "Email Address",
+        "emailPlaceholder": "merchant@example.com",
+        "emailHint": "A verification code will be sent to your email",
+        "invalidEmail": "Enter a valid email address",
+        "otpSubtitleEmail": "Enter the 6-digit code sent to {{email}}"
     },
     "dashboard": {
         "greeting": "Good morning, {{name}} 👋",

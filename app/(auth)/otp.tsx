@@ -24,9 +24,11 @@ const RESEND_SECONDS = 60;
 
 export default function OtpScreen() {
   const router = useRouter();
-  const { phone } = useLocalSearchParams<{ phone: string }>();
+  const { phone, email, method } = useLocalSearchParams<{ phone?: string; email?: string; method?: string }>();
   const { t, isRTL } = useTranslation();
   const { signIn } = useAuth();
+  const isEmailMethod = method === 'email';
+  const displayIdentifier = isEmailMethod ? (email ?? '') : (phone ?? '');
 
   const [code, setCode] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [timer, setTimer] = useState(RESEND_SECONDS);
@@ -120,7 +122,9 @@ export default function OtpScreen() {
           {t('auth.otpTitle')}
         </Text>
         <Text style={[styles.subtitle, isRTL && styles.textRTL]}>
-          {t('auth.otpSubtitle', { phone: phone ?? '' })}
+          {isEmailMethod
+            ? t('auth.otpSubtitleEmail', { email: displayIdentifier })
+            : t('auth.otpSubtitle', { phone: displayIdentifier })}
         </Text>
 
         {/* OTP Cells */}

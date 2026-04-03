@@ -33,7 +33,14 @@
         "resend": "إعادة إرسال الرمز",
         "resendIn": "إعادة الإرسال بعد {{seconds}} ثانية",
         "invalidPhone": "أدخل رقم هاتف صحيح",
-        "invalidOtp": "رمز التحقق غير صحيح"
+        "invalidOtp": "رمز التحقق غير صحيح",
+        "phoneTab": "رقم الهاتف",
+        "emailTab": "البريد الإلكتروني",
+        "emailLabel": "البريد الإلكتروني",
+        "emailPlaceholder": "merchant@example.com",
+        "emailHint": "سيتم إرسال رمز التحقق إلى بريدك الإلكتروني",
+        "invalidEmail": "أدخل بريد إلكتروني صحيح",
+        "otpSubtitleEmail": "أدخل الرمز المكون من 6 أرقام المرسل إلى {{email}}"
     },
     "dashboard": {
         "greeting": "صباح الخير، {{name}} 👋",
