@@ -5,7 +5,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Tabs, useRouter } from 'expo-router';
-import { View, Text, StyleSheet, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT, SPACING } from '../../constants/theme';
@@ -14,6 +14,7 @@ import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useDeepLinking } from '../../hooks/useDeepLinking';
 import { notificationsApi } from '../../services/api';
 import { HeaderBar } from '../../components/HeaderBar';
+import { NavigationDrawer } from '../../components/NavigationDrawer';
 
 function TabIcon({ icon, label, focused, badge }: { icon: string; label: string; focused: boolean; badge?: number }) {
   return (
@@ -45,6 +46,7 @@ export default function MerchantLayout() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [drawerVisible, setDrawerVisible] = useState(false);
 
   useEffect(() => {
     const fetchUnread = async () => {
@@ -67,9 +69,15 @@ export default function MerchantLayout() {
 
   // ─── Header Callbacks (Phase 6 Task 6.1) ──────
   const handleMenuPress = () => {
-    // Phase 6 Task 6.3 will implement the sidebar/drawer.
-    // For now, show a placeholder alert.
-    Alert.alert('القائمة', 'سيتم إضافة القائمة الجانبية قريباً');
+    setDrawerVisible(true);
+  };
+
+  const handleDrawerClose = () => {
+    setDrawerVisible(false);
+  };
+
+  const handleDrawerNavigate = (route: string) => {
+    router.push(route as any);
   };
 
   const handleMessagesPress = () => {
@@ -160,6 +168,13 @@ export default function MerchantLayout() {
       <Tabs.Screen name="expenses" options={{ href: null }} />
       <Tabs.Screen name="invoices" options={{ href: null }} />
     </Tabs>
+
+      {/* Navigation Drawer — Phase 6 Task 6.3 */}
+      <NavigationDrawer
+        visible={drawerVisible}
+        onClose={handleDrawerClose}
+        onNavigate={handleDrawerNavigate}
+      />
     </View>
   );
 }
