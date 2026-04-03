@@ -238,14 +238,9 @@ export default function AnalyticsScreen() {
         {/* ── Page header ── */}
         <View style={styles.pageHeader}>
           <View style={[styles.headerRow, isRTL && styles.headerRowRTL]}>
-            <View>
-              <Text style={[styles.pageTitle, isRTL && styles.textRight]}>
-                {t('analytics.title')}
-              </Text>
-              <Text style={[styles.pageSubtitle, isRTL && styles.textRight]}>
-                {t('analytics.subtitle')}
-              </Text>
-            </View>
+            <Text style={[styles.pageSubtitle, isRTL && styles.textRight]}>
+              {t('analytics.subtitle')}
+            </Text>
             <RangeToggle active={range} onChange={handleRangeChange} />
           </View>
         </View>
@@ -319,7 +314,7 @@ export default function AnalyticsScreen() {
             </View>
           </View>
 
-          {/* ── Countries (framed section) ── */}
+          {/* ── Countries (framed section with unique bar colors) ── */}
           <View style={styles.framedSection}>
             <View style={styles.framedHeader}>
               <Text style={[styles.framedTitle, isRTL && styles.textRight]}>
@@ -327,14 +322,32 @@ export default function AnalyticsScreen() {
               </Text>
             </View>
             <View style={styles.framedBody}>
-              <ChartCard
-                title=""
-                data={data.countries}
-                color={COLORS.products.crypto}
-                unit="%"
-                type="bar"
-                style={{ borderWidth: 0, padding: 0, marginBottom: 0 }}
-              />
+              {(() => {
+                const COUNTRY_COLORS = [
+                  COLORS.chart.blue, COLORS.chart.green, COLORS.chart.orange,
+                  COLORS.chart.purple, COLORS.chart.cyan, COLORS.chart.red,
+                ]
+                const maxVal = Math.max(...data.countries.map(c => c.value), 1)
+                return (
+                  <View style={{ gap: 10, paddingVertical: 8 }}>
+                    {data.countries.map((c, i) => {
+                      const pct = Math.max((c.value / maxVal) * 100, 5)
+                      const barColor = COUNTRY_COLORS[i % COUNTRY_COLORS.length]
+                      return (
+                        <View key={i} style={{ gap: 4 }}>
+                          <View style={[{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, isRTL && { flexDirection: 'row-reverse' }]}>
+                            <Text style={{ fontSize: 12, color: COLORS.textSecondary, fontWeight: '500' }}>{c.label}</Text>
+                            <Text style={{ fontSize: 12, color: barColor, fontWeight: '700' }}>{c.value}%</Text>
+                          </View>
+                          <View style={{ height: 8, backgroundColor: COLORS.divider, borderRadius: 4, overflow: 'hidden' }}>
+                            <View style={{ width: `${pct}%`, height: '100%', backgroundColor: barColor, borderRadius: 4 }} />
+                          </View>
+                        </View>
+                      )
+                    })}
+                  </View>
+                )
+              })()}
             </View>
           </View>
 
@@ -383,12 +396,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   pageHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 10,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    paddingHorizontal: 16,
+    paddingTop: 6,
+    paddingBottom: 6,
+    backgroundColor: COLORS.cardBg,
   },
   headerRow: {
     flexDirection: 'row',

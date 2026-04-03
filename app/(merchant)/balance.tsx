@@ -371,11 +371,9 @@ const styles = StyleSheet.create({
   // Header
   pageHeader: {
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 10,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    paddingTop: 4,
+    paddingBottom: 4,
+    backgroundColor: COLORS.cardBg,
   },
   pageTitle: {
     fontSize: 22,
