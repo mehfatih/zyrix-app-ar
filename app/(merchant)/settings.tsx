@@ -109,33 +109,24 @@ function LanguagePicker({
   current: Language
   onChange: (lang: Language) => void
 }) {
-  const langs: { key: Language; label: string; flag: string }[] = [
-    { key: 'ar', label: 'العربية', flag: '🇸🇦' },
-    { key: 'en', label: 'English', flag: '🇬🇧' },
-  ]
-
   return (
     <View style={[langPicker.row, isRTL && langPicker.rowRTL]}>
-      {langs.map((l) => (
-        <TouchableOpacity
-          key={l.key}
-          style={[
-            langPicker.btn,
-            current === l.key && langPicker.btnActive,
-          ]}
-          onPress={() => onChange(l.key)}
-        >
-          <Text style={langPicker.flag}>{l.flag}</Text>
-          <Text
-            style={[
-              langPicker.label,
-              current === l.key && langPicker.labelActive,
-            ]}
-          >
-            {l.label}
-          </Text>
-        </TouchableOpacity>
-      ))}
+      <TouchableOpacity
+        style={[langPicker.btn, current === 'ar' && langPicker.btnActive]}
+        onPress={() => onChange('ar')}
+      >
+        <Text style={[langPicker.label, current === 'ar' && langPicker.labelActive]}>
+          🇸🇦 العربية
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[langPicker.btn, current === 'en' && langPicker.btnActive]}
+        onPress={() => onChange('en')}
+      >
+        <Text style={[langPicker.label, current === 'en' && langPicker.labelActive]}>
+          🇬🇧 EN
+        </Text>
+      </TouchableOpacity>
     </View>
   )
 }
@@ -148,6 +139,7 @@ export default function SettingsScreen() {
   const { signOut } = useAuth()
 
   const [language, setLanguage] = useState<Language>('ar')
+  const [darkMode, setDarkMode] = useState(true)
   const [toggles, setToggles] = useState<ToggleState>({
     pushNotifications: true,
     emailReports:      true,
@@ -210,34 +202,56 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
 
-        {/* Page header */}
+        {/* Page header — compact with logo */}
         <View style={styles.pageHeader}>
-          <Text style={[styles.pageTitle, isRTL && styles.textRight]}>
-            {t('settings.title')}
-          </Text>
-          <Text style={[styles.merchantId, isRTL && styles.textRight]}>
-            ZRX-10042 · Zyrix Global Teknoloji A.Ş.
-          </Text>
+          <View style={[styles.headerRow, isRTL && styles.headerRowRTL]}>
+            <View style={styles.logoCircle}>
+              <Text style={styles.logoText}>Z</Text>
+            </View>
+            <View style={styles.headerInfo}>
+              <Text style={[styles.pageTitle, isRTL && styles.textRight]}>
+                {t('settings.title')}
+              </Text>
+              <Text style={[styles.merchantId, isRTL && styles.textRight]}>
+                ZRX-10042 · Zyrix Global Technology
+              </Text>
+            </View>
+          </View>
         </View>
 
         <View style={styles.body}>
 
-          {/* ── Language ── */}
+          {/* ── Language (compact toggle) ── */}
           <SectionHeader title={t('settings.language')} />
           <SettingsGroup>
-            <SettingRow
-              icon="🌐"
-              label={t('settings.language')}
-              sublabel={language === 'ar' ? 'العربية' : 'English'}
-              showChevron={false}
-              rightElement={null}
-            />
             <View style={styles.langPickerWrapper}>
               <LanguagePicker
                 current={language}
                 onChange={handleLanguageChange}
               />
             </View>
+          </SettingsGroup>
+
+          {/* ── Appearance ── */}
+          <SectionHeader title="🎨" />
+          <SettingsGroup>
+            <SettingRow
+              icon="🌙"
+              label={darkMode ? 'Dark Mode' : 'Light Mode'}
+              sublabel={t('common.coming_soon')}
+              showChevron={false}
+              rightElement={
+                <Switch
+                  value={darkMode}
+                  onValueChange={(val) => {
+                    setDarkMode(val)
+                    Alert.alert('Theme', t('common.coming_soon'))
+                  }}
+                  trackColor={{ false: COLORS.border, true: COLORS.primary }}
+                  thumbColor={COLORS.white}
+                />
+              }
+            />
           </SettingsGroup>
 
           {/* ── Notifications ── */}
@@ -402,28 +416,52 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.cardBg,
+    backgroundColor: COLORS.darkBg,
   },
   scrollContent: {
     paddingBottom: 48,
   },
   pageHeader: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 10,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.cardBg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
-    gap: 4,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerRowRTL: {
+    flexDirection: 'row-reverse',
+  },
+  logoCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.white,
+  },
+  headerInfo: {
+    flex: 1,
   },
   pageTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '700',
     color: COLORS.textPrimary,
   },
   merchantId: {
-    fontSize: 12,
+    fontSize: 11,
     color: COLORS.textMuted,
+    marginTop: 1,
   },
   textRight: {
     textAlign: 'right',
@@ -433,8 +471,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   langPickerWrapper: {
-    paddingHorizontal: 16,
-    paddingBottom: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
 })
 
@@ -445,7 +483,7 @@ const sectionHeader = StyleSheet.create({
     color: COLORS.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
-    marginTop: 20,
+    marginTop: 16,
     marginBottom: 6,
     marginLeft: 4,
   },
@@ -458,7 +496,7 @@ const sectionHeader = StyleSheet.create({
 
 const group = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.cardBg,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -471,17 +509,17 @@ const row = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 13,
-    gap: 14,
+    paddingVertical: 12,
+    gap: 12,
   },
   containerRTL: {
     flexDirection: 'row-reverse',
   },
   iconBubble: {
-    width: 36,
-    height: 36,
-    borderRadius: 9,
-    backgroundColor: COLORS.cardBg,
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    backgroundColor: COLORS.surfaceBg,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -492,17 +530,17 @@ const row = StyleSheet.create({
     borderColor: COLORS.dangerBg,
   },
   icon: {
-    fontSize: 18,
+    fontSize: 16,
   },
   labels: {
     flex: 1,
-    gap: 2,
+    gap: 1,
   },
   labelsRTL: {
     alignItems: 'flex-end',
   },
   label: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '500',
     color: COLORS.textPrimary,
   },
@@ -511,7 +549,7 @@ const row = StyleSheet.create({
     fontWeight: '600',
   },
   sublabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: COLORS.textMuted,
   },
   right: {
@@ -533,8 +571,8 @@ const row = StyleSheet.create({
 const dividerStyle = StyleSheet.create({
   line: {
     height: 1,
-    backgroundColor: COLORS.border,
-    marginLeft: 66,
+    backgroundColor: COLORS.divider,
+    marginLeft: 62,
   },
 })
 
@@ -542,36 +580,33 @@ const langPicker = StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap: 8,
-    marginTop: 4,
   },
   rowRTL: {
     flexDirection: 'row-reverse',
   },
   btn: {
     flex: 1,
-    flexDirection: 'column',
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
+    justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: COLORS.border,
-    backgroundColor: COLORS.cardBg,
-    gap: 4,
+    backgroundColor: COLORS.surfaceBg,
+    gap: 6,
   },
   btnActive: {
     borderColor: COLORS.primary,
-    backgroundColor: COLORS.primaryLight,
-  },
-  flag: {
-    fontSize: 20,
+    backgroundColor: `${COLORS.primary}20`,
   },
   label: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
     color: COLORS.textSecondary,
   },
   labelActive: {
-    color: COLORS.primary,
+    color: COLORS.primaryLight,
     fontWeight: '700',
   },
 })
