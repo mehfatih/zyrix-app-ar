@@ -107,40 +107,47 @@ export default function TransactionsScreen() {
 
   const renderHeader = () => (
     <>
-      {/* Page header */}
+      {/* Page header — compact, no white bg */}
       <View style={styles.header}>
-        <Text style={[styles.title, isRTL && styles.textRight]}>
-          {t('transactions.title')}
-        </Text>
-        <Text style={[styles.subtitle, isRTL && styles.textRight]}>
-          {t('transactions.subtitle')}
-        </Text>
-        <TouchableOpacity
-          style={{ backgroundColor: COLORS.primary, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, marginTop: 8, alignSelf: isRTL ? 'flex-end' : 'flex-start' }}
-          onPress={() => {
-            const url = 'https://api.zyrix.co/api/export/transactions?format=csv';
-            Linking.openURL(url).catch(() => {});
-          }}
-        >
-          <Text style={{ color: COLORS.white, fontSize: 12, fontWeight: '600' }}>{t('transactions.export_csv')}</Text>
-        </TouchableOpacity>
+        <View style={[styles.headerTopRow, isRTL && styles.headerTopRowRTL]}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.subtitle, isRTL && styles.textRight]}>
+              {t('transactions.subtitle')}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.csvBtn}
+            onPress={() => {
+              const url = 'https://api.zyrix.co/api/export/transactions?format=csv';
+              Linking.openURL(url).catch(() => {});
+            }}
+          >
+            <Text style={styles.csvBtnText}>{t('transactions.export_csv')}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* KPI row */}
       <View style={styles.kpiRow}>
         <KpiCard
-          label={t('transactions.total_volume')}
-          value={`$${totalVolume.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+          label={t('transactions.success_rate')}
+          value={`${successRate}%`}
+          icon="✅"
+          color={COLORS.kpiGreen}
           style={styles.kpiCard}
         />
         <KpiCard
           label={t('transactions.total_count')}
           value={String(stats.totalCount)}
+          icon="📋"
+          color={COLORS.kpiPurple}
           style={styles.kpiCard}
         />
         <KpiCard
-          label={t('transactions.success_rate')}
-          value={`${successRate}%`}
+          label={t('transactions.total_volume')}
+          value={`$${totalVolume.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+          icon="💳"
+          color={COLORS.kpiBlue}
           style={styles.kpiCard}
         />
       </View>
@@ -216,12 +223,21 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 10,
-    backgroundColor: COLORS.white,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
+    backgroundColor: COLORS.surfaceBg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
+  },
+  headerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  headerTopRowRTL: {
+    flexDirection: 'row-reverse',
   },
   title: {
     fontSize: 22,
@@ -230,8 +246,20 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: COLORS.textSecondary,
+    fontWeight: '500',
+  },
+  csvBtn: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  csvBtnText: {
+    color: COLORS.white,
+    fontSize: 11,
+    fontWeight: '700',
   },
   textRight: {
     textAlign: 'right',
@@ -252,20 +280,18 @@ const styles = StyleSheet.create({
   // Search
   searchWrapper: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    paddingVertical: 8,
+    backgroundColor: COLORS.cardBg,
   },
   searchInput: {
     height: 40,
-    backgroundColor: COLORS.cardBg,
+    backgroundColor: COLORS.surfaceBg,
     borderRadius: 10,
     paddingHorizontal: 14,
-    fontSize: 14,
+    fontSize: 13,
     color: COLORS.textPrimary,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.borderLight,
   },
   searchInputRTL: {
     textAlign: 'right',
@@ -275,9 +301,10 @@ const styles = StyleSheet.create({
   filterRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 8,
     gap: 8,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.cardBg,
+    justifyContent: 'center',
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -288,12 +315,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: COLORS.cardBg,
+    backgroundColor: COLORS.cardBgLight,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.borderLight,
   },
   filterTabActive: {
-    backgroundColor: `${COLORS.primary}20`,
+    backgroundColor: `${COLORS.primary}30`,
     borderColor: COLORS.primary,
   },
   filterTabText: {

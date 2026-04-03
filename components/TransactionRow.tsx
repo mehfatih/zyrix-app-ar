@@ -13,6 +13,17 @@ import StatusBadge from './StatusBadge'
 
 const isRTL = I18nManager.isRTL
 
+// Method icon mapping — replaces empty circles with relevant icons
+function getMethodIcon(method: string): string {
+  const m = method.toLowerCase()
+  if (m.includes('credit') || m.includes('card') || m.includes('visa') || m.includes('master')) return '💳'
+  if (m.includes('bank') || m.includes('transfer') || m.includes('wire')) return '🏦'
+  if (m.includes('wallet') || m.includes('digital') || m.includes('apple') || m.includes('google')) return '📱'
+  if (m.includes('cash') || m.includes('cod')) return '💵'
+  if (m.includes('crypto') || m.includes('bitcoin')) return '₿'
+  return '💳' // default
+}
+
 export interface TransactionRowProps {
   id: string
   date: string
@@ -57,7 +68,10 @@ export default function TransactionRow({
       {/* Left: Flag + Info */}
       <View style={[styles.leftSection, isRTL && styles.leftSectionRTL]}>
         <View style={styles.flagContainer}>
-          <Text style={styles.flag}>{flag}</Text>
+          <Text style={styles.methodIcon}>{getMethodIcon(method)}</Text>
+          <View style={styles.flagBadge}>
+            <Text style={styles.flagSmall}>{flag}</Text>
+          </View>
         </View>
 
         <View style={styles.info}>
@@ -122,17 +136,36 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   flagContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.divider,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: COLORS.surfaceBg,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: isRTL ? 0 : 10,
     marginLeft: isRTL ? 10 : 0,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    position: 'relative',
   },
-  flag: {
-    fontSize: 18,
+  methodIcon: {
+    fontSize: 16,
+  },
+  flagBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: COLORS.cardBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  flagSmall: {
+    fontSize: 9,
   },
   info: {
     flex: 1,
