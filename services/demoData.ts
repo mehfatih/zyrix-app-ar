@@ -219,17 +219,17 @@ export const demoProfile: import('../types').MerchantProfile = {
 // ─── Payment Links ───────────────────────────────
 export const demoPaymentLinks = {
   links: [
-    { id: 'pl_001', linkId: 'ZRX-PL-001', amount: '500.00', currency: 'SAR', title: 'باقة تجميل أساسية', description: 'مجموعة العناية بالبشرة', status: 'active', expiresAt: daysAgo(-30), paidAt: null, createdAt: daysAgo(2), paymentUrl: 'https://pay.zyrix.co/pl/ZRX-PL-001' },
-    { id: 'pl_002', linkId: 'ZRX-PL-002', amount: '1200.00', currency: 'SAR', title: 'باقة تجميل متقدمة', description: null, status: 'paid', expiresAt: null, paidAt: daysAgo(1), createdAt: daysAgo(5), paymentUrl: 'https://pay.zyrix.co/pl/ZRX-PL-002' },
-    { id: 'pl_003', linkId: 'ZRX-PL-003', amount: '350.00', currency: 'SAR', title: 'استشارة تجميلية', description: 'جلسة استشارة 60 دقيقة', status: 'active', expiresAt: daysAgo(-14), paidAt: null, createdAt: daysAgo(0), paymentUrl: 'https://pay.zyrix.co/pl/ZRX-PL-003' },
+    { id: 'pl_001', linkId: 'ZRX-PL-001', amount: '500.00', currency: 'SAR', title: 'الباقة الأساسية', description: 'باقة الخدمات الأساسية', status: 'active', expiresAt: daysAgo(-30), paidAt: null, createdAt: daysAgo(2), paymentUrl: 'https://pay.zyrix.co/pl/ZRX-PL-001' },
+    { id: 'pl_002', linkId: 'ZRX-PL-002', amount: '1200.00', currency: 'SAR', title: 'الباقة المتقدمة', description: null, status: 'paid', expiresAt: null, paidAt: daysAgo(1), createdAt: daysAgo(5), paymentUrl: 'https://pay.zyrix.co/pl/ZRX-PL-002' },
+    { id: 'pl_003', linkId: 'ZRX-PL-003', amount: '350.00', currency: 'SAR', title: 'استشارة خاصة', description: 'جلسة استشارية 60 دقيقة', status: 'active', expiresAt: daysAgo(-14), paidAt: null, createdAt: daysAgo(0), paymentUrl: 'https://pay.zyrix.co/pl/ZRX-PL-003' },
   ],
 };
 
 // ─── Subscriptions ───────────────────────────────
 export const demoSubscriptions = {
   subscriptions: [
-    { id: 'sub_001', subscriptionId: 'ZRX-SUB-001', customerName: 'سارة القحطاني', amount: '99.00', currency: 'SAR', interval: 'monthly', title: 'اشتراك العناية الشهري', status: 'active', nextBillingDate: daysAgo(-15), billingCount: 4, createdAt: daysAgo(120) },
-    { id: 'sub_002', subscriptionId: 'ZRX-SUB-002', customerName: 'نورا السالم', amount: '249.00', currency: 'SAR', interval: 'monthly', title: 'باقة VIP', status: 'active', nextBillingDate: daysAgo(-8), billingCount: 2, createdAt: daysAgo(60) },
+    { id: 'sub_001', subscriptionId: 'ZRX-SUB-001', customerName: 'سارة القحطاني', amount: '99.00', currency: 'SAR', interval: 'monthly', title: 'الباقة البرونزية', status: 'active', nextBillingDate: daysAgo(-15), billingCount: 4, createdAt: daysAgo(120) },
+    { id: 'sub_002', subscriptionId: 'ZRX-SUB-002', customerName: 'نورا السالم', amount: '249.00', currency: 'SAR', interval: 'monthly', title: 'الباقة الذهبية', status: 'active', nextBillingDate: daysAgo(-8), billingCount: 2, createdAt: daysAgo(60) },
     { id: 'sub_003', subscriptionId: 'ZRX-SUB-003', customerName: 'ريم العتيبي', amount: '49.00', currency: 'SAR', interval: 'monthly', title: 'اشتراك أساسي', status: 'paused', nextBillingDate: daysAgo(-20), billingCount: 6, createdAt: daysAgo(180) },
   ],
 };

@@ -21,6 +21,7 @@ import { transactionsApi } from '../../services/api'
 import KpiCard from '../../components/KpiCard'
 import TransactionRow from '../../components/TransactionRow'
 import type { Transaction } from '../../types'
+import { useToast } from '../../components/Toast'
 
 const isRTL = I18nManager.isRTL
 
@@ -49,6 +50,7 @@ const FILTERS: FilterTab[] = [
 export default function TransactionsScreen() {
   const { t } = useTranslation()
   const router = useRouter()
+  const { showToast } = useToast()
 
   const [filter, setFilter] = useState<FilterKey>('all')
   const [search, setSearch] = useState('')
@@ -119,7 +121,9 @@ export default function TransactionsScreen() {
             style={styles.csvBtn}
             onPress={() => {
               const url = 'https://api.zyrix.co/api/export/transactions?format=csv';
-              Linking.openURL(url).catch(() => {});
+              Linking.openURL(url).catch(() => {
+                showToast(t('common.coming_soon'), 'info');
+              });
             }}
           >
             <Text style={styles.csvBtnText}>{t('transactions.export_csv')}</Text>

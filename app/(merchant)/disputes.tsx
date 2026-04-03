@@ -177,7 +177,18 @@ export default function DisputesScreen() {
   const fetchData = async () => {
     try {
       const data = await disputesApi.list()
-      setAllDisputes(data.disputes)
+      // Data guard — prevent crash if disputes is undefined or has unexpected shape
+      const disputes = Array.isArray(data?.disputes) ? data.disputes : []
+      setAllDisputes(disputes.map((d: any) => ({
+        id: d.id || d.disputeId || '',
+        orderId: d.disputeId || d.orderId || d.id || '',
+        opened: d.createdAt || '',
+        amount: parseFloat(d.amount) || 0,
+        reason: d.reason || '',
+        deadline: d.deadline || '',
+        status: (d.status === 'open' ? 'pending' : d.status) as DisputeStatus,
+        urgent: d.urgent ?? false,
+      })))
     } catch (err) { console.warn(err) }
     finally { setLoading(false); setRefreshing(false) }
   }
