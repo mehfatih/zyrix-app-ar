@@ -4,8 +4,8 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { Tabs } from 'expo-router';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { Tabs, useRouter } from 'expo-router';
+import { View, Text, StyleSheet, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT, SPACING } from '../../constants/theme';
@@ -13,6 +13,7 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useDeepLinking } from '../../hooks/useDeepLinking';
 import { notificationsApi } from '../../services/api';
+import { HeaderBar } from '../../components/HeaderBar';
 
 function TabIcon({ icon, label, focused, badge }: { icon: string; label: string; focused: boolean; badge?: number }) {
   return (
@@ -30,8 +31,6 @@ function TabIcon({ icon, label, focused, badge }: { icon: string; label: string;
       <Text
         style={[styles.tabLabel, focused && styles.tabLabelActive]}
         numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.75}
       >
         {label}
       </Text>
@@ -43,6 +42,7 @@ export default function MerchantLayout() {
   usePushNotifications();
   useDeepLinking();
   const { t } = useTranslation();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -65,8 +65,27 @@ export default function MerchantLayout() {
     default: 64,
   });
 
+  // ─── Header Callbacks (Phase 6 Task 6.1) ──────
+  const handleMenuPress = () => {
+    // Phase 6 Task 6.3 will implement the sidebar/drawer.
+    // For now, show a placeholder alert.
+    Alert.alert('القائمة', 'سيتم إضافة القائمة الجانبية قريباً');
+  };
+
+  const handleMessagesPress = () => {
+    router.push('/(merchant)/notifications');
+  };
+
   return (
-    <Tabs
+    <View style={styles.rootContainer}>
+      {/* Fixed Header Bar — Phase 6 Task 6.1 */}
+      <HeaderBar
+        onMenuPress={handleMenuPress}
+        onMessagesPress={handleMessagesPress}
+        unreadMessages={unreadCount}
+      />
+
+      <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: [
@@ -135,10 +154,15 @@ export default function MerchantLayout() {
       <Tabs.Screen name="expenses" options={{ href: null }} />
       <Tabs.Screen name="invoices" options={{ href: null }} />
     </Tabs>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  rootContainer: {
+    flex: 1,
+    backgroundColor: COLORS.darkBg,
+  },
   tabBar: {
     backgroundColor: COLORS.tabBarBg,
     borderTopColor: COLORS.border,
@@ -151,8 +175,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
-    minWidth: 56,
-    paddingHorizontal: 2,
   },
   tabIcon: {
     fontSize: 22,
@@ -162,10 +184,9 @@ const styles = StyleSheet.create({
     opacity: 1,
   },
   tabLabel: {
-    fontSize: 9,
+    fontSize: FONT_SIZE.xs,
     fontWeight: FONT_WEIGHT.medium,
     color: COLORS.tabInactive,
-    textAlign: 'center',
   },
   tabLabelActive: {
     color: COLORS.primaryLight,
