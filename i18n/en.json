@@ -374,5 +374,28 @@
     },
     "drawer": {
         "merchant_panel": "Merchant Panel"
+    },
+    "change_password": {
+        "title": "Change Password",
+        "subtitle": "Enter your current password and a new password",
+        "current_password": "Current Password",
+        "current_placeholder": "Enter current password",
+        "new_password": "New Password",
+        "new_placeholder": "Enter new password",
+        "confirm_password": "Confirm Password",
+        "confirm_placeholder": "Re-enter new password",
+        "submit": "Update Password",
+        "requirements_title": "Password requirements:",
+        "req_min_length": "• At least 8 characters",
+        "req_uppercase": "• At least one uppercase letter",
+        "req_number": "• At least one number",
+        "error_current_required": "Current password is required",
+        "error_new_required": "New password is required",
+        "error_confirm_required": "Password confirmation is required",
+        "error_min_length": "Password must be at least 8 characters",
+        "error_mismatch": "Passwords do not match",
+        "error_failed": "Failed to update password. Please try again",
+        "success_title": "Updated",
+        "success_message": "Your password has been changed successfully"
     }
 }

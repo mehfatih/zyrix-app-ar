@@ -374,5 +374,28 @@
     },
     "drawer": {
         "merchant_panel": "لوحة التاجر"
+    },
+    "change_password": {
+        "title": "تغيير كلمة المرور",
+        "subtitle": "أدخل كلمة المرور الحالية وكلمة المرور الجديدة",
+        "current_password": "كلمة المرور الحالية",
+        "current_placeholder": "أدخل كلمة المرور الحالية",
+        "new_password": "كلمة المرور الجديدة",
+        "new_placeholder": "أدخل كلمة المرور الجديدة",
+        "confirm_password": "تأكيد كلمة المرور",
+        "confirm_placeholder": "أعد إدخال كلمة المرور الجديدة",
+        "submit": "تحديث كلمة المرور",
+        "requirements_title": "متطلبات كلمة المرور:",
+        "req_min_length": "• 8 أحرف على الأقل",
+        "req_uppercase": "• حرف كبير واحد على الأقل",
+        "req_number": "• رقم واحد على الأقل",
+        "error_current_required": "كلمة المرور الحالية مطلوبة",
+        "error_new_required": "كلمة المرور الجديدة مطلوبة",
+        "error_confirm_required": "تأكيد كلمة المرور مطلوب",
+        "error_min_length": "كلمة المرور يجب أن تكون 8 أحرف على الأقل",
+        "error_mismatch": "كلمات المرور غير متطابقة",
+        "error_failed": "فشل تحديث كلمة المرور. يرجى المحاولة مرة أخرى",
+        "success_title": "تم التحديث",
+        "success_message": "تم تغيير كلمة المرور بنجاح"
     }
 }

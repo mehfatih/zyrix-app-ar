@@ -184,7 +184,7 @@ export default function SettingsScreen() {
   }
 
   const handleChangePassword = () =>
-    Alert.alert(t('settings.security'), t('common.coming_soon'))
+    router.push('/(merchant)/change-password')
 
   const handleApiKeys = () =>
     Alert.alert(t('settings.apiKeys'), t('common.coming_soon'))
