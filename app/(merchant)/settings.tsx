@@ -322,6 +322,13 @@ export default function SettingsScreen() {
             />
             <Divider />
             <SettingRow
+              icon="🛡️"
+              label={t('settings.manage_2fa')}
+              sublabel={t('settings.manage_2fa_sub')}
+              onPress={() => router.push('/(merchant)/2fa-setup')}
+            />
+            <Divider />
+            <SettingRow
               icon="👆"
               label={t('settings.biometric')}
               sublabel={t('settings.security')}

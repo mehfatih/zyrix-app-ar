@@ -203,7 +203,9 @@
         "logout": "Log Out",
         "logoutConfirm": "Are you sure you want to log out?",
         "version": "Version",
-        "webhooks": "Webhooks"
+        "webhooks": "Webhooks",
+        "manage_2fa": "Manage 2FA",
+        "manage_2fa_sub": "Set up multiple verification methods"
     },
     "profile": {
         "title": "Profile",
@@ -404,5 +406,33 @@
         "error_failed": "Failed to update password. Please try again",
         "success_title": "Updated",
         "success_message": "Your password has been changed successfully"
+    },
+    "twofa": {
+        "title": "Two-Factor Authentication",
+        "status_title": "Protect Your Account",
+        "status_active": "{{count}} method(s) enabled",
+        "status_inactive": "Not enabled",
+        "description": "Add an extra layer of security to your account with two-factor authentication",
+        "methods_title": "Verification Methods",
+        "method_sms": "SMS",
+        "method_sms_desc": "Receive verification code via text message",
+        "method_email": "Email",
+        "method_email_desc": "Receive verification code via your email",
+        "method_authenticator": "Authenticator App",
+        "method_authenticator_desc": "Use Google Authenticator or similar app",
+        "method_backup": "Backup Codes",
+        "method_backup_desc": "One-time use codes in case you lose access",
+        "recommended": "Recommended",
+        "authenticator_setup_title": "Set Up Authenticator",
+        "authenticator_setup_desc": "Open Google Authenticator and scan the QR code. The code will be displayed when the feature is activated.",
+        "authenticator_setup_confirm": "Setup Complete",
+        "backup_codes_title": "Backup Codes",
+        "backup_codes_desc": "Save these codes in a safe place. Each code can only be used once.",
+        "backup_codes_warning": "⚠️ You won't be able to see these codes again. Save them now!",
+        "backup_codes_done": "Done",
+        "view_backup_codes": "View Backup Codes",
+        "regenerate_title": "Regenerate Codes",
+        "regenerate_desc": "All previous codes will be invalidated and new ones generated. Are you sure?",
+        "info_tip": "We recommend enabling at least two methods for maximum security. Authenticator app is the most secure option."
     }
 }

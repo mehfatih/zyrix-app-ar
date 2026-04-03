@@ -203,7 +203,9 @@
         "logout": "تسجيل الخروج",
         "logoutConfirm": "هل أنت متأكد من تسجيل الخروج؟",
         "version": "الإصدار",
-        "webhooks": "ويب هوكس"
+        "webhooks": "ويب هوكس",
+        "manage_2fa": "إدارة المصادقة الثنائية",
+        "manage_2fa_sub": "إعداد طرق التحقق المتعددة"
     },
     "profile": {
         "title": "الملف الشخصي",
@@ -404,5 +406,33 @@
         "error_failed": "فشل تحديث كلمة المرور. يرجى المحاولة مرة أخرى",
         "success_title": "تم التحديث",
         "success_message": "تم تغيير كلمة المرور بنجاح"
+    },
+    "twofa": {
+        "title": "المصادقة الثنائية",
+        "status_title": "حماية حسابك",
+        "status_active": "{{count}} طريقة مفعّلة",
+        "status_inactive": "غير مفعّلة",
+        "description": "أضف طبقة حماية إضافية لحسابك باستخدام المصادقة الثنائية",
+        "methods_title": "طرق التحقق",
+        "method_sms": "رسالة SMS",
+        "method_sms_desc": "استلم رمز التحقق عبر رسالة نصية",
+        "method_email": "البريد الإلكتروني",
+        "method_email_desc": "استلم رمز التحقق عبر بريدك الإلكتروني",
+        "method_authenticator": "تطبيق المصادقة",
+        "method_authenticator_desc": "استخدم Google Authenticator أو تطبيق مشابه",
+        "method_backup": "رموز النسخ الاحتياطي",
+        "method_backup_desc": "رموز استخدام لمرة واحدة في حالة فقدان الوصول",
+        "recommended": "موصى به",
+        "authenticator_setup_title": "إعداد تطبيق المصادقة",
+        "authenticator_setup_desc": "افتح تطبيق Google Authenticator وامسح رمز QR. سيتم عرض الرمز عند تفعيل الميزة في الإعدادات.",
+        "authenticator_setup_confirm": "تم الإعداد",
+        "backup_codes_title": "رموز النسخ الاحتياطي",
+        "backup_codes_desc": "احفظ هذه الرموز في مكان آمن. كل رمز يُستخدم مرة واحدة فقط.",
+        "backup_codes_warning": "⚠️ لن تتمكن من رؤية هذه الرموز مرة أخرى. احفظها الآن!",
+        "backup_codes_done": "تم الحفظ",
+        "view_backup_codes": "عرض رموز النسخ الاحتياطي",
+        "regenerate_title": "إعادة إنشاء الرموز",
+        "regenerate_desc": "سيتم إلغاء جميع الرموز السابقة وإنشاء رموز جديدة. هل أنت متأكد؟",
+        "info_tip": "ننصح بتفعيل طريقتين على الأقل للحماية القصوى. تطبيق المصادقة هو الخيار الأكثر أماناً."
     }
 }

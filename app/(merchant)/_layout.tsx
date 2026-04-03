@@ -156,6 +156,7 @@ export default function MerchantLayout() {
       {/* Hidden screens */}
       <Tabs.Screen name="search" options={{ href: null }} />
       <Tabs.Screen name="change-password" options={{ href: null }} />
+      <Tabs.Screen name="2fa-setup" options={{ href: null }} />
       <Tabs.Screen name="transaction-detail" options={{ href: null }} />
       <Tabs.Screen name="settlements" options={{ href: null }} />
       <Tabs.Screen name="refunds" options={{ href: null }} />
