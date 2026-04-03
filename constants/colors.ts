@@ -87,6 +87,21 @@ export const COLORS = {
     pink: '#EC4899',
   },
 
+  // ─── KPI Card Colors ──────────────────────────
+  kpiBlue: '#2563EB',
+  kpiBlueBg: 'rgba(37, 99, 235, 0.18)',
+  kpiGreen: '#059669',
+  kpiGreenBg: 'rgba(5, 150, 105, 0.18)',
+  kpiPurple: '#7C3AED',
+  kpiPurpleBg: 'rgba(124, 58, 237, 0.18)',
+  kpiOrange: '#EA580C',
+  kpiOrangeBg: 'rgba(234, 88, 12, 0.18)',
+
+  // ─── Settlement Card ────────────────────────
+  settlementTeal: '#0D9488',
+  settlementTealBg: 'rgba(13, 148, 136, 0.15)',
+  settlementTealBorder: 'rgba(13, 148, 136, 0.35)',
+
   // ─── Tab Bar ─────────────────────────────────
   tabActive: '#1A56DB',
   tabInactive: '#94A3B8',

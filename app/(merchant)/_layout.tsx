@@ -32,6 +32,8 @@ function TabIcon({ icon, label, focused, badge }: { icon: string; label: string;
       <Text
         style={[styles.tabLabel, focused && styles.tabLabelActive]}
         numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.75}
       >
         {label}
       </Text>
@@ -208,7 +210,7 @@ const styles = StyleSheet.create({
     opacity: 1,
   },
   tabLabel: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: 10,
     fontWeight: FONT_WEIGHT.medium,
     color: COLORS.tabInactive,
   },

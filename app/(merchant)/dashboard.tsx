@@ -74,7 +74,7 @@ interface DashboardData {
 export default function DashboardScreen() {
   const router = useRouter();
   const { t, isRTL } = useTranslation();
-  const { currency, setCurrency, format } = useCurrency('USD');
+  const { currency, setCurrency, format } = useCurrency('SAR');
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('7d');
@@ -195,13 +195,13 @@ export default function DashboardScreen() {
             label={t('dashboard.totalVolume')}
             value={format(dashData?.kpis?.totalVolume ?? 0)}
             icon="💳"
-            color={COLORS.primary}
+            color={COLORS.kpiBlue}
           />
           <KpiCard
             label={t('dashboard.successRate')}
             value={`${dashData?.kpis?.successRate ?? '0'}%`}
             icon="✅"
-            color={COLORS.success}
+            color={COLORS.kpiGreen}
           />
         </View>
         <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
@@ -209,13 +209,13 @@ export default function DashboardScreen() {
             label={t('dashboard.todayTx')}
             value={String(dashData?.kpis?.todayTx ?? 0)}
             icon="📋"
-            color={COLORS.info}
+            color={COLORS.kpiPurple}
           />
           <KpiCard
             label={t('dashboard.openDisputes')}
             value={String(dashData?.kpis?.openDisputes ?? 0)}
             icon="⚠️"
-            color={COLORS.warning}
+            color={COLORS.kpiOrange}
           />
         </View>
       </View>
@@ -549,11 +549,11 @@ const styles = StyleSheet.create({
   },
   // ── Settlement Card ──
   settlementCard: {
-    backgroundColor: COLORS.cardBg,
+    backgroundColor: COLORS.settlementTealBg,
     borderRadius: RADIUS.lg,
     padding: SPACING.lg,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.settlementTealBorder,
     marginTop: SPACING.xl,
   },
   settlementRow: {
