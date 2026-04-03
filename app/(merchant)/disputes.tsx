@@ -39,10 +39,7 @@ type FilterKey = 'all' | DisputeStatus
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function daysUntil(dateStr: string): number {
-  const parts = dateStr.split('.').map(Number)
-  const d = parts[0] ?? 1
-  const m = parts[1] ?? 1
-  const y = parts[2] ?? 2026
+  const [d, m, y] = dateStr.split('.').map(Number)
   const target = new Date(y, m - 1, d)
   const today  = new Date(2026, 2, 23) // fixed to brief date
   const diff   = Math.ceil((target.getTime() - today.getTime()) / 86_400_000)
@@ -125,9 +122,9 @@ function DisputeCard({
 
         {/* Amount */}
         <View style={card.footerCell}>
-          <Text style={card.footerCellLabel}>{t('disputes.amount_label')}</Text>
+          <Text style={card.footerCellLabel}>{	('disputes.amount_label')}</Text>
           <Text style={card.footerAmount}>
-            {dispute.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
+            {dispute.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} $
           </Text>
         </View>
 
@@ -138,7 +135,7 @@ function DisputeCard({
             {dispute.deadline}
             {isPending && (
               <Text style={[card.daysLeft, { color: deadlineColor }]}>
-                {' '}({days > 0 ? `${days}d` : '—'})
+                {' '}({days > 0 ? `${days}g` : 'Bugün'})
               </Text>
             )}
           </Text>
@@ -146,7 +143,7 @@ function DisputeCard({
 
         {/* Opened */}
         <View style={card.footerCell}>
-          <Text style={card.footerCellLabel}>{t('disputes.opened')}</Text>
+          <Text style={card.footerCellLabel}>Açılış</Text>
           <Text style={card.footerOpened}>{dispute.opened}</Text>
         </View>
 
@@ -195,14 +192,14 @@ export default function DisputesScreen() {
     { key: 'lost',    label: t('disputes.filter_lost') },
   ]
 
-  const pendingCount = allDisputes.filter((d: any) => d.status === 'pending').length
-  const urgentCount  = allDisputes.filter((d: any) => d.urgent).length
+  const pendingCount = allDisputes.filter((d) => d.status === 'pending').length
+  const urgentCount  = allDisputes.filter((d) => d.urgent).length
   const totalAmount  = allDisputes
-    .filter((d: any) => d.status === 'pending')
-    .reduce((s: number, d: any) => s + d.amount, 0)
+    .filter((d) => d.status === 'pending')
+    .reduce((s, d) => s + d.amount, 0)
 
   const filtered = useMemo(
-    () => allDisputes.filter((d: any) => filter === 'all' || d.status === filter),
+    () => allDisputes.filter((d) => filter === 'all' || d.status === filter),
     [filter, allDisputes],
   )
 
@@ -212,7 +209,7 @@ export default function DisputesScreen() {
 
   // ── Render ──
 
-  const renderItem = ({ item }: any) => (
+  const renderItem = ({ item }: ListRenderItemInfo<Dispute>) => (
     <DisputeCard dispute={item} onRespond={handleRespond} />
   )
 
@@ -256,7 +253,7 @@ export default function DisputesScreen() {
         />
         <KpiMini
           label={t('disputes.risk_amount')}
-          value={`${totalAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`}
+          value={`$${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
           color={COLORS.textPrimary}
         />
       </View>
@@ -292,7 +289,7 @@ export default function DisputesScreen() {
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyIcon}>🎉</Text>
-      <Text style={styles.emptyText}>{t('disputes.no_disputes')}</Text>
+      <Text style={styles.emptyText}>Anlaşmazlık yok</Text>
     </View>
   )
 
@@ -301,7 +298,7 @@ export default function DisputesScreen() {
       <FlatList
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} colors={[COLORS.primary]} />}
         data={filtered}
-        keyExtractor={(item: any) => item.id}
+        keyExtractor={(item) => item.id}
         renderItem={renderItem}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}
@@ -347,7 +344,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
-    backgroundColor: COLORS.darkBg,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
     gap: 12,
@@ -415,7 +412,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     gap: 8,
-    backgroundColor: COLORS.darkBg,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -474,7 +471,7 @@ const styles = StyleSheet.create({
 
 const card = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.cardBgLight,
+    backgroundColor: COLORS.white,
     marginHorizontal: 16,
     marginTop: 12,
     borderRadius: 14,
@@ -645,7 +642,7 @@ const card = StyleSheet.create({
 const mini = StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: COLORS.cardBgLight,
+    backgroundColor: COLORS.white,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: COLORS.border,

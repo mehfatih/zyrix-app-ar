@@ -9,7 +9,7 @@ import {
   I18nManager,
   SafeAreaView,
   Alert,
-  ActivityIndicator,
+
 } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 import { useRouter, useLocalSearchParams } from 'expo-router'
@@ -17,7 +17,6 @@ import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { transactionsApi } from '../../services/api'
 import StatusBadge from '../../components/StatusBadge'
-import { Icon } from '../../components/Icon'
 
 const isRTL = I18nManager.isRTL
 
@@ -79,7 +78,7 @@ function DetailRow({
 }) {
   const handleCopy = () => {
     Clipboard.setStringAsync(value)
-    Alert.alert('✓', `${label} copied`)
+    Alert.alert('✓', `${label} kopyalandı`)
   }
 
   return (
@@ -161,12 +160,12 @@ function Timeline({ events }: { events: TimelineEvent[] }) {
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
 function ActionButton({
-  iconName,
+  icon,
   label,
   onPress,
   variant = 'default',
 }: {
-  iconName: string
+  icon: string
   label: string
   onPress: () => void
   variant?: 'default' | 'danger'
@@ -177,7 +176,7 @@ function ActionButton({
       onPress={onPress}
       activeOpacity={0.75}
     >
-      <Icon name={iconName} size={16} color={variant === 'danger' ? COLORS.danger : COLORS.primary} strokeWidth={2} />
+      <Text style={action.icon}>{icon}</Text>
       <Text style={[action.label, variant === 'danger' && action.labelDanger]}>
         {label}
       </Text>
@@ -198,7 +197,7 @@ export default function TransactionDetailScreen() {
     const fetchTx = async () => {
       try {
         const data = await transactionsApi.getById(id ?? '')
-        setTx(data as any)
+        setTx(data)
       } catch (err) {
         console.warn(err)
       } finally {
@@ -232,19 +231,19 @@ export default function TransactionDetailScreen() {
   }
 
   const handleRefund = () =>
-    Alert.alert(t('refunds.title'), `${tx.id}`, [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.confirm'), style: 'destructive', onPress: () => {} },
+    Alert.alert('İade', `${tx.id} için iade başlatılsın mı?`, [
+      { text: 'İptal', style: 'cancel' },
+      { text: 'İade Et', style: 'destructive', onPress: () => {} },
     ])
 
   const handleDispute = () =>
-    Alert.alert(t('disputes.title'), `${tx.id}`, [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.confirm'), style: 'destructive', onPress: () => {} },
+    Alert.alert('Anlaşmazlık', `${tx.id} için anlaşmazlık açılsın mı?`, [
+      { text: 'İptal', style: 'cancel' },
+      { text: 'Aç', style: 'destructive', onPress: () => {} },
     ])
 
   const handleShare = () =>
-    Alert.alert(t('common.export'), `${tx.id}`)
+    Alert.alert('Paylaş', `${tx.id} makbuz paylaşılacak`)
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -278,7 +277,7 @@ export default function TransactionDetailScreen() {
           >
             {tx.status === 'failed'
               ? '—'
-              : `${tx.isCredit ? '+' : '-'}${tx.amount.toLocaleString('tr-TR', {
+              : `${tx.isCredit ? '+' : '-'}${tx.amount.toLocaleString('en-US', {
                   minimumFractionDigits: 2,
                 })} ${tx.currency}`}
           </Text>
@@ -291,9 +290,9 @@ export default function TransactionDetailScreen() {
 
         {/* ── Actions ── */}
         <View style={[styles.actionsRow, isRTL && styles.actionsRowRTL]}>
-          <ActionButton iconName="undo" label={t('refunds.title')}      onPress={handleRefund}  variant={tx.status === 'success' ? 'danger' : 'default'} />
-          <ActionButton iconName="alert-triangle" label={t('disputes.title')} onPress={handleDispute} />
-          <ActionButton iconName="share" label={t('common.export')}    onPress={handleShare}   />
+          <ActionButton icon="↩" label={t('refunds.title')}      onPress={handleRefund}  variant={tx.status === 'success' ? 'danger' : 'default'} />
+          <ActionButton icon="⚡" label={t('disputes.title')} onPress={handleDispute} />
+          <ActionButton icon="↑" label={t('common.export')}    onPress={handleShare}   />
         </View>
 
         {/* ── Fee breakdown ── */}
@@ -301,7 +300,7 @@ export default function TransactionDetailScreen() {
           <Section title={t('transactions.amount_breakdown')}>
             <DetailRow
               label={t('transactions.gross_amount')}
-              value={`${tx.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ${tx.currency}`}
+              value={`${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ${tx.currency}`}
               valueColor={COLORS.textPrimary}
             />
             <RowDivider />

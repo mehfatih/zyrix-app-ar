@@ -74,7 +74,7 @@ export default function TransactionRow({
           ]}
         >
           {isCredit ? '+' : '-'}
-          {amount.toLocaleString('tr-TR', {
+          {amount.toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}{' '}

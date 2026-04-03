@@ -16,7 +16,6 @@ import {
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { notificationsApi } from '../../services/api'
-import { Icon } from '../../components/Icon'
 
 const isRTL = I18nManager.isRTL
 
@@ -39,14 +38,14 @@ interface Notification {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function typeConfig(type: NotifType): { iconName: string; color: string; bg: string } {
+function typeConfig(type: NotifType): { icon: string; color: string; bg: string } {
   switch (type) {
-    case 'payment':    return { iconName: 'credit-card', color: COLORS.primary,      bg: COLORS.primaryMuted }
-    case 'settlement': return { iconName: 'bank',        color: COLORS.success,      bg: COLORS.successBg }
-    case 'dispute':    return { iconName: 'alert-triangle', color: COLORS.warning,   bg: COLORS.warningBg }
-    case 'refund':     return { iconName: 'undo',        color: COLORS.danger,       bg: COLORS.dangerBg  }
-    case 'security':   return { iconName: 'shield',      color: COLORS.products.crypto, bg: COLORS.infoBg }
-    case 'system':     return { iconName: 'settings',    color: COLORS.textMuted,    bg: COLORS.cardBg      }
+    case 'payment':    return { icon: '💳', color: COLORS.primary,      bg: COLORS.primaryLight }
+    case 'settlement': return { icon: '🏦', color: COLORS.success,      bg: COLORS.successBg }
+    case 'dispute':    return { icon: '⚠️',  color: COLORS.warning,      bg: COLORS.warningBg }
+    case 'refund':     return { icon: '↩',  color: COLORS.danger,       bg: COLORS.dangerBg  }
+    case 'security':   return { icon: '🔐', color: COLORS.products.crypto, bg: COLORS.infoBg           }
+    case 'system':     return { icon: '⚙️',  color: COLORS.textMuted,    bg: COLORS.cardBg      }
   }
 }
 
@@ -75,7 +74,7 @@ function NotifCard({
 
       {/* Icon bubble */}
       <View style={[card.iconBubble, { backgroundColor: cfg.bg }]}>
-        <Icon name={cfg.iconName} size={18} color={cfg.color} strokeWidth={1.8} />
+        <Text style={card.iconText}>{cfg.icon}</Text>
       </View>
 
       {/* Content */}
@@ -102,7 +101,7 @@ function NotifCard({
           <View style={[card.amountRow, isRTL && card.amountRowRTL]}>
             <View style={[card.amountPill, { borderColor: cfg.color }]}>
               <Text style={[card.amountText, { color: cfg.color }]}>
-                {notif.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}{' '}
+                {notif.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}{' '}
                 {notif.currency}
               </Text>
             </View>
@@ -134,40 +133,40 @@ export default function NotificationsScreen() {
   React.useEffect(() => { fetchData() }, [])
   const onRefresh = () => { setRefreshing(true); fetchData() }
 
-  const unreadCount = notifications.filter((n: any) => !n.read).length
+  const unreadCount = notifications.filter((n) => !n.read).length
 
-  const FILTERS: { key: FilterKey; label: string; iconName: string }[] = [
-    { key: 'all',        label: t('notifications.filter_all'),        iconName: 'bell' },
-    { key: 'payment',    label: t('notifications.filter_payment'),    iconName: 'credit-card' },
-    { key: 'settlement', label: t('notifications.filter_settlement'), iconName: 'bank' },
-    { key: 'dispute',    label: t('notifications.filter_dispute'),    iconName: 'alert-triangle' },
-    { key: 'refund',     label: t('notifications.filter_refund'),     iconName: 'undo' },
-    { key: 'security',   label: t('notifications.filter_security'),   iconName: 'shield' },
+  const FILTERS: { key: FilterKey; label: string; icon: string }[] = [
+    { key: 'all',        label: t('notifications.filter_all'),        icon: '🔔' },
+    { key: 'payment',    label: t('notifications.filter_payment'),    icon: '💳' },
+    { key: 'settlement', label: t('notifications.filter_settlement'), icon: '🏦' },
+    { key: 'dispute',    label: t('notifications.filter_dispute'),    icon: '⚠️'  },
+    { key: 'refund',     label: t('notifications.filter_refund'),     icon: '↩'  },
+    { key: 'security',   label: t('notifications.filter_security'),   icon: '🔐' },
   ]
 
   const filtered = useMemo(
-    () => notifications.filter((n: any) => filter === 'all' || n.type === filter),
+    () => notifications.filter((n) => filter === 'all' || n.type === filter),
     [notifications, filter],
   )
 
   const handlePress = (id: string) => {
     // Mark as read on open
-    setNotifications((prev: any) =>
-      prev.map((n: any) => (n.id === id ? { ...n, read: true } : n)),
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
     )
-    const notif = notifications.find((n: any) => n.id === id)
+    const notif = notifications.find((n) => n.id === id)
     if (notif) Alert.alert(notif.title, notif.body)
   }
 
   const handleMarkRead = (id: string) => {
-    setNotifications((prev: any) =>
-      prev.map((n: any) => (n.id === id ? { ...n, read: true } : n)),
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
     )
   }
 
   const handleMarkAllRead = () => {
     notificationsApi.markAllRead().catch(() => {})
-    setNotifications((prev: any) => prev.map((n: any) => ({ ...n, read: true })))
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
   }
 
   // ── Render ──
@@ -209,7 +208,7 @@ export default function NotificationsScreen() {
               ]}
               onPress={() => setFilter(f.key)}
             >
-              <Icon name={f.iconName} size={14} color={filter === f.key ? COLORS.primary : COLORS.textMuted} strokeWidth={1.8} />
+              <Text style={styles.filterIcon}>{f.icon}</Text>
               <Text
                 style={[
                   styles.filterTabText,
@@ -233,8 +232,8 @@ export default function NotificationsScreen() {
   )
 
   // Group into unread / earlier
-  const unread  = filtered.filter((n: any) => !n.read)
-  const read    = filtered.filter((n: any) =>  n.read)
+  const unread  = filtered.filter((n) => !n.read)
+  const read    = filtered.filter((n) =>  n.read)
 
   const renderGrouped = () => (
     <>
@@ -244,8 +243,8 @@ export default function NotificationsScreen() {
           <Text style={[styles.groupLabel, isRTL && styles.groupLabelRTL]}>
             {t('notifications.unread')} ({unread.length})
           </Text>
-          {unread.map((n: any) => (
-            <NotifCard key={n.id} notif={n as any} onPress={handlePress} onMarkRead={handleMarkRead} />
+          {unread.map((n) => (
+            <NotifCard key={n.id} notif={n} onPress={handlePress} onMarkRead={handleMarkRead} />
           ))}
         </>
       )}
@@ -254,8 +253,8 @@ export default function NotificationsScreen() {
           <Text style={[styles.groupLabel, isRTL && styles.groupLabelRTL]}>
             {t('notifications.earlier')}
           </Text>
-          {read.map((n: any) => (
-            <NotifCard key={n.id} notif={n as any} onPress={handlePress} onMarkRead={handleMarkRead} />
+          {read.map((n) => (
+            <NotifCard key={n.id} notif={n} onPress={handlePress} onMarkRead={handleMarkRead} />
           ))}
         </>
       )}

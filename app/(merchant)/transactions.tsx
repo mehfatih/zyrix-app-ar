@@ -1,5 +1,4 @@
 // app/(merchant)/transactions.tsx
-import type { TransactionStatus } from '../../types'
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   View,
@@ -66,13 +65,7 @@ export default function TransactionsScreen() {
       setAllTx(data.transactions)
       setStats(data.stats)
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || t('common.error'))
-      } else if (typeof err === 'string') {
-        setError(err || t('common.error'))
-      } else {
-        setError(t('common.error'))
-      }
+      setError(err instanceof Error ? err.message : String(err) || t('common.error'))
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -88,7 +81,7 @@ export default function TransactionsScreen() {
 
   // Filtered + searched list
   const filtered = useMemo(() => {
-    return allTx.filter((tx: any) => {
+    return allTx.filter((tx) => {
       const matchesFilter = filter === 'all' || tx.status === filter
       const query = search.toLowerCase()
       const matchesSearch =
@@ -136,7 +129,7 @@ export default function TransactionsScreen() {
       <View style={styles.kpiRow}>
         <KpiCard
           label={t('transactions.total_volume')}
-          value={`${totalVolume.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`}
+          value={`$${totalVolume.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
           style={styles.kpiCard}
         />
         <KpiCard
@@ -198,7 +191,7 @@ export default function TransactionsScreen() {
     <SafeAreaView style={styles.safeArea}>
       <FlatList
         data={filtered}
-        keyExtractor={(item: any) => item.id}
+        keyExtractor={(item) => item.id}
         renderItem={renderItem}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}
@@ -223,9 +216,9 @@ const styles = StyleSheet.create({
   // Header
   header: {
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 12,
-    backgroundColor: COLORS.darkBg,
+    paddingTop: 20,
+    paddingBottom: 16,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -259,7 +252,7 @@ const styles = StyleSheet.create({
   searchWrapper: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: COLORS.darkBg,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -283,7 +276,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     gap: 8,
-    backgroundColor: COLORS.darkBg,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },

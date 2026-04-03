@@ -51,18 +51,18 @@ export default function ExpensesScreen() {
 
         {/* KPI Summary */}
         <View style={s.kpiRow}>
-          <KpiCard label={t('expenses.total_revenue')} value={`₺${(summary?.totalRevenue || 0).toLocaleString()}`} color={COLORS.success} style={{flex:1}} />
-          <KpiCard label={t('expenses.total_expenses')} value={`₺${(summary?.totalExpenses || 0).toLocaleString()}`} color={COLORS.danger} style={{flex:1}} />
-          <KpiCard label={t('expenses.net_profit')} value={`₺${(summary?.netProfit || 0).toLocaleString()}`} color={profitColor} style={{flex:1}} />
+          <KpiCard label={t('expenses.total_revenue')} value={`$${(summary?.totalRevenue || 0).toLocaleString()}`} color={COLORS.success} style={{flex:1}} />
+          <KpiCard label={t('expenses.total_expenses')} value={`$${(summary?.totalExpenses || 0).toLocaleString()}`} color={COLORS.danger} style={{flex:1}} />
+          <KpiCard label={t('expenses.net_profit')} value={`$${(summary?.netProfit || 0).toLocaleString()}`} color={profitColor} style={{flex:1}} />
         </View>
 
         {/* Category breakdown */}
         {summary?.byCategory && summary.byCategory.length > 0 && (
           <View style={s.catSection}>
-            {summary.byCategory.map((cat: any, i: number) => (
+            {summary.byCategory.map((cat, i) => (
               <View key={i} style={[s.catRow, isRTL && s.catRowRTL]}>
                 <Text style={s.catName}>{t(`expenses.${cat.category}`) || cat.category}</Text>
-                <Text style={s.catAmount}>₺{cat.total.toLocaleString()} ({cat.count})</Text>
+                <Text style={s.catAmount}>${cat.total.toLocaleString()} ({cat.count})</Text>
               </View>
             ))}
           </View>
@@ -71,14 +71,14 @@ export default function ExpensesScreen() {
         {/* Expenses list */}
         {(!data?.expenses || data.expenses.length === 0) ? (
           <View style={s.center}><Text style={s.emptyText}>{t('expenses.no_expenses')}</Text></View>
-        ) : data.expenses.map((exp: any) => (
+        ) : data.expenses.map(exp => (
           <View key={exp.id} style={s.card}>
             <View style={[s.cardRow, isRTL && s.cardRowRTL]}>
               <View style={{flex:1}}>
                 <Text style={s.cardTitle}>{exp.title}</Text>
                 <Text style={s.cardCat}>{t(`expenses.${exp.category}`) || exp.category} · {new Date(exp.date).toLocaleDateString()}</Text>
               </View>
-              <Text style={s.cardAmount}>-₺{Number(exp.amount).toLocaleString()}</Text>
+              <Text style={s.cardAmount}>-${Number(exp.amount).toLocaleString()}</Text>
             </View>
           </View>
         ))}

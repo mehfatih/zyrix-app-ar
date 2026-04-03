@@ -19,7 +19,6 @@ import { useTranslation } from '../../hooks/useTranslation'
 import { balanceApi } from '../../services/api'
 import KpiCard from '../../components/KpiCard'
 import { QRCodeModal } from '../../components/QRCodeModal'
-import { Icon } from '../../components/Icon'
 
 const isRTL = I18nManager.isRTL
 
@@ -34,12 +33,12 @@ function SectionTitle({ text }: { text: string }) {
 }
 
 function ActionButton({
-  iconName,
+  icon,
   label,
   onPress,
   variant = 'default',
 }: {
-  iconName: string
+  icon: string
   label: string
   onPress: () => void
   variant?: 'default' | 'primary'
@@ -50,7 +49,7 @@ function ActionButton({
       onPress={onPress}
       activeOpacity={0.75}
     >
-      <Icon name={iconName} size={18} color={variant === 'primary' ? COLORS.white : COLORS.textSecondary} strokeWidth={2} />
+      <Text style={styles.actionIcon}>{icon}</Text>
       <Text style={[styles.actionLabel, variant === 'primary' && styles.actionLabelPrimary]}>
         {label}
       </Text>
@@ -132,27 +131,27 @@ export default function BalanceScreen() {
         <View style={styles.heroCard}>
           <Text style={styles.heroLabel}>{t('balance.available')}</Text>
           <Text style={styles.heroAmount}>
-            {bal.available.toLocaleString('tr-TR', {
+            {bal.available.toLocaleString('en-US', {
               minimumFractionDigits: 2,
             })}{' '}
-            <Text style={styles.heroCurrency}>{'TRY'}</Text>
+            <Text style={styles.heroCurrency}>{'USD'}</Text>
           </Text>
 
           {/* Action Buttons */}
           <View style={[styles.actionRow, isRTL && styles.actionRowRTL]}>
             <ActionButton
-              iconName="arrow-up"
+              icon="↑"
               label={t('balance.transfer')}
               onPress={handleTransfer}
               variant="primary"
             />
             <ActionButton
-              iconName="copy"
+              icon="⧉"
               label={t('balance.copy_iban')}
               onPress={handleCopyIban}
             />
             <ActionButton
-              iconName="qr-code"
+              icon="▦"
               label={t('balance.qr_code')}
               onPress={handleQr}
             />
@@ -178,11 +177,11 @@ export default function BalanceScreen() {
             <KpiCard
               key={item.label}
               label={t(`balance.${item.label}`)}
-              value={`${item.sign}${item.amount.toLocaleString('tr-TR', {
+              value={`${item.sign}${item.amount.toLocaleString('en-US', {
                 minimumFractionDigits: 2,
-              })} ₺`}
+              })} $`}
               valueColor={item.color}
-              style={styles.kpiCard as any}
+              style={styles.kpiCard}
             />
           ))}
         </View>
@@ -196,7 +195,7 @@ export default function BalanceScreen() {
             <View style={[styles.settlementRow, isRTL && styles.settlementRowRTL]}>
               <View style={styles.settlementLeft}>
                 <Text style={styles.settlementDate}>
-                  {bal.nextSettlement?.date}
+                  📅  {bal.nextSettlement?.date}
                 </Text>
                 <Text style={styles.settlementCompany}>
                   {bal.company}
@@ -204,10 +203,10 @@ export default function BalanceScreen() {
               </View>
               <View style={styles.settlementRight}>
                 <Text style={styles.settlementNet}>
-                  +{(bal.nextSettlement?.net ?? 0).toLocaleString('tr-TR', {
+                  +{(bal.nextSettlement?.dateAmount ?? 0).toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                   })}{' '}
-                  {'TRY'}
+                  {'USD'}
                 </Text>
                 <Text style={styles.settlementNetLabel}>Net</Text>
               </View>
@@ -220,17 +219,17 @@ export default function BalanceScreen() {
             <View style={[styles.breakdownRow, isRTL && styles.breakdownRowRTL]}>
               <BreakdownItem
                 label={t('settlements.pending')}
-                value={`${bal.available.toFixed(2)} ₺`}
+                value={`$${bal.available.toFixed(2)}`}
                 color={COLORS.textPrimary}
               />
               <BreakdownItem
                 label={t('settlements.commission')}
-                value={`-${(bal.nextSettlement?.commission ?? 0).toFixed(2)} ₺`}
+                value={`-$${(bal.nextSettlement?.commission ?? 0).toFixed(2)}`}
                 color={COLORS.danger}
               />
               <BreakdownItem
                 label={t('settlements.net')}
-                value={`${(bal.nextSettlement?.net ?? 0).toFixed(2)} ₺`}
+                value={`$${(bal.nextSettlement?.dateAmount ?? 0).toFixed(2)}`}
                 color={COLORS.success}
               />
             </View>
@@ -239,7 +238,7 @@ export default function BalanceScreen() {
 
         {/* ── Account Info ── */}
         <View style={styles.section}>
-          <SectionTitle text={t('profile.merchantId')} />
+          <SectionTitle text="Merchant ID" />
           <View style={styles.infoCard}>
             <InfoRow label={t('profile.merchantId')} value="ZRX-10042" />
             <InfoRow label={t('profile.company')} value={bal.company} />
@@ -382,6 +381,10 @@ const styles = StyleSheet.create({
   actionBtnPrimary: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
+  },
+  actionIcon: {
+    fontSize: 18,
+    color: COLORS.white,
   },
   actionLabel: {
     fontSize: 11,

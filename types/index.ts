@@ -78,7 +78,7 @@ export interface Dispute {
 }
 
 // ─── Currency ────────────────────────────────────
-export type CurrencyCode = 'TRY' | 'SAR' | 'AED' | 'KWD' | 'QAR' | 'USD' | 'EUR';
+export type CurrencyCode = 'USD' | 'SAR' | 'AED' | 'KWD' | 'QAR' | 'EUR';
 
 export interface CurrencyInfo {
   code: CurrencyCode;

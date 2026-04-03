@@ -94,7 +94,7 @@ function RefundCard({
         {/* Amount + badge */}
         <View style={{ alignItems: isRTL ? 'flex-start' : 'flex-end', gap: 4 }}>
           <Text style={card.amount}>
-            -{refund.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {refund.currency}
+            -{refund.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} {refund.currency}
           </Text>
           <View style={[card.badge, { backgroundColor: cfg.bg }]}>
             <Text style={[card.badgeText, { color: cfg.text }]}>
@@ -152,15 +152,15 @@ export default function RefundsScreen() {
 
   // KPIs
   const totalRefunded  = allRefunds
-    .filter((r: any) => r.status === 'completed')
-    .reduce((s: number, r: any) => s + r.amount, 0)
+    .filter((r) => r.status === 'completed')
+    .reduce((s, r) => s + r.amount, 0)
   const processingAmt  = allRefunds
-    .filter((r: any) => r.status === 'processing')
-    .reduce((s: number, r: any) => s + r.amount, 0)
-  const processingCount = allRefunds.filter((r: any) => r.status === 'processing').length
+    .filter((r) => r.status === 'processing')
+    .reduce((s, r) => s + r.amount, 0)
+  const processingCount = allRefunds.filter((r) => r.status === 'processing').length
 
   const filtered = useMemo(
-    () => allRefunds.filter((r: any) => filter === 'all' || r.status === filter),
+    () => allRefunds.filter((r) => filter === 'all' || r.status === filter),
     [filter, allRefunds],
   )
 
@@ -174,7 +174,7 @@ export default function RefundsScreen() {
 
   // ── Render ──
 
-  const renderItem = ({ item }: any) => (
+  const renderItem = ({ item }: ListRenderItemInfo<Refund>) => (
     <RefundCard refund={item} onPress={handlePress} />
   )
 
@@ -203,7 +203,7 @@ export default function RefundsScreen() {
             <Text style={styles.processingText}>
               {processingCount} {t('refunds.filter_processing')} —{' '}
               <Text style={styles.processingAmt}>
-                {processingAmt.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
+                ${processingAmt.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </Text>
             </Text>
           </View>
@@ -214,12 +214,12 @@ export default function RefundsScreen() {
       <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
         <KpiMini
           label={t('refunds.total_refunded')}
-          value={`${totalRefunded.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`}
+          value={`$${totalRefunded.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
           color={COLORS.danger}
         />
         <KpiMini
           label={t('refunds.filter_processing')}
-          value={`${processingAmt.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`}
+          value={`$${processingAmt.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
           color={COLORS.warning}
         />
         <KpiMini
@@ -269,7 +269,7 @@ export default function RefundsScreen() {
       <FlatList
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} colors={[COLORS.primary]} />}
         data={filtered}
-        keyExtractor={(item: any) => item.id}
+        keyExtractor={(item) => item.id}
         renderItem={renderItem}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
-    backgroundColor: COLORS.darkBg,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
     gap: 12,
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     gap: 6,
-    backgroundColor: COLORS.darkBg,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
 
 const card = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.cardBgLight,
+    backgroundColor: COLORS.white,
     marginHorizontal: 16,
     marginTop: 10,
     borderRadius: 14,
@@ -597,7 +597,7 @@ const card = StyleSheet.create({
 const mini = StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: COLORS.cardBgLight,
+    backgroundColor: COLORS.white,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: COLORS.border,

@@ -8,28 +8,26 @@ import type { CurrencyCode, CurrencyInfo } from '../types';
 
 // ─── Static currency data ────────────────────────
 const CURRENCIES: CurrencyInfo[] = [
-  { code: 'TRY', symbol: '₺', flag: '🇹🇷', name: 'Turkish Lira' },
+  { code: 'USD', symbol: '$', flag: '🇺🇸', name: 'US Dollar' },
   { code: 'SAR', symbol: '﷼', flag: '🇸🇦', name: 'Saudi Riyal' },
   { code: 'AED', symbol: 'د.إ', flag: '🇦🇪', name: 'UAE Dirham' },
   { code: 'KWD', symbol: 'د.ك', flag: '🇰🇼', name: 'Kuwaiti Dinar' },
   { code: 'QAR', symbol: '﷼', flag: '🇶🇦', name: 'Qatari Riyal' },
-  { code: 'USD', symbol: '$', flag: '🇺🇸', name: 'US Dollar' },
   { code: 'EUR', symbol: '€', flag: '🇪🇺', name: 'Euro' },
 ];
 
-// ─── Demo exchange rates (vs TRY base) ──────────
+// ─── Demo exchange rates (vs USD base) ──────────
 const EXCHANGE_RATES: Record<CurrencyCode, number> = {
-  TRY: 1,
-  SAR: 0.104,
-  AED: 0.102,
-  KWD: 0.0085,
-  QAR: 0.101,
-  USD: 0.0278,
-  EUR: 0.0256,
+  USD: 1,
+  SAR: 3.75,
+  AED: 3.67,
+  KWD: 0.307,
+  QAR: 3.64,
+  EUR: 0.92,
 };
 
 // ─── Hook ────────────────────────────────────────
-export function useCurrency(defaultCurrency: CurrencyCode = 'TRY') {
+export function useCurrency(defaultCurrency: CurrencyCode = 'USD') {
   const [currency, setCurrency] = useState<CurrencyCode>(defaultCurrency);
 
   const currencyInfo = useMemo(
@@ -45,18 +43,18 @@ export function useCurrency(defaultCurrency: CurrencyCode = 'TRY') {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });
-      return `${info!.symbol}${formatted}`;
+      return `${info.symbol}${formatted}`;
     },
     [currency],
   );
 
   const convert = useCallback(
     (amount: number, from: CurrencyCode, to?: CurrencyCode): number => {
-      const target: CurrencyCode = (to ?? currency) as CurrencyCode;
+      const target = to ?? currency;
       if (from === target) return amount;
-      // Convert: from → TRY → target
-      const inTRY = amount / EXCHANGE_RATES[from];
-      return inTRY * EXCHANGE_RATES[target];
+      // Convert: from → USD → target
+      const inUSD = amount / EXCHANGE_RATES[from];
+      return inUSD * EXCHANGE_RATES[target];
     },
     [currency],
   );

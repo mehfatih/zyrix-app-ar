@@ -16,7 +16,6 @@ import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { useAuth } from '../../hooks/useAuth'
 import { merchantApi } from '../../services/api'
-import { Icon } from '../../components/Icon'
 
 const isRTL = I18nManager.isRTL
 
@@ -45,7 +44,6 @@ function SectionHeader({ title }: { title: string }) {
 
 function SettingRow({
   icon,
-  iconName,
   label,
   sublabel,
   onPress,
@@ -53,8 +51,7 @@ function SettingRow({
   destructive,
   showChevron = true,
 }: {
-  icon?: string
-  iconName?: string
+  icon: string
   label: string
   sublabel?: string
   onPress?: () => void
@@ -70,11 +67,7 @@ function SettingRow({
     >
       {/* Icon bubble */}
       <View style={[row.iconBubble, destructive && row.iconBubbleDestructive]}>
-        {iconName ? (
-          <Icon name={iconName} size={18} color={destructive ? COLORS.danger : COLORS.primary} strokeWidth={1.8} />
-        ) : (
-          <Text style={row.icon}>{icon}</Text>
-        )}
+        <Text style={row.icon}>{icon}</Text>
       </View>
 
       {/* Labels */}
@@ -91,7 +84,7 @@ function SettingRow({
       <View style={[row.right, isRTL && row.rightRTL]}>
         {rightElement ?? (
           showChevron && (
-            <Icon name={isRTL ? 'chevron-left' : 'chevron-right'} size={18} color={COLORS.textMuted} strokeWidth={1.5} />
+            <Text style={[row.chevron, isRTL && row.chevronRTL]}>›</Text>
           )
         )}
       </View>
@@ -165,7 +158,7 @@ export default function SettingsScreen() {
   })
 
   const setToggle = (key: keyof ToggleState) => (val: boolean) =>
-    setToggles((prev: any) => ({ ...prev, [key]: val }))
+    setToggles((prev) => ({ ...prev, [key]: val }))
 
   const handleLanguageChange = async (lang: Language) => {
     setLanguage(lang)
@@ -208,7 +201,7 @@ export default function SettingsScreen() {
     Alert.alert(t('settings.webhooks'), t('common.coming_soon'))
 
   const handleSupport = () =>
-    Alert.alert(t('settings.support'), 'info@zyrix.co · +90 545 221 0888')
+    Alert.alert('Support', 'info@zyrix.co · +90 545 221 0888')
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -233,7 +226,7 @@ export default function SettingsScreen() {
           <SectionHeader title={t('settings.language')} />
           <SettingsGroup>
             <SettingRow
-              iconName="globe"
+              icon="🌐"
               label={t('settings.language')}
               sublabel={language === 'ar' ? 'العربية' : 'English'}
               showChevron={false}
@@ -251,7 +244,7 @@ export default function SettingsScreen() {
           <SectionHeader title={t('settings.notifications')} />
           <SettingsGroup>
             <SettingRow
-              iconName="bell"
+              icon="🔔"
               label={t('settings.notifications')}
               sublabel={t('notifications.payment')}
               showChevron={false}
@@ -266,9 +259,9 @@ export default function SettingsScreen() {
             />
             <Divider />
             <SettingRow
-              iconName="mail"
+              icon="📧"
               label={t('settings.email_reports')}
-              sublabel={t('notifications.settlement')}
+              sublabel={t('settings.email_reports_sub')}
               showChevron={false}
               rightElement={
                 <Switch
@@ -281,7 +274,7 @@ export default function SettingsScreen() {
             />
             <Divider />
             <SettingRow
-              iconName="message-square"
+              icon="💬"
               label={t('settings.sms_alerts')}
               sublabel={t('settings.sms_alerts_sub')}
               showChevron={false}
@@ -300,9 +293,9 @@ export default function SettingsScreen() {
           <SectionHeader title={t('settings.security')} />
           <SettingsGroup>
             <SettingRow
-              iconName="shield"
-              label={t('settings.two_factor')}
-              sublabel={toggles.twoFactor ? t('settings.two_factor_active') : t('settings.two_factor_inactive')}
+              icon="🔐"
+              label={t('settings.twoFactor')}
+              sublabel={toggles.twoFactor ? t('settings.twoFactor_active') : t('settings.twoFactor_inactive')}
               showChevron={false}
               rightElement={
                 <Switch
@@ -315,7 +308,7 @@ export default function SettingsScreen() {
             />
             <Divider />
             <SettingRow
-              iconName="fingerprint"
+              icon="👆"
               label={t('settings.biometric')}
               sublabel={t('settings.security')}
               showChevron={false}
@@ -330,7 +323,7 @@ export default function SettingsScreen() {
             />
             <Divider />
             <SettingRow
-              iconName="clock"
+              icon="⏱"
               label={t('settings.auto_logout')}
               sublabel={t('settings.auto_logout_sub')}
               showChevron={false}
@@ -345,7 +338,7 @@ export default function SettingsScreen() {
             />
             <Divider />
             <SettingRow
-              iconName="key"
+              icon="🔑"
               label={t('settings.change_password')}
               onPress={handleChangePassword}
             />
@@ -355,14 +348,14 @@ export default function SettingsScreen() {
           <SectionHeader title={t('settings.integration')} />
           <SettingsGroup>
             <SettingRow
-              iconName="settings"
+              icon="⚙️"
               label={t('settings.apiKeys')}
               sublabel={t('settings.apiKeys')}
               onPress={handleApiKeys}
             />
             <Divider />
             <SettingRow
-              iconName="link"
+              icon="🔗"
               label={t('settings.webhooks')}
               sublabel={t('notifications.title')}
               onPress={handleWebhooks}
@@ -373,14 +366,14 @@ export default function SettingsScreen() {
           <SectionHeader title={t('settings.support')} />
           <SettingsGroup>
             <SettingRow
-              iconName="message-square"
+              icon="💬"
               label={t('common.coming_soon')}
               sublabel="info@zyrix.co"
               onPress={handleSupport}
             />
             <Divider />
             <SettingRow
-              iconName="clipboard"
+              icon="📋"
               label={t('settings.version_label')}
               sublabel="1.0.0 (build 42)"
               showChevron={false}
@@ -390,7 +383,7 @@ export default function SettingsScreen() {
           {/* ── Logout ── */}
           <SettingsGroup>
             <SettingRow
-              iconName="log-out"
+              icon="🚪"
               label={t('settings.logout')}
               onPress={handleLogout}
               destructive

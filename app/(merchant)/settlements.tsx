@@ -40,7 +40,7 @@ interface FilterTab {
 export default function SettlementsScreen() {
   const { t } = useTranslation()
   const [filter, setFilter] = useState<FilterKey>('all')
-  const [allSettlements, setAllSettlements] = useState<any[]>([])
+  const [allSettlements, setAllSettlements] = useState<Settlement[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -65,14 +65,14 @@ export default function SettlementsScreen() {
     { key: 'settled', label: t('settlements.filter_settled') },
   ]
 
-  const totalGross = allSettlements.reduce((s: number, x: any) => s + x.gross, 0)
-  const totalNet   = allSettlements.reduce((s: number, x: any) => s + x.net, 0)
-  const totalComm  = allSettlements.reduce((s: number, x: any) => s + x.commission, 0)
+  const totalGross = allSettlements.reduce((s, x) => s + x.gross, 0)
+  const totalNet   = allSettlements.reduce((s, x) => s + x.net, 0)
+  const totalComm  = allSettlements.reduce((s, x) => s + x.commission, 0)
 
   const filtered = useMemo(
     () =>
       allSettlements.filter(
-        (s: any) => filter === 'all' || s.status === filter,
+        (s) => filter === 'all' || s.status === filter,
       ),
     [filter, allSettlements],
   )
@@ -87,7 +87,7 @@ export default function SettlementsScreen() {
 
   // ── Render ──
 
-  const renderItem = ({ item }: any) => (
+  const renderItem = ({ item }: ListRenderItemInfo<Settlement>) => (
     <SettlementRow {...item} onPress={() => handleRowPress(item.id)} />
   )
 
@@ -115,18 +115,18 @@ export default function SettlementsScreen() {
       <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
         <KpiCard
           label={t('settlements.gross')}
-          value={`${totalGross.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`}
+          value={`$${totalGross.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
           style={styles.kpiCard}
         />
         <KpiCard
           label={t('settlements.commission')}
-          value={`-${totalComm.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`}
+          value={`-$${totalComm.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
           valueColor={COLORS.danger}
           style={styles.kpiCard}
         />
         <KpiCard
           label={t('settlements.net')}
-          value={`${totalNet.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`}
+          value={`$${totalNet.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
           valueColor={COLORS.success}
           style={styles.kpiCard}
         />
@@ -184,7 +184,7 @@ export default function SettlementsScreen() {
     <SafeAreaView style={styles.safeArea}>
       <FlatList
         data={filtered}
-        keyExtractor={(item: any) => item.id}
+        keyExtractor={(item) => item.id}
         renderItem={renderItem}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
-    backgroundColor: COLORS.darkBg,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: COLORS.border,
-    backgroundColor: COLORS.cardBgLight,
+    backgroundColor: COLORS.white,
   },
   exportIcon: {
     fontSize: 14,
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     gap: 8,
-    backgroundColor: COLORS.darkBg,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },

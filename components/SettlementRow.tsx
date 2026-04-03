@@ -65,19 +65,19 @@ export default function SettlementRow({
       <View style={[styles.bottomRow, isRTL && styles.bottomRowRTL]}>
         <FinancialCell
           label={t('settlements.gross')}
-          value={`${gross.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`}
+          value={`$${gross.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
           color={COLORS.textPrimary}
         />
         <View style={styles.separator} />
         <FinancialCell
           label={t('settlements.commission')}
-          value={`-${commission.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`}
+          value={`-$${commission.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
           color={COLORS.danger}
         />
         <View style={styles.separator} />
         <FinancialCell
           label={t('settlements.net')}
-          value={`${net.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺`}
+          value={`$${net.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
           color={COLORS.success}
           bold
         />

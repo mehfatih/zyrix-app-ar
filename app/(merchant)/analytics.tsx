@@ -129,15 +129,21 @@ export default function AnalyticsScreen() {
     try {
       setError(null)
       const result = await analyticsApi.getData(selectedRange)
+      // Validate the data structure to prevent render crashes
+      if (!result || !result.kpi || !result.volume || !result.successRate || !result.methods || !result.countries) {
+        throw new Error(t('common.error'))
+      }
       setData(result)
     } catch (err: unknown) {
+      let message = t('common.error')
       if (err instanceof Error) {
-        setError(err.message || t('common.error'))
+        message = err.message
       } else if (typeof err === 'string') {
-        setError(err || t('common.error'))
-      } else {
-        setError(t('common.error'))
+        message = err
+      } else if (err && typeof err === 'object' && 'error' in err) {
+        message = String((err as Record<string, unknown>).error)
       }
+      setError(message)
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -222,7 +228,7 @@ export default function AnalyticsScreen() {
           <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
             <KpiCard
               label={t('analytics.volume')}
-              value={`${(data.kpi.volume / 1000).toFixed(1)}k ₺`}
+              value={`$${(data.kpi.volume / 1000).toFixed(1)}k`}
               style={styles.kpiCard}
             />
             <KpiCard
@@ -235,7 +241,7 @@ export default function AnalyticsScreen() {
           <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
             <KpiCard
               label={t('analytics.avg_tx')}
-              value={`${data.kpi.avgTx.toFixed(1)} ₺`}
+              value={`$${data.kpi.avgTx.toFixed(1)}`}
               style={styles.kpiCard}
             />
             <KpiCard
@@ -248,10 +254,10 @@ export default function AnalyticsScreen() {
           {/* ── Volume chart (bar) ── */}
           <ChartCard
             title={t('analytics.volume')}
-            subtitle={`${range} · TRY`}
+            subtitle={`${range} · USD`}
             data={data.volume}
             color={COLORS.primary}
-            unit="₺"
+            unit="$"
             showAverage
             type="bar"
           />
@@ -330,9 +336,9 @@ const styles = StyleSheet.create({
   },
   pageHeader: {
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 12,
-    backgroundColor: COLORS.darkBg,
+    paddingTop: 20,
+    paddingBottom: 16,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -373,7 +379,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   card: {
-    backgroundColor: COLORS.cardBgLight,
+    backgroundColor: COLORS.white,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: COLORS.border,

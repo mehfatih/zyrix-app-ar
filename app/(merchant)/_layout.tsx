@@ -1,6 +1,6 @@
 /**
- * Zyrix App — Merchant Tab Layout v2
- * Premium tab bar with SVG icons and accent glow.
+ * Zyrix App — Merchant Tab Layout
+ * Bottom tab navigation with Android 15 edge-to-edge safe areas.
  */
 
 import React, { useEffect, useState } from 'react';
@@ -13,20 +13,14 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useDeepLinking } from '../../hooks/useDeepLinking';
 import { notificationsApi } from '../../services/api';
-import { Icon } from '../../components/Icon';
 
-function TabIcon({ iconName, label, focused, badge }: { iconName: string; label: string; focused: boolean; badge?: number }) {
+function TabIcon({ icon, label, focused, badge }: { icon: string; label: string; focused: boolean; badge?: number }) {
   return (
     <View style={styles.tabItem}>
       <View>
-        {/* Glow dot behind active icon */}
-        {focused && <View style={styles.activeGlow} />}
-        <Icon
-          name={iconName}
-          size={22}
-          color={focused ? COLORS.tabActive : COLORS.tabInactive}
-          strokeWidth={focused ? 2.2 : 1.6}
-        />
+        <Text style={[styles.tabIcon, focused && styles.tabIconActive]}>
+          {icon}
+        </Text>
         {badge !== undefined && badge > 0 && (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{badge > 9 ? '9+' : badge}</Text>
@@ -36,6 +30,8 @@ function TabIcon({ iconName, label, focused, badge }: { iconName: string; label:
       <Text
         style={[styles.tabLabel, focused && styles.tabLabelActive]}
         numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.75}
       >
         {label}
       </Text>
@@ -62,6 +58,7 @@ export default function MerchantLayout() {
     return () => clearInterval(interval);
   }, []);
 
+  // Android 15: account for navigation bar inset in edge-to-edge mode
   const tabBarHeight = Platform.select({
     ios: 84,
     android: 64 + insets.bottom,
@@ -87,40 +84,40 @@ export default function MerchantLayout() {
       <Tabs.Screen
         name="dashboard"
         options={{
-          tabBarIcon: ({ focused }: { focused: boolean }) => (
-            <TabIcon iconName="home" label={t('tabs.dashboard')} focused={focused} />
+          tabBarIcon: ({ focused }) => (
+            <TabIcon icon="🏠" label={t('tabs.dashboard')} focused={focused} />
           ),
         }}
       />
       <Tabs.Screen
         name="transactions"
         options={{
-          tabBarIcon: ({ focused }: { focused: boolean }) => (
-            <TabIcon iconName="credit-card" label={t('tabs.transactions')} focused={focused} />
+          tabBarIcon: ({ focused }) => (
+            <TabIcon icon="💳" label={t('tabs.transactions')} focused={focused} />
           ),
         }}
       />
       <Tabs.Screen
         name="balance"
         options={{
-          tabBarIcon: ({ focused }: { focused: boolean }) => (
-            <TabIcon iconName="wallet" label={t('tabs.balance')} focused={focused} />
+          tabBarIcon: ({ focused }) => (
+            <TabIcon icon="💰" label={t('tabs.balance')} focused={focused} />
           ),
         }}
       />
       <Tabs.Screen
         name="analytics"
         options={{
-          tabBarIcon: ({ focused }: { focused: boolean }) => (
-            <TabIcon iconName="bar-chart" label={t('tabs.analytics')} focused={focused} />
+          tabBarIcon: ({ focused }) => (
+            <TabIcon icon="📊" label={t('tabs.analytics')} focused={focused} />
           ),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          tabBarIcon: ({ focused }: { focused: boolean }) => (
-            <TabIcon iconName="settings" label={t('tabs.settings')} focused={focused} />
+          tabBarIcon: ({ focused }) => (
+            <TabIcon icon="⚙️" label={t('tabs.settings')} focused={focused} />
           ),
         }}
       />
@@ -147,30 +144,31 @@ const styles = StyleSheet.create({
     borderTopColor: COLORS.border,
     borderTopWidth: 1,
     paddingTop: SPACING.sm,
+    // Android 15: no elevation shadow in edge-to-edge
     elevation: 0,
   },
   tabItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 3,
+    gap: 2,
+    minWidth: 56,
+    paddingHorizontal: 2,
   },
-  activeGlow: {
-    position: 'absolute',
-    top: -4,
-    left: -4,
-    right: -4,
-    bottom: -4,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 212, 170, 0.12)',
+  tabIcon: {
+    fontSize: 22,
+    opacity: 0.5,
+  },
+  tabIconActive: {
+    opacity: 1,
   },
   tabLabel: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: FONT_WEIGHT.medium,
     color: COLORS.tabInactive,
-    marginTop: 1,
+    textAlign: 'center',
   },
   tabLabelActive: {
-    color: COLORS.tabActive,
+    color: COLORS.primaryLight,
     fontWeight: FONT_WEIGHT.semibold,
   },
   badge: {
