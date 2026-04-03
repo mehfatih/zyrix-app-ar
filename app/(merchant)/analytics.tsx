@@ -32,13 +32,24 @@ interface AnalyticsData {
   countries: { label: string; value: number }[]
 }
 
-// ─── Method colour map ────────────────────────────────────────────────────────
+// ─── KPI Configuration (unique accent colors) ───────────────────────────────
 
-const METHOD_COLORS = [
-  COLORS.primary,
-  COLORS.products.crypto,
-  COLORS.products.cod,
-  COLORS.success,
+type KpiKey = 'volume' | 'successRate' | 'avgTx' | 'customers'
+
+interface KpiConfig {
+  key: KpiKey
+  labelKey: string
+  color: string
+  unit: string
+  chartType: 'bar' | 'line'
+  dataKey: 'volume' | 'successRate'
+}
+
+const KPI_CONFIG: KpiConfig[] = [
+  { key: 'volume',      labelKey: 'analytics.volume',       color: COLORS.primary,          unit: '$', chartType: 'bar',  dataKey: 'volume' },
+  { key: 'successRate', labelKey: 'analytics.success_rate',  color: COLORS.success,          unit: '%', chartType: 'line', dataKey: 'successRate' },
+  { key: 'avgTx',       labelKey: 'analytics.avg_tx',        color: COLORS.products.crypto,  unit: '$', chartType: 'bar',  dataKey: 'volume' },
+  { key: 'customers',   labelKey: 'analytics.customers',     color: COLORS.warning,          unit: '',  chartType: 'bar',  dataKey: 'volume' },
 ]
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -124,12 +135,12 @@ export default function AnalyticsScreen() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [selectedKpi, setSelectedKpi] = useState<KpiKey>('volume')
 
   const fetchData = useCallback(async (selectedRange: RangeKey) => {
     try {
       setError(null)
       const result = await analyticsApi.getData(selectedRange)
-      // Validate the data structure to prevent render crashes
       if (!result || !result.kpi || !result.volume || !result.successRate || !result.methods || !result.countries) {
         throw new Error(t('common.error'))
       }
@@ -164,7 +175,24 @@ export default function AnalyticsScreen() {
     setRange(newRange)
   }
 
-  // ── Loading state ──
+  // Get active KPI config
+  const activeKpi = KPI_CONFIG.find(k => k.key === selectedKpi) ?? KPI_CONFIG[0]
+
+  // Method colors for donut
+  const METHOD_COLORS = [COLORS.primary, COLORS.products.crypto, COLORS.products.cod, COLORS.success]
+
+  // Get KPI display value
+  const getKpiValue = (key: KpiKey): string => {
+    if (!data) return '—'
+    switch (key) {
+      case 'volume': return `$${(data.kpi.volume / 1000).toFixed(1)}k`
+      case 'successRate': return `${data.kpi.successRate}%`
+      case 'avgTx': return `$${data.kpi.avgTx.toFixed(1)}`
+      case 'customers': return String(data.kpi.customers)
+    }
+  }
+
+  // Loading state
   if (loading && !data) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -176,7 +204,7 @@ export default function AnalyticsScreen() {
     )
   }
 
-  // ── Error state ──
+  // Error state
   if (error && !data) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -224,71 +252,91 @@ export default function AnalyticsScreen() {
 
         <View style={styles.body}>
 
-          {/* ── KPI Row ── */}
+          {/* ── Interactive KPI Cards ── */}
           <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
-            <KpiCard
-              label={t('analytics.volume')}
-              value={`$${(data.kpi.volume / 1000).toFixed(1)}k`}
-              style={styles.kpiCard}
-            />
-            <KpiCard
-              label={t('analytics.success_rate')}
-              value={`${data.kpi.successRate}%`}
-              valueColor={COLORS.success}
-              style={styles.kpiCard}
-            />
+            {KPI_CONFIG.slice(0, 2).map((kpi) => (
+              <TouchableOpacity
+                key={kpi.key}
+                style={[
+                  styles.kpiCard,
+                  selectedKpi === kpi.key && { borderColor: kpi.color, borderWidth: 2 },
+                ]}
+                onPress={() => setSelectedKpi(kpi.key)}
+                activeOpacity={0.7}
+              >
+                <KpiCard
+                  label={t(kpi.labelKey)}
+                  value={getKpiValue(kpi.key)}
+                  color={kpi.color}
+                  valueColor={selectedKpi === kpi.key ? kpi.color : undefined}
+                  style={{ borderWidth: 0 }}
+                />
+              </TouchableOpacity>
+            ))}
           </View>
           <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
-            <KpiCard
-              label={t('analytics.avg_tx')}
-              value={`$${data.kpi.avgTx.toFixed(1)}`}
-              style={styles.kpiCard}
-            />
-            <KpiCard
-              label={t('analytics.customers')}
-              value={String(data.kpi.customers)}
-              style={styles.kpiCard}
-            />
+            {KPI_CONFIG.slice(2, 4).map((kpi) => (
+              <TouchableOpacity
+                key={kpi.key}
+                style={[
+                  styles.kpiCard,
+                  selectedKpi === kpi.key && { borderColor: kpi.color, borderWidth: 2 },
+                ]}
+                onPress={() => setSelectedKpi(kpi.key)}
+                activeOpacity={0.7}
+              >
+                <KpiCard
+                  label={t(kpi.labelKey)}
+                  value={getKpiValue(kpi.key)}
+                  color={kpi.color}
+                  valueColor={selectedKpi === kpi.key ? kpi.color : undefined}
+                  style={{ borderWidth: 0 }}
+                />
+              </TouchableOpacity>
+            ))}
           </View>
 
-          {/* ── Volume chart (bar) ── */}
+          {/* ── Dynamic Chart (changes based on selected KPI) ── */}
           <ChartCard
-            title={t('analytics.volume')}
-            subtitle={`${range} · USD`}
-            data={data.volume}
-            color={COLORS.primary}
-            unit="$"
-            showAverage
-            type="bar"
+            title={t(activeKpi.labelKey)}
+            subtitle={`${range} · ${activeKpi.unit || '#'}`}
+            data={data[activeKpi.dataKey]}
+            color={activeKpi.color}
+            unit={activeKpi.unit}
+            showAverage={activeKpi.key === 'volume'}
+            type={activeKpi.chartType}
           />
 
-          {/* ── Success rate chart (line) ── */}
-          <ChartCard
-            title={t('analytics.success_rate')}
-            subtitle={`${range} · %`}
-            data={data.successRate}
-            color={COLORS.success}
-            unit="%"
-            type="line"
-          />
-
-          {/* ── Payment methods ── */}
-          <View style={styles.card}>
-            <Text style={[styles.cardTitle, isRTL && styles.textRight]}>
-              {t('analytics.payment_methods')}
-            </Text>
-            <DonutLegend data={data.methods} colors={METHOD_COLORS} />
+          {/* ── Payment Methods (framed section) ── */}
+          <View style={styles.framedSection}>
+            <View style={styles.framedHeader}>
+              <Text style={[styles.framedTitle, isRTL && styles.textRight]}>
+                {t('analytics.payment_methods')}
+              </Text>
+            </View>
+            <View style={styles.framedBody}>
+              <DonutLegend data={data.methods} colors={METHOD_COLORS} />
+            </View>
           </View>
 
-          {/* ── Countries chart (bar) ── */}
-          <ChartCard
-            title={t('analytics.countries')}
-            subtitle={`${range} · %`}
-            data={data.countries}
-            color={COLORS.products.crypto}
-            unit="%"
-            type="bar"
-          />
+          {/* ── Countries (framed section) ── */}
+          <View style={styles.framedSection}>
+            <View style={styles.framedHeader}>
+              <Text style={[styles.framedTitle, isRTL && styles.textRight]}>
+                {t('analytics.countries')}
+              </Text>
+            </View>
+            <View style={styles.framedBody}>
+              <ChartCard
+                title=""
+                data={data.countries}
+                color={COLORS.products.crypto}
+                unit="%"
+                type="bar"
+                style={{ borderWidth: 0, padding: 0, marginBottom: 0 }}
+              />
+            </View>
+          </View>
 
         </View>
       </ScrollView>
@@ -377,20 +425,33 @@ const styles = StyleSheet.create({
   },
   kpiCard: {
     flex: 1,
-  },
-  card: {
-    backgroundColor: COLORS.white,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: COLORS.border,
-    padding: 16,
+    overflow: 'hidden',
+  },
+  framedSection: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
     marginBottom: 12,
   },
-  cardTitle: {
+  framedHeader: {
+    backgroundColor: COLORS.surfaceBg,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  framedTitle: {
     fontSize: 14,
     fontWeight: '700',
     color: COLORS.textPrimary,
-    marginBottom: 14,
+  },
+  framedBody: {
+    backgroundColor: COLORS.cardBg,
+    padding: 16,
   },
 })
 
