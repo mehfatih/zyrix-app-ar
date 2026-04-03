@@ -10,12 +10,12 @@ import {
   RefreshControl,
   I18nManager,
   SafeAreaView,
-  Alert,
 
 } from 'react-native'
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { notificationsApi } from '../../services/api'
+import { useToast } from '../../components/Toast'
 
 const isRTL = I18nManager.isRTL
 
@@ -55,16 +55,23 @@ function NotifCard({
   notif,
   onPress,
   onMarkRead,
+  index = 0,
 }: {
   notif: Notification
   onPress: (id: string) => void
   onMarkRead: (id: string) => void
+  index?: number
 }) {
   const cfg = typeConfig(notif.type)
+  const isEven = index % 2 === 0
 
   return (
     <TouchableOpacity
-      style={[card.container, !notif.read && card.containerUnread]}
+      style={[
+        card.container,
+        isEven ? card.containerEven : card.containerOdd,
+        !notif.read && card.containerUnread,
+      ]}
       onPress={() => onPress(notif.id)}
       onLongPress={() => onMarkRead(notif.id)}
       activeOpacity={0.72}
@@ -116,6 +123,7 @@ function NotifCard({
 
 export default function NotificationsScreen() {
   const { t } = useTranslation()
+  const { showToast } = useToast()
 
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [filter, setFilter] = useState<FilterKey>('all')
@@ -155,7 +163,7 @@ export default function NotificationsScreen() {
       prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
     )
     const notif = notifications.find((n) => n.id === id)
-    if (notif) Alert.alert(notif.title, notif.body)
+    if (notif) showToast(notif.title, 'info')
   }
 
   const handleMarkRead = (id: string) => {
@@ -243,8 +251,8 @@ export default function NotificationsScreen() {
           <Text style={[styles.groupLabel, isRTL && styles.groupLabelRTL]}>
             {t('notifications.unread')} ({unread.length})
           </Text>
-          {unread.map((n) => (
-            <NotifCard key={n.id} notif={n} onPress={handlePress} onMarkRead={handleMarkRead} />
+          {unread.map((n, idx) => (
+            <NotifCard key={n.id} notif={n} onPress={handlePress} onMarkRead={handleMarkRead} index={idx} />
           ))}
         </>
       )}
@@ -253,8 +261,8 @@ export default function NotificationsScreen() {
           <Text style={[styles.groupLabel, isRTL && styles.groupLabelRTL]}>
             {t('notifications.earlier')}
           </Text>
-          {read.map((n) => (
-            <NotifCard key={n.id} notif={n} onPress={handlePress} onMarkRead={handleMarkRead} />
+          {read.map((n, idx) => (
+            <NotifCard key={n.id} notif={n} onPress={handlePress} onMarkRead={handleMarkRead} index={idx} />
           ))}
         </>
       )}
@@ -290,9 +298,9 @@ const styles = StyleSheet.create({
   // Header
   pageHeader: {
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 10,
-    backgroundColor: COLORS.white,
+    paddingTop: 8,
+    paddingBottom: 8,
+    backgroundColor: COLORS.surfaceBg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -339,16 +347,18 @@ const styles = StyleSheet.create({
 
   // Filters
   filterWrapper: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surfaceBg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
   filterRow: {
     flexDirection: 'row',
-    gap: 6,
-    flexWrap: 'wrap',
+    gap: 5,
+    flexWrap: 'nowrap',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   filterRowRTL: {
     flexDirection: 'row-reverse',
@@ -356,11 +366,11 @@ const styles = StyleSheet.create({
   filterTab: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 11,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: COLORS.cardBg,
+    gap: 3,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 16,
+    backgroundColor: COLORS.cardBgLight,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
@@ -369,10 +379,10 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
   },
   filterIcon: {
-    fontSize: 12,
+    fontSize: 10,
   },
   filterTabText: {
-    fontSize: 12,
+    fontSize: 10,
     color: COLORS.textSecondary,
     fontWeight: '500',
   },
@@ -389,8 +399,9 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginTop: 16,
-    marginBottom: 6,
+    marginBottom: 8,
     marginLeft: 20,
+    paddingHorizontal: 4,
   },
   groupLabelRTL: {
     textAlign: 'right',
@@ -418,16 +429,21 @@ const card = StyleSheet.create({
   container: {
     flexDirection: isRTL ? 'row-reverse' : 'row',
     alignItems: 'flex-start',
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     paddingVertical: 14,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: COLORS.border,
     gap: 12,
     position: 'relative',
   },
+  containerEven: {
+    backgroundColor: COLORS.cardBg,
+  },
+  containerOdd: {
+    backgroundColor: COLORS.surfaceBg,
+  },
   containerUnread: {
-    backgroundColor: COLORS.infoBg,
+    backgroundColor: 'rgba(26, 86, 219, 0.12)',
   },
   unreadDot: {
     position: 'absolute',
@@ -440,15 +456,17 @@ const card = StyleSheet.create({
     backgroundColor: COLORS.primary,
   },
   iconBubble: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
   },
   iconText: {
-    fontSize: 20,
+    fontSize: 18,
   },
   content: {
     flex: 1,
