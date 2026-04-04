@@ -1,16 +1,8 @@
 // app/(merchant)/refunds.tsx
 import React, { useState, useMemo } from 'react'
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  FlatList,
-  RefreshControl,
-  I18nManager,
-  SafeAreaView,
-  Alert,
-  ListRenderItemInfo,
+  View, Text, StyleSheet, TouchableOpacity, FlatList, RefreshControl,
+  I18nManager, SafeAreaView, Alert, ListRenderItemInfo,
 } from 'react-native'
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
@@ -18,112 +10,66 @@ import { refundsApi } from '../../services/api'
 
 const isRTL = I18nManager.isRTL
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 type RefundStatus = 'processing' | 'completed' | 'failed'
-
 interface Refund {
-  id: string
-  orderId: string
-  date: string
-  customerName: string
-  amount: number
-  currency: string
-  reason: string
-  method: string
-  flag: string
-  status: RefundStatus
+  id: string; orderId: string; date: string; customerName: string;
+  amount: number; currency: string; reason: string; method: string; flag: string; status: RefundStatus;
 }
-
 type FilterKey = 'all' | RefundStatus
 
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function statusConfig(status: RefundStatus): {
-  label: string
-  bg: string
-  text: string
-  icon: string
-} {
-  switch (status) {
-    case 'processing':
-      return { label: 'Processing', bg: COLORS.warningBg, text: COLORS.warning, icon: '↻' }
-    case 'completed':
-      return { label: 'Completed',  bg: COLORS.successBg,  text: COLORS.success,  icon: '✓' }
-    case 'failed':
-      return { label: 'Failed',     bg: COLORS.dangerBg,   text: COLORS.danger,   icon: '✕' }
-  }
+const STATUS_AR: Record<string, { label: string; bg: string; text: string; icon: string }> = {
+  processing: { label: 'قيد المعالجة', bg: COLORS.warningBg, text: COLORS.warning, icon: '↻' },
+  completed:  { label: 'مكتمل',       bg: COLORS.successBg, text: COLORS.success, icon: '✓' },
+  failed:     { label: 'فاشل',        bg: COLORS.dangerBg,  text: COLORS.danger,  icon: '✕' },
 }
 
-// ─── RefundCard ───────────────────────────────────────────────────────────────
+const METHOD_AR: Record<string, string> = {
+  'Credit card': 'بطاقة ائتمان', 'credit_card': 'بطاقة ائتمان',
+  'Bank transfer': 'تحويل بنكي', 'bank_transfer': 'تحويل بنكي',
+  'Digital wallet': 'محفظة رقمية', 'digital_wallet': 'محفظة رقمية',
+}
 
-function RefundCard({
-  refund,
-  onPress,
-}: {
-  refund: Refund
-  onPress: (id: string) => void
-}) {
-  const cfg = statusConfig(refund.status)
+const CARD_BG = [
+  { bg: 'rgba(26, 86, 219, 0.1)', border: 'rgba(26, 86, 219, 0.3)' },
+  { bg: 'rgba(139, 92, 246, 0.1)', border: 'rgba(139, 92, 246, 0.3)' },
+  { bg: 'rgba(13, 148, 136, 0.1)', border: 'rgba(13, 148, 136, 0.3)' },
+  { bg: 'rgba(245, 158, 11, 0.1)', border: 'rgba(245, 158, 11, 0.3)' },
+  { bg: 'rgba(99, 102, 241, 0.1)', border: 'rgba(99, 102, 241, 0.3)' },
+]
+
+const ICONS_BY_STATUS: Record<string, string> = { processing: '⏳', completed: '✅', failed: '❌' }
+
+function RefundCard({ refund, index }: { refund: Refund; index: number }) {
+  const cfg = STATUS_AR[refund.status] || STATUS_AR.processing
+  const colors = CARD_BG[index % CARD_BG.length]
+  const methodLabel = METHOD_AR[refund.method] ?? refund.method
 
   return (
-    <TouchableOpacity
-      style={card.container}
-      onPress={() => onPress(refund.id)}
-      activeOpacity={0.75}
-    >
-      {/* Top row */}
-      <View style={[card.topRow, isRTL && card.topRowRTL]}>
-
-        {/* Flag + customer */}
-        <View style={[card.customerGroup, isRTL && card.customerGroupRTL]}>
-          <View style={card.flagBubble}>
-            <Text style={card.flag}>{refund.flag}</Text>
-          </View>
+    <View style={[cd.container, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+      <View style={[cd.topRow, isRTL && cd.topRowRTL]}>
+        <View style={[cd.customerGroup, isRTL && cd.customerGroupRTL]}>
+          <View style={cd.iconBubble}><Text style={cd.iconText}>{ICONS_BY_STATUS[refund.status] || '↩'}</Text></View>
           <View style={{ alignItems: isRTL ? 'flex-end' : 'flex-start' }}>
-            <Text style={card.customerName}>{refund.customerName}</Text>
-            <View style={[card.idRow, isRTL && card.idRowRTL]}>
-              <Text style={card.refundId}>{refund.id}</Text>
-              <Text style={card.idSep}>·</Text>
-              <Text style={card.orderId}>{refund.orderId}</Text>
-            </View>
+            <Text style={cd.customerName}>{refund.customerName}</Text>
+            <Text style={cd.refundId}>{refund.id}</Text>
           </View>
         </View>
-
-        {/* Amount + badge */}
         <View style={{ alignItems: isRTL ? 'flex-start' : 'flex-end', gap: 4 }}>
-          <Text style={card.amount}>
-            -{refund.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} {refund.currency}
-          </Text>
-          <View style={[card.badge, { backgroundColor: cfg.bg }]}>
-            <Text style={[card.badgeText, { color: cfg.text }]}>
-              {cfg.icon}  {cfg.label}
-            </Text>
+          <Text style={cd.amount}>-{refund.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</Text>
+          <View style={[cd.badge, { backgroundColor: cfg.bg }]}>
+            <Text style={[cd.badgeText, { color: cfg.text }]}>{cfg.icon} {cfg.label}</Text>
           </View>
         </View>
       </View>
-
-      {/* Divider */}
-      <View style={card.divider} />
-
-      {/* Bottom row */}
-      <View style={[card.bottomRow, isRTL && card.bottomRowRTL]}>
-        <View style={[card.metaItem, isRTL && card.metaItemRTL]}>
-          <Text style={card.metaLabel}>Sebep</Text>
-          <Text style={card.metaValue} numberOfLines={1}>{refund.reason}</Text>
-        </View>
-        <View style={[card.metaItem, isRTL && card.metaItemRTL]}>
-          <Text style={card.metaLabel}>Yöntem</Text>
-          <Text style={card.metaValue} numberOfLines={1}>{refund.method}</Text>
-        </View>
-        <Text style={card.date}>{refund.date}</Text>
+      <View style={cd.divider} />
+      <View style={[cd.bottomRow, isRTL && cd.bottomRowRTL]}>
+        <View style={cd.metaItem}><Text style={cd.metaLabel}>السبب</Text><Text style={cd.metaValue} numberOfLines={1}>{refund.reason}</Text></View>
+        <View style={cd.metaItem}><Text style={cd.metaLabel}>الطريقة</Text><Text style={cd.metaValue} numberOfLines={1}>{methodLabel}</Text></View>
+        <Text style={cd.date}>{refund.date}</Text>
       </View>
-    </TouchableOpacity>
+    </View>
   )
 }
-
-// ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function RefundsScreen() {
   const { t } = useTranslation()
@@ -133,487 +79,157 @@ export default function RefundsScreen() {
   const [refreshing, setRefreshing] = useState(false)
 
   const fetchData = async () => {
-    try {
-      const data = await refundsApi.list()
-      setAllRefunds(data.refunds)
-    } catch (err) { console.warn(err) }
+    try { const data = await refundsApi.list(); setAllRefunds(data.refunds) }
+    catch (err) { console.warn(err) }
     finally { setLoading(false); setRefreshing(false) }
   }
 
   React.useEffect(() => { fetchData() }, [])
   const onRefresh = () => { setRefreshing(true); fetchData() }
 
-  const FILTERS: { key: FilterKey; label: string }[] = [
-    { key: 'all',        label: t('refunds.filter_all') },
-    { key: 'processing', label: t('refunds.filter_processing') },
-    { key: 'completed',  label: t('refunds.filter_completed') },
-    { key: 'failed',     label: t('refunds.filter_failed') },
+  const FILTERS: { key: FilterKey; label: string; color: string; activeBg: string; activeBorder: string }[] = [
+    { key: 'completed',  label: t('refunds.filter_completed'),  color: COLORS.success, activeBg: COLORS.successBg, activeBorder: COLORS.success },
+    { key: 'processing', label: t('refunds.filter_processing'), color: COLORS.warning, activeBg: COLORS.warningBg, activeBorder: COLORS.warning },
+    { key: 'failed',     label: t('refunds.filter_failed'),     color: COLORS.danger,  activeBg: COLORS.dangerBg,  activeBorder: COLORS.danger },
+    { key: 'all',        label: t('refunds.filter_all'),        color: COLORS.primaryLight, activeBg: 'rgba(59,130,246,0.2)', activeBorder: COLORS.primaryLight },
   ]
 
-  // KPIs
-  const totalRefunded  = allRefunds
-    .filter((r) => r.status === 'completed')
-    .reduce((s, r) => s + r.amount, 0)
-  const processingAmt  = allRefunds
-    .filter((r) => r.status === 'processing')
-    .reduce((s, r) => s + r.amount, 0)
+  const totalRefunded = allRefunds.filter((r) => r.status === 'completed').reduce((s, r) => s + r.amount, 0)
+  const processingAmt = allRefunds.filter((r) => r.status === 'processing').reduce((s, r) => s + r.amount, 0)
   const processingCount = allRefunds.filter((r) => r.status === 'processing').length
+  const refundCount = allRefunds.length
 
-  const filtered = useMemo(
-    () => allRefunds.filter((r) => filter === 'all' || r.status === filter),
-    [filter, allRefunds],
-  )
+  const filtered = useMemo(() => allRefunds.filter((r) => filter === 'all' || r.status === filter), [filter, allRefunds])
 
-  const handlePress = (id: string) => {
-    Alert.alert(t('refunds.title'), id)
-  }
+  const maxKpi = Math.max(totalRefunded, processingAmt, refundCount, 1)
 
-  const handleNewRefund = () => {
-    Alert.alert(t('refunds.new_refund'), t('common.coming_soon'))
-  }
-
-  // ── Render ──
-
-  const renderItem = ({ item }: ListRenderItemInfo<Refund>) => (
-    <RefundCard refund={item} onPress={handlePress} />
-  )
+  const renderItem = ({ item, index }: ListRenderItemInfo<Refund>) => <RefundCard refund={item} index={index} />
 
   const renderHeader = () => (
     <>
-      {/* Page header */}
-      <View style={styles.pageHeader}>
-        <View style={[styles.headerRow, isRTL && styles.headerRowRTL]}>
-          <View>
-            <Text style={[styles.pageTitle, isRTL && styles.textRight]}>
-              {t('refunds.title')}
-            </Text>
-            <Text style={[styles.pageSubtitle, isRTL && styles.textRight]}>
-              {t('refunds.subtitle')}
-            </Text>
-          </View>
-          <TouchableOpacity style={styles.newBtn} onPress={handleNewRefund}>
-            <Text style={styles.newBtnText}>+ {t('refunds.new_refund')}</Text>
+      {/* Compact header — two buttons side by side */}
+      <View style={st.pageHeader}>
+        <View style={[st.headerBtns, isRTL && st.headerBtnsRTL]}>
+          <TouchableOpacity style={st.newBtn} onPress={() => Alert.alert(t('refunds.new_refund'))}>
+            <Text style={st.newBtnText}>+ {t('refunds.new_refund')}</Text>
           </TouchableOpacity>
+          {processingCount > 0 && (
+            <View style={st.processingPill}>
+              <Text style={st.processingText}>{processingCount} {t('refunds.filter_processing')} — {processingAmt.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</Text>
+            </View>
+          )}
         </View>
-
-        {/* Processing alert */}
-        {processingCount > 0 && (
-          <View style={[styles.processingBar, isRTL && styles.processingBarRTL]}>
-            <Text style={styles.processingIcon}>↻</Text>
-            <Text style={styles.processingText}>
-              {processingCount} {t('refunds.filter_processing')} —{' '}
-              <Text style={styles.processingAmt}>
-                ${processingAmt.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-              </Text>
-            </Text>
-          </View>
-        )}
       </View>
 
-      {/* KPI row */}
-      <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
-        <KpiMini
-          label={t('refunds.total_refunded')}
-          value={`$${totalRefunded.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
-          color={COLORS.danger}
-        />
-        <KpiMini
-          label={t('refunds.filter_processing')}
-          value={`$${processingAmt.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
-          color={COLORS.warning}
-        />
-        <KpiMini
-          label={t('refunds.count')}
-          value={String(allRefunds.length)}
-          color={COLORS.textPrimary}
-        />
+      {/* KPI — each unique color */}
+      <View style={[st.kpiRow, isRTL && st.kpiRowRTL]}>
+        <View style={[st.kpiCard, { backgroundColor: 'rgba(220, 38, 38, 0.15)', borderColor: 'rgba(220, 38, 38, 0.3)' }]}>
+          <Text style={st.kpiLabel}>{t('refunds.total_refunded')}</Text>
+          <Text style={[st.kpiValue, { color: COLORS.danger }]}>{totalRefunded.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</Text>
+        </View>
+        <View style={[st.kpiCard, { backgroundColor: 'rgba(217, 119, 6, 0.15)', borderColor: 'rgba(217, 119, 6, 0.3)' }]}>
+          <Text style={st.kpiLabel}>{t('refunds.filter_processing')}</Text>
+          <Text style={[st.kpiValue, { color: COLORS.warning }]}>{processingAmt.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</Text>
+        </View>
+        <View style={[st.kpiCard, { backgroundColor: 'rgba(26, 86, 219, 0.15)', borderColor: 'rgba(26, 86, 219, 0.3)' }]}>
+          <Text style={st.kpiLabel}>{t('refunds.count')}</Text>
+          <Text style={[st.kpiValue, { color: COLORS.primaryLight }]}>{refundCount}</Text>
+        </View>
       </View>
 
-      {/* Filter tabs */}
-      <View style={[styles.filterRow, isRTL && styles.filterRowRTL]}>
-        {FILTERS.map((f) => (
-          <TouchableOpacity
-            key={f.key}
-            style={[
-              styles.filterTab,
-              filter === f.key && styles.filterTabActive,
-              f.key === 'processing' && filter === f.key && styles.filterTabProcessing,
-              f.key === 'completed'  && filter === f.key && styles.filterTabCompleted,
-              f.key === 'failed'     && filter === f.key && styles.filterTabFailed,
-            ]}
-            onPress={() => setFilter(f.key)}
-          >
-            <Text
-              style={[
-                styles.filterTabText,
-                filter === f.key && styles.filterTabTextActive,
-              ]}
-            >
-              {f.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+      {/* Pivot chart */}
+      <View style={st.chartContainer}>
+        <View style={st.chartBarGroup}>
+          <View style={st.chartBarTrack}><View style={[st.chartBarFill, { backgroundColor: COLORS.danger, height: `${Math.max((totalRefunded / maxKpi) * 100, 8)}%` }]} /></View>
+          <Text style={[st.chartBarLabel, { color: COLORS.danger }]}>{t('refunds.total_refunded')}</Text>
+        </View>
+        <View style={st.chartBarGroup}>
+          <View style={st.chartBarTrack}><View style={[st.chartBarFill, { backgroundColor: COLORS.warning, height: `${Math.max((processingAmt / maxKpi) * 100, 8)}%` }]} /></View>
+          <Text style={[st.chartBarLabel, { color: COLORS.warning }]}>{t('refunds.filter_processing')}</Text>
+        </View>
+        <View style={st.chartBarGroup}>
+          <View style={st.chartBarTrack}><View style={[st.chartBarFill, { backgroundColor: COLORS.primaryLight, height: `${Math.max((refundCount / Math.max(totalRefunded, 1)) * 100, 15)}%` }]} /></View>
+          <Text style={[st.chartBarLabel, { color: COLORS.primaryLight }]}>{t('refunds.count')}</Text>
+        </View>
+      </View>
+
+      {/* Filters — centered, unique colors, order: مكتمل، قيد المعالجة، فاشل، الكل */}
+      <View style={st.filterWrapper}>
+        <View style={st.filterRow}>
+          {FILTERS.map((f) => {
+            const isActive = filter === f.key
+            return (
+              <TouchableOpacity key={f.key} style={[st.filterTab, isActive && { backgroundColor: f.activeBg, borderColor: f.activeBorder }]} onPress={() => setFilter(f.key)}>
+                <Text style={[st.filterTabText, isActive && { color: f.color, fontWeight: '700' }]}>{f.label}</Text>
+              </TouchableOpacity>
+            )
+          })}
+        </View>
       </View>
     </>
   )
 
   const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyIcon}>↩</Text>
-      <Text style={styles.emptyText}>{t('refunds.empty')}</Text>
-    </View>
+    <View style={st.emptyContainer}><Text style={st.emptyIcon}>↩</Text><Text style={st.emptyText}>{t('refunds.empty')}</Text></View>
   )
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <FlatList
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} colors={[COLORS.primary]} />}
-        data={filtered}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        ListHeaderComponent={renderHeader}
-        ListEmptyComponent={renderEmpty}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
+    <SafeAreaView style={st.safeArea}>
+      <FlatList refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+        data={filtered} keyExtractor={(item) => item.id} renderItem={renderItem}
+        ListHeaderComponent={renderHeader} ListEmptyComponent={renderEmpty}
+        contentContainerStyle={st.listContent} showsVerticalScrollIndicator={false} />
     </SafeAreaView>
   )
 }
 
-// ─── KpiMini ─────────────────────────────────────────────────────────────────
-
-function KpiMini({
-  label,
-  value,
-  color,
-}: {
-  label: string
-  value: string
-  color: string
-}) {
-  return (
-    <View style={mini.card}>
-      <Text style={mini.label}>{label}</Text>
-      <Text style={[mini.value, { color }]} numberOfLines={1} adjustsFontSizeToFit>
-        {value}
-      </Text>
-    </View>
-  )
-}
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.cardBg,
-  },
-  listContent: {
-    paddingBottom: 40,
-  },
-
-  // Header
-  pageHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 10,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    gap: 12,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  headerRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  pageTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
-  pageSubtitle: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-  },
-  textRight: {
-    textAlign: 'right',
-  },
-
-  // New refund button
-  newBtn: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  newBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.white,
-  },
-
-  // Processing alert bar
-  processingBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: COLORS.warningBg,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderWidth: 1,
-    borderColor: COLORS.warning,
-  },
-  processingBarRTL: {
-    flexDirection: 'row-reverse',
-  },
-  processingIcon: {
-    fontSize: 16,
-    color: COLORS.warning,
-    fontWeight: '700',
-  },
-  processingText: {
-    fontSize: 13,
-    color: COLORS.warning,
-    fontWeight: '500',
-  },
-  processingAmt: {
-    fontWeight: '700',
-  },
-
-  // KPI row
-  kpiRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    gap: 8,
-    backgroundColor: COLORS.cardBg,
-  },
-  kpiRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-
-  // Filter tabs
-  filterRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 6,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  filterRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  filterTab: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: COLORS.cardBg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  filterTabActive: {
-    backgroundColor: `${COLORS.primary}20`,
-    borderColor: COLORS.primary,
-  },
-  filterTabProcessing: {
-    backgroundColor: `${COLORS.warning}20`,
-    borderColor: COLORS.warning,
-  },
-  filterTabCompleted: {
-    backgroundColor: `${COLORS.success}20`,
-    borderColor: COLORS.success,
-  },
-  filterTabFailed: {
-    backgroundColor: `${COLORS.danger}20`,
-    borderColor: COLORS.danger,
-  },
-  filterTabText: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
-  },
-  filterTabTextActive: {
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-
-  // Empty
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: 60,
-    gap: 10,
-  },
-  emptyIcon: {
-    fontSize: 36,
-    color: COLORS.textMuted,
-  },
-  emptyText: {
-    fontSize: 15,
-    color: COLORS.textMuted,
-    fontWeight: '500',
-  },
+const st = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: COLORS.darkBg },
+  listContent: { paddingBottom: 40 },
+  pageHeader: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10, backgroundColor: 'rgba(13, 148, 136, 0.12)', borderBottomWidth: 1, borderBottomColor: 'rgba(13, 148, 136, 0.3)' },
+  headerBtns: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+  headerBtnsRTL: { flexDirection: 'row-reverse' },
+  newBtn: { backgroundColor: COLORS.primary, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 },
+  newBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.white },
+  processingPill: { flex: 1, backgroundColor: COLORS.warningBg, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: COLORS.warning },
+  processingText: { fontSize: 12, color: COLORS.warning, fontWeight: '600' },
+  kpiRow: { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 12, gap: 8 },
+  kpiRowRTL: { flexDirection: 'row-reverse' },
+  kpiCard: { flex: 1, borderRadius: 12, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 10, gap: 4 },
+  kpiLabel: { fontSize: 9, fontWeight: '600', color: COLORS.textMuted },
+  kpiValue: { fontSize: 14, fontWeight: '800' },
+  chartContainer: { flexDirection: isRTL ? 'row-reverse' : 'row', justifyContent: 'space-around', alignItems: 'flex-end', backgroundColor: COLORS.surfaceBg, marginHorizontal: 12, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, padding: 16, height: 130 },
+  chartBarGroup: { alignItems: 'center', flex: 1, gap: 4 },
+  chartBarTrack: { width: 28, height: 70, backgroundColor: COLORS.cardBg, borderRadius: 6, justifyContent: 'flex-end', overflow: 'hidden' },
+  chartBarFill: { width: '100%', borderRadius: 6 },
+  chartBarLabel: { fontSize: 8, fontWeight: '700', textAlign: 'center' },
+  filterWrapper: { backgroundColor: COLORS.cardBg, paddingHorizontal: 12, paddingVertical: 10, borderWidth: 1, borderColor: COLORS.border, marginHorizontal: 12, marginTop: 10, borderRadius: 12 },
+  filterRow: { flexDirection: isRTL ? 'row' : 'row-reverse', gap: 6, justifyContent: 'center' },
+  filterTab: { flex: 1, paddingVertical: 10, borderRadius: 12, backgroundColor: COLORS.surfaceBg, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center' },
+  filterTabText: { fontSize: 11, color: COLORS.textSecondary, fontWeight: '600' },
+  emptyContainer: { alignItems: 'center', paddingVertical: 60, gap: 10 },
+  emptyIcon: { fontSize: 36, color: COLORS.textMuted },
+  emptyText: { fontSize: 15, color: COLORS.textMuted, fontWeight: '500' },
 })
 
-const card = StyleSheet.create({
-  container: {
-    backgroundColor: COLORS.white,
-    marginHorizontal: 16,
-    marginTop: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    overflow: 'hidden',
-  },
-
-  // Top row
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 12,
-  },
-  topRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  customerGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
-  },
-  customerGroupRTL: {
-    flexDirection: 'row-reverse',
-  },
-  flagBubble: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: COLORS.cardBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  flag: {
-    fontSize: 20,
-  },
-  customerName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginBottom: 3,
-  },
-  idRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  idRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  refundId: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.primary,
-    fontFamily: 'monospace',
-  },
-  idSep: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-  },
-  orderId: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    fontFamily: 'monospace',
-  },
-  amount: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: COLORS.danger,
-  },
-  badge: {
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-
-  // Divider
-  divider: {
-    height: 1,
-    backgroundColor: COLORS.border,
-  },
-
-  // Bottom row
-  bottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 12,
-  },
-  bottomRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  metaItem: {
-    flex: 1,
-    gap: 2,
-  },
-  metaItemRTL: {
-    alignItems: 'flex-end',
-  },
-  metaLabel: {
-    fontSize: 10,
-    color: COLORS.textMuted,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-  },
-  metaValue: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
-  },
-  date: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    alignSelf: 'flex-end',
-  },
-})
-
-const mini = StyleSheet.create({
-  card: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 4,
-  },
-  label: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: COLORS.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-  },
-  value: {
-    fontSize: 15,
-    fontWeight: '800',
-  },
+const cd = StyleSheet.create({
+  container: { marginHorizontal: 16, marginTop: 10, borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 14, paddingTop: 12, paddingBottom: 10 },
+  topRowRTL: { flexDirection: 'row-reverse' },
+  customerGroup: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  customerGroupRTL: { flexDirection: 'row-reverse' },
+  iconBubble: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surfaceBg, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.border },
+  iconText: { fontSize: 18 },
+  customerName: { fontSize: 13, fontWeight: '600', color: COLORS.textPrimary, marginBottom: 2 },
+  refundId: { fontSize: 10, color: COLORS.textMuted, fontFamily: 'monospace' },
+  amount: { fontSize: 14, fontWeight: '800', color: COLORS.danger },
+  badge: { borderRadius: 20, paddingHorizontal: 8, paddingVertical: 2 },
+  badgeText: { fontSize: 10, fontWeight: '700' },
+  divider: { height: 1, backgroundColor: COLORS.border },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, gap: 10 },
+  bottomRowRTL: { flexDirection: 'row-reverse' },
+  metaItem: { flex: 1, gap: 1 },
+  metaLabel: { fontSize: 9, color: COLORS.textMuted, fontWeight: '600' },
+  metaValue: { fontSize: 11, color: COLORS.textSecondary, fontWeight: '500' },
+  date: { fontSize: 10, color: COLORS.textMuted },
 })

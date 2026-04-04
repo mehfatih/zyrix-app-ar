@@ -13,15 +13,27 @@ import StatusBadge from './StatusBadge'
 
 const isRTL = I18nManager.isRTL
 
-// Method icon mapping — replaces empty circles with relevant icons
-function getMethodIcon(method: string): string {
-  const m = method.toLowerCase()
-  if (m.includes('credit') || m.includes('card') || m.includes('visa') || m.includes('master')) return '💳'
-  if (m.includes('bank') || m.includes('transfer') || m.includes('wire')) return '🏦'
-  if (m.includes('wallet') || m.includes('digital') || m.includes('apple') || m.includes('google')) return '📱'
-  if (m.includes('cash') || m.includes('cod')) return '💵'
-  if (m.includes('crypto') || m.includes('bitcoin')) return '₿'
-  return '💳' // default
+// Arabic currency symbols
+const CURRENCY_AR: Record<string, string> = {
+  SAR: 'ر.س',
+  AED: 'د.إ',
+  KWD: 'د.ك',
+  QAR: 'ر.ق',
+  USD: '$',
+  EUR: '€',
+  TRY: '₺',
+}
+
+// Arabic method names
+const METHOD_AR: Record<string, string> = {
+  'Credit card': 'بطاقة ائتمان',
+  'credit_card': 'بطاقة ائتمان',
+  'Bank transfer': 'تحويل بنكي',
+  'bank_transfer': 'تحويل بنكي',
+  'Digital wallet': 'محفظة رقمية',
+  'digital_wallet': 'محفظة رقمية',
+  'Cash': 'نقدي',
+  'cash': 'نقدي',
 }
 
 export interface TransactionRowProps {
@@ -35,7 +47,6 @@ export interface TransactionRowProps {
   currency: string
   isCredit: boolean
   status: 'success' | 'pending' | 'failed'
-  index?: number
   onPress?: () => void
 }
 
@@ -50,41 +61,36 @@ export default function TransactionRow({
   currency,
   isCredit,
   status,
-  index = 0,
   onPress,
 }: TransactionRowProps) {
   const { t } = useTranslation()
-  const isEven = index % 2 === 0
+  const currencyLabel = CURRENCY_AR[currency] ?? currency
+  const methodLabel = METHOD_AR[method] ?? method
 
   return (
     <TouchableOpacity
-      style={[
-        styles.container,
-        isEven ? styles.rowEven : styles.rowOdd,
-      ]}
+      style={styles.container}
       onPress={onPress}
       activeOpacity={0.7}
     >
       {/* Left: Flag + Info */}
       <View style={[styles.leftSection, isRTL && styles.leftSectionRTL]}>
         <View style={styles.flagContainer}>
-          <Text style={styles.methodIcon}>{getMethodIcon(method)}</Text>
-          <View style={styles.flagBadge}>
-            <Text style={styles.flagSmall}>{flag}</Text>
-          </View>
+          <Text style={styles.flag}>{flag}</Text>
         </View>
 
         <View style={styles.info}>
           <Text style={styles.name} numberOfLines={1}>
             {name}
           </Text>
-          <Text style={styles.meta} numberOfLines={1}>
-            {method} · {id}
+          <Text style={styles.method} numberOfLines={1}>
+            {methodLabel}
           </Text>
+          <Text style={styles.idText}>{id}</Text>
         </View>
       </View>
 
-      {/* Right: Amount + Status + Date */}
+      {/* Right: Amount + Status */}
       <View style={[styles.rightSection, isRTL && styles.rightSectionRTL]}>
         <Text
           style={[
@@ -97,12 +103,10 @@ export default function TransactionRow({
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}{' '}
-          {currency}
+          {currencyLabel}
         </Text>
-        <View style={styles.statusDateRow}>
-          <StatusBadge status={status} />
-          <Text style={styles.date}>{date}</Text>
-        </View>
+        <StatusBadge status={status} />
+        <Text style={styles.date}>{date}</Text>
       </View>
     </TouchableOpacity>
   )
@@ -114,15 +118,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.divider,
-  },
-  rowEven: {
+    paddingVertical: 14,
     backgroundColor: COLORS.cardBg,
-  },
-  rowOdd: {
-    backgroundColor: COLORS.surfaceBg,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
   leftSection: {
     flexDirection: 'row',
@@ -136,61 +135,48 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   flagContainer: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: COLORS.surfaceBg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: isRTL ? 0 : 10,
-    marginLeft: isRTL ? 10 : 0,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    position: 'relative',
+    marginRight: isRTL ? 0 : 12,
+    marginLeft: isRTL ? 12 : 0,
   },
-  methodIcon: {
-    fontSize: 16,
-  },
-  flagBadge: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: COLORS.cardBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  flagSmall: {
-    fontSize: 9,
+  flag: {
+    fontSize: 20,
   },
   info: {
     flex: 1,
     alignItems: isRTL ? 'flex-end' : 'flex-start',
   },
   name: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: COLORS.textPrimary,
     marginBottom: 2,
   },
-  meta: {
+  method: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginBottom: 2,
+  },
+  idText: {
     fontSize: 11,
     color: COLORS.textMuted,
+    fontFamily: 'monospace',
   },
   rightSection: {
     alignItems: 'flex-end',
-    gap: 4,
   },
   rightSectionRTL: {
     alignItems: 'flex-start',
   },
   amount: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
+    marginBottom: 4,
   },
   amountCredit: {
     color: COLORS.success,
@@ -198,13 +184,9 @@ const styles = StyleSheet.create({
   amountDebit: {
     color: COLORS.danger,
   },
-  statusDateRow: {
-    flexDirection: isRTL ? 'row-reverse' : 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
   date: {
-    fontSize: 10,
+    fontSize: 11,
     color: COLORS.textMuted,
+    marginTop: 4,
   },
 })

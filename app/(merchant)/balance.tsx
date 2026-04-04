@@ -8,8 +8,7 @@ import {
   ScrollView,
   I18nManager,
   SafeAreaView,
-  Modal,
-  Linking,
+  Alert,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native'
@@ -19,7 +18,6 @@ import { useTranslation } from '../../hooks/useTranslation'
 import { balanceApi } from '../../services/api'
 import KpiCard from '../../components/KpiCard'
 import { QRCodeModal } from '../../components/QRCodeModal'
-import { useToast } from '../../components/Toast'
 
 const isRTL = I18nManager.isRTL
 
@@ -33,38 +31,12 @@ function SectionTitle({ text }: { text: string }) {
   )
 }
 
-function ActionButton({
-  icon,
-  label,
-  onPress,
-  variant = 'default',
-}: {
-  icon: string
-  label: string
-  onPress: () => void
-  variant?: 'default' | 'primary'
-}) {
-  return (
-    <TouchableOpacity
-      style={[styles.actionBtn, variant === 'primary' && styles.actionBtnPrimary]}
-      onPress={onPress}
-      activeOpacity={0.75}
-    >
-      <Text style={styles.actionIcon}>{icon}</Text>
-      <Text style={[styles.actionLabel, variant === 'primary' && styles.actionLabelPrimary]}>
-        {label}
-      </Text>
-    </TouchableOpacity>
-  )
-}
-
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function BalanceScreen() {
   const { t } = useTranslation()
-  const { showToast } = useToast()
   const [ibanCopied, setIbanCopied] = useState(false)
-  const [balanceData, setBalanceData] = useState<{ available: number; incoming: number; outgoing: number; iban: string; company: string; nextSettlement: { id: string; date: string; net: number; commission: number } | null } | null>(null)
+  const [balanceData, setBalanceData] = useState<{ available: number; incoming: number; outgoing: number; iban: string; company: string; nextSettlement: { id: string; date: string; net: number; commission: number; dateAmount?: number } | null } | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -84,23 +56,18 @@ export default function BalanceScreen() {
   }
 
   React.useEffect(() => { fetchData() }, [])
-
   const onRefresh = () => { setRefreshing(true); fetchData() }
 
-  // Use API data or fallback
   const bal = balanceData || { available: 0, iban: '', company: '', incoming: 0, outgoing: 0, nextSettlement: null }
 
   const handleCopyIban = () => {
     Clipboard.setStringAsync(bal.iban)
     setIbanCopied(true)
-    showToast(t('common.copied'), 'success')
     setTimeout(() => setIbanCopied(false), 2000)
   }
 
-  const [showTransfer, setShowTransfer] = useState(false)
-
   const handleTransfer = () => {
-    setShowTransfer(true)
+    Alert.alert(t('balance.transfer'), bal.iban)
   }
 
   const handleQr = () => {
@@ -116,6 +83,10 @@ export default function BalanceScreen() {
       </SafeAreaView>
     )
   }
+
+  const netAmount = bal.nextSettlement?.net ?? bal.nextSettlement?.dateAmount ?? 0
+  const commission = bal.nextSettlement?.commission ?? 0
+  const maxFlow = Math.max(bal.incoming, Math.abs(bal.outgoing), 1)
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -136,178 +107,123 @@ export default function BalanceScreen() {
         <View style={styles.heroCard}>
           <Text style={styles.heroLabel}>{t('balance.available')}</Text>
           <Text style={styles.heroAmount}>
-            {bal.available.toLocaleString('en-US', {
-              minimumFractionDigits: 2,
-            })}{' '}
-            <Text style={styles.heroCurrency}>{'USD'}</Text>
+            {bal.available.toLocaleString('en-US', { minimumFractionDigits: 2 })}{' '}
+            <Text style={styles.heroCurrency}>ر.س</Text>
           </Text>
 
-          {/* Action Buttons */}
+          {/* Action Buttons — each with unique color */}
           <View style={[styles.actionRow, isRTL && styles.actionRowRTL]}>
-            <ActionButton
-              icon="↑"
-              label={t('balance.transfer')}
-              onPress={handleTransfer}
-              variant="primary"
-            />
-            <ActionButton
-              icon="⧉"
-              label={t('balance.copy_iban')}
-              onPress={handleCopyIban}
-            />
-            <ActionButton
-              icon="▦"
-              label={t('balance.qr_code')}
-              onPress={handleQr}
-            />
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: COLORS.primary, borderColor: COLORS.primary }]} onPress={handleTransfer} activeOpacity={0.75}>
+              <Text style={styles.actionIcon}>↑</Text>
+              <Text style={[styles.actionLabel, { color: COLORS.white }]}>{t('balance.transfer')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: 'rgba(13, 148, 136, 0.25)', borderColor: 'rgba(13, 148, 136, 0.5)' }]} onPress={handleCopyIban} activeOpacity={0.75}>
+              <Text style={styles.actionIcon}>⧉</Text>
+              <Text style={[styles.actionLabel, { color: '#0D9488' }]}>{t('balance.copy_iban')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: 'rgba(139, 92, 246, 0.2)', borderColor: 'rgba(139, 92, 246, 0.4)' }]} onPress={handleQr} activeOpacity={0.75}>
+              <Text style={styles.actionIcon}>▦</Text>
+              <Text style={[styles.actionLabel, { color: COLORS.chart.purple }]}>{t('balance.qr_code')}</Text>
+            </TouchableOpacity>
           </View>
 
-          {/* IBAN row */}
+          {/* IBAN row — single line, small font */}
           <TouchableOpacity
             style={[styles.ibanRow, isRTL && styles.ibanRowRTL]}
             onPress={handleCopyIban}
             activeOpacity={0.7}
           >
             <Text style={styles.ibanLabel}>IBAN</Text>
-            <Text style={styles.ibanValue}>{bal.iban}</Text>
-            <Text style={[styles.ibanCopied, { opacity: ibanCopied ? 1 : 0 }]}>
-              ✓
-            </Text>
+            <Text style={styles.ibanValue} numberOfLines={1} adjustsFontSizeToFit>{bal.iban}</Text>
+            <Text style={[styles.ibanCopied, { opacity: ibanCopied ? 1 : 0 }]}>✓</Text>
           </TouchableOpacity>
         </View>
 
-        {/* ── KPI Row — Incoming / Outgoing ── */}
-        <View style={styles.kpiRow}>
-          {[{ label: 'incoming', amount: bal.incoming, sign: '+', color: COLORS.success }, { label: 'outgoing', amount: bal.outgoing, sign: '-', color: COLORS.danger }].map((item) => (
-            <KpiCard
-              key={item.label}
-              label={t(`balance.${item.label}`)}
-              value={`${item.sign}${item.amount.toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-              })} $`}
-              valueColor={item.color}
-              style={styles.kpiCard}
-            />
-          ))}
+        {/* ── Incoming / Outgoing ── */}
+        <View style={[styles.flowRow, isRTL && styles.flowRowRTL]}>
+          <View style={[styles.flowCard, { backgroundColor: 'rgba(5, 150, 105, 0.12)', borderColor: 'rgba(5, 150, 105, 0.3)' }]}>
+            <View style={[styles.flowDot, { backgroundColor: COLORS.success }]} />
+            <Text style={styles.flowLabel}>{t('balance.incoming')}</Text>
+            <Text style={[styles.flowAmount, { color: COLORS.success }]}>
+              +{bal.incoming.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س
+            </Text>
+          </View>
+          <View style={[styles.flowCard, { backgroundColor: 'rgba(220, 38, 38, 0.12)', borderColor: 'rgba(220, 38, 38, 0.3)' }]}>
+            <View style={[styles.flowDot, { backgroundColor: COLORS.danger }]} />
+            <Text style={styles.flowLabel}>{t('balance.outgoing')}</Text>
+            <Text style={[styles.flowAmount, { color: COLORS.danger }]}>
+              -{Math.abs(bal.outgoing).toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س
+            </Text>
+          </View>
+        </View>
+
+        {/* ── Flow Pivot Chart ── */}
+        <View style={styles.chartContainer}>
+          <View style={styles.chartBarGroup}>
+            <View style={styles.chartBarTrack}>
+              <View style={[styles.chartBarFill, { backgroundColor: COLORS.success, height: `${Math.max((bal.incoming / maxFlow) * 100, 8)}%` }]} />
+            </View>
+            <Text style={[styles.chartBarLabel, { color: COLORS.success }]}>{t('balance.incoming')}</Text>
+          </View>
+          <View style={styles.chartBarGroup}>
+            <View style={styles.chartBarTrack}>
+              <View style={[styles.chartBarFill, { backgroundColor: COLORS.danger, height: `${Math.max((Math.abs(bal.outgoing) / maxFlow) * 100, 8)}%` }]} />
+            </View>
+            <Text style={[styles.chartBarLabel, { color: COLORS.danger }]}>{t('balance.outgoing')}</Text>
+          </View>
         </View>
 
         {/* ── Next Settlement Card ── */}
         <View style={styles.section}>
           <SectionTitle text={t('balance.next_settlement')} />
-
           <View style={styles.settlementCard}>
-            {/* Header row */}
-            <View style={styles.settlementHeader}>
-              <Text style={styles.settlementHeaderText}>{t('balance.next_settlement')}</Text>
+            <View style={styles.settlementCardHeader}>
+              <Text style={styles.settlementCardTitle}>{t('balance.next_settlement')}</Text>
             </View>
-
-            {/* Date & Company row */}
-            <View style={[styles.tableRow, styles.tableRowShaded]}>
-              <Text style={styles.tableLabel}>📅  {t('settlements.date')}</Text>
-              <Text style={styles.tableValue}>{bal.nextSettlement?.date}</Text>
+            <View style={[styles.settRow, { backgroundColor: 'rgba(26, 86, 219, 0.08)' }]}>
+              <Text style={styles.settLabel}>📅  {t('settlements.date') || 'التاريخ'}</Text>
+              <Text style={styles.settValue}>{bal.nextSettlement?.date ?? '2026-04-07'}</Text>
             </View>
-            <View style={styles.tableRow}>
-              <Text style={styles.tableLabel}>{t('profile.company')}</Text>
-              <Text style={styles.tableValue}>{bal.company}</Text>
+            <View style={[styles.settRow, { backgroundColor: 'rgba(26, 86, 219, 0.04)' }]}>
+              <Text style={styles.settLabel}>{t('profile.company')}</Text>
+              <Text style={styles.settValue}>{bal.company || 'Zyrix Global Technology'}</Text>
             </View>
-
-            {/* Financial breakdown */}
-            <View style={[styles.tableRow, styles.tableRowShaded]}>
-              <Text style={styles.tableLabel}>{t('settlements.gross')}</Text>
-              <Text style={styles.tableValue}>${bal.available.toFixed(2)}</Text>
+            <View style={[styles.settRow, { backgroundColor: 'rgba(26, 86, 219, 0.08)' }]}>
+              <Text style={styles.settLabel}>{t('settlements.gross') || 'الإجمالي'}</Text>
+              <Text style={styles.settValue}>{bal.available.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</Text>
             </View>
-            <View style={styles.tableRow}>
-              <Text style={styles.tableLabel}>{t('settlements.commission')}</Text>
-              <Text style={[styles.tableValue, { color: COLORS.danger }]}>-${(bal.nextSettlement?.commission ?? 0).toFixed(2)}</Text>
+            <View style={[styles.settRow, { backgroundColor: 'rgba(26, 86, 219, 0.04)' }]}>
+              <Text style={styles.settLabel}>{t('settlements.commission')}</Text>
+              <Text style={[styles.settValue, { color: COLORS.danger }]}>-{commission.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</Text>
             </View>
-            <View style={[styles.tableRow, styles.tableRowShaded, styles.tableRowLast]}>
-              <Text style={[styles.tableLabel, { fontWeight: '700' }]}>{t('settlements.net')}</Text>
-              <Text style={[styles.tableValue, { color: COLORS.success, fontWeight: '700', fontSize: 16 }]}>
-                +${(bal.nextSettlement?.dateAmount ?? 0).toFixed(2)}
-              </Text>
+            <View style={[styles.settRow, { backgroundColor: 'rgba(26, 86, 219, 0.08)' }]}>
+              <Text style={styles.settLabel}>{t('settlements.net')}</Text>
+              <Text style={[styles.settValue, { color: COLORS.success }]}>+{netAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</Text>
             </View>
           </View>
         </View>
 
-        {/* ── Account Info ── */}
+        {/* ── Account Info / Profile ── */}
         <View style={styles.section}>
           <SectionTitle text={t('profile.title')} />
           <View style={styles.infoCard}>
-            <View style={[styles.tableRow, styles.tableRowShaded]}>
-              <Text style={styles.tableLabel}>{t('profile.merchantId')}</Text>
-              <Text style={[styles.tableValue, { fontFamily: 'monospace' }]}>ZRX-10042</Text>
+            <View style={[styles.infoRow, { backgroundColor: 'rgba(139, 92, 246, 0.08)' }]}>
+              <Text style={styles.infoLabel}>{t('profile.merchantId')}</Text>
+              <Text style={styles.infoValue}>ZRX-10042</Text>
             </View>
-            <View style={styles.tableRow}>
-              <Text style={styles.tableLabel}>{t('profile.company')}</Text>
-              <Text style={styles.tableValue}>{bal.company}</Text>
+            <View style={[styles.infoRow, { backgroundColor: 'rgba(139, 92, 246, 0.04)' }]}>
+              <Text style={styles.infoLabel}>{t('profile.company')}</Text>
+              <Text style={styles.infoValue}>{bal.company || 'Zyrix Global Technology'}</Text>
             </View>
-            <View style={[styles.tableRow, styles.tableRowShaded, styles.tableRowLast]}>
-              <Text style={styles.tableLabel}>IBAN</Text>
-              <Text style={[styles.tableValue, { fontFamily: 'monospace', fontSize: 11 }]}>{bal.iban}</Text>
+            <View style={[styles.infoRow, { backgroundColor: 'rgba(139, 92, 246, 0.08)' }]}>
+              <Text style={styles.infoLabel}>IBAN</Text>
+              <Text style={[styles.infoValue, styles.infoValueMono]} numberOfLines={1} adjustsFontSizeToFit>{bal.iban}</Text>
             </View>
           </View>
         </View>
 
+        <View style={{ height: 40 }} />
       </ScrollView>
-
-      {/* ── Transfer Bottom Sheet ── */}
-      <Modal
-        visible={showTransfer}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowTransfer(false)}
-      >
-        <TouchableOpacity
-          style={transferStyles.overlay}
-          activeOpacity={1}
-          onPress={() => setShowTransfer(false)}
-        >
-          <View style={transferStyles.sheet}>
-            <View style={transferStyles.handle} />
-            <Text style={[transferStyles.title, isRTL && styles.textRight]}>
-              {t('balance.transfer')}
-            </Text>
-
-            {/* IBAN display */}
-            <TouchableOpacity
-              style={transferStyles.ibanBox}
-              onPress={() => {
-                Clipboard.setStringAsync(bal.iban)
-                showToast(t('common.copied'), 'success')
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={transferStyles.ibanLabel}>IBAN</Text>
-              <Text style={transferStyles.ibanText}>{bal.iban}</Text>
-              <Text style={transferStyles.copyHint}>{t('common.copy')} 📋</Text>
-            </TouchableOpacity>
-
-            {/* Open bank app button */}
-            <TouchableOpacity
-              style={transferStyles.bankBtn}
-              onPress={() => {
-                setShowTransfer(false)
-                // Try to open banking app with IBAN
-                Linking.openURL(`https://pay.zyrix.co/transfer?iban=${encodeURIComponent(bal.iban)}`).catch(() => {
-                  showToast(t('common.coming_soon'), 'info')
-                })
-              }}
-              activeOpacity={0.75}
-            >
-              <Text style={transferStyles.bankBtnText}>{t('balance.transfer')} →</Text>
-            </TouchableOpacity>
-
-            {/* Close */}
-            <TouchableOpacity
-              style={transferStyles.closeBtn}
-              onPress={() => setShowTransfer(false)}
-            >
-              <Text style={transferStyles.closeBtnText}>{t('common.close')}</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
       <QRCodeModal
         visible={showQR}
         onClose={() => setShowQR(false)}
@@ -319,50 +235,12 @@ export default function BalanceScreen() {
   )
 }
 
-// ─── Helper components ────────────────────────────────────────────────────────
-
-function BreakdownItem({
-  label,
-  value,
-  color,
-}: {
-  label: string
-  value: string
-  color: string
-}) {
-  return (
-    <View style={styles.breakdownItem}>
-      <Text style={styles.breakdownLabel}>{label}</Text>
-      <Text style={[styles.breakdownValue, { color }]}>{value}</Text>
-    </View>
-  )
-}
-
-function InfoRow({
-  label,
-  value,
-  mono,
-}: {
-  label: string
-  value: string
-  mono?: boolean
-}) {
-  return (
-    <View style={[styles.infoRow, isRTL && styles.infoRowRTL]}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={[styles.infoValue, mono && styles.infoValueMono]}>
-        {value}
-      </Text>
-    </View>
-  )
-}
-
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.cardBg,
+    backgroundColor: COLORS.darkBg,
   },
   scrollContent: {
     paddingBottom: 40,
@@ -371,9 +249,11 @@ const styles = StyleSheet.create({
   // Header
   pageHeader: {
     paddingHorizontal: 20,
-    paddingTop: 4,
-    paddingBottom: 4,
-    backgroundColor: COLORS.cardBg,
+    paddingTop: 20,
+    paddingBottom: 16,
+    backgroundColor: COLORS.deepBg,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
   pageTitle: {
     fontSize: 22,
@@ -384,36 +264,32 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
 
-  // Hero card
+  // Hero card — distinctive teal gradient
   heroCard: {
     margin: 16,
     borderRadius: 16,
-    backgroundColor: COLORS.darkBg,
+    backgroundColor: 'rgba(13, 148, 136, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(13, 148, 136, 0.35)',
     padding: 24,
-    shadowColor: COLORS.deepBg,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 6,
   },
   heroLabel: {
     fontSize: 12,
     fontWeight: '600',
     letterSpacing: 1,
     color: COLORS.textSecondary,
-    textTransform: 'uppercase',
     marginBottom: 8,
     textAlign: isRTL ? 'right' : 'left',
   },
   heroAmount: {
-    fontSize: 38,
+    fontSize: 36,
     fontWeight: '800',
     color: COLORS.white,
     marginBottom: 24,
     textAlign: isRTL ? 'right' : 'left',
   },
   heroCurrency: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '500',
     color: COLORS.textSecondary,
   },
@@ -430,16 +306,10 @@ const styles = StyleSheet.create({
   actionBtn: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: COLORS.divider,
+    paddingVertical: 12,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
     gap: 4,
-  },
-  actionBtnPrimary: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
   },
   actionIcon: {
     fontSize: 18,
@@ -447,37 +317,36 @@ const styles = StyleSheet.create({
   },
   actionLabel: {
     fontSize: 11,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
-  },
-  actionLabelPrimary: {
-    color: COLORS.white,
+    fontWeight: '600',
   },
 
-  // IBAN
+  // IBAN — compact single line
   ibanRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.divider,
+    backgroundColor: COLORS.cardBg,
     borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   ibanRowRTL: {
     flexDirection: 'row-reverse',
   },
   ibanLabel: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
+    fontSize: 10,
+    color: COLORS.textMuted,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
   ibanValue: {
     flex: 1,
-    fontSize: 12,
-    color: COLORS.white,
+    fontSize: 10,
+    color: COLORS.textPrimary,
     fontFamily: 'monospace',
+    letterSpacing: 0.5,
   },
   ibanCopied: {
     fontSize: 14,
@@ -485,15 +354,74 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // KPI row
-  kpiRow: {
-    flexDirection: isRTL ? 'row-reverse' : 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    gap: 8,
+  // Flow cards (incoming/outgoing)
+  flowRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    gap: 10,
   },
-  kpiCard: {
+  flowRowRTL: {
+    flexDirection: 'row-reverse',
+  },
+  flowCard: {
     flex: 1,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 16,
+    alignItems: isRTL ? 'flex-end' : 'flex-start',
+  },
+  flowDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginBottom: 6,
+  },
+  flowLabel: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  flowAmount: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+
+  // Chart
+  chartContainer: {
+    flexDirection: isRTL ? 'row-reverse' : 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-end',
+    backgroundColor: COLORS.cardBg,
+    marginHorizontal: 16,
+    marginTop: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 16,
+    height: 120,
+  },
+  chartBarGroup: {
+    alignItems: 'center',
+    flex: 1,
+    gap: 4,
+  },
+  chartBarTrack: {
+    width: 36,
+    height: 65,
+    backgroundColor: COLORS.surfaceBg,
+    borderRadius: 6,
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
+  },
+  chartBarFill: {
+    width: '100%',
+    borderRadius: 6,
+  },
+  chartBarLabel: {
+    fontSize: 11,
+    fontWeight: '700',
   },
 
   // Section
@@ -506,155 +434,79 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textSecondary,
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
     marginBottom: 10,
   },
 
-  // Settlement card
+  // Settlement card — with alternating row colors
   settlementCard: {
-    backgroundColor: COLORS.cardBg,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: 'rgba(26, 86, 219, 0.3)',
     overflow: 'hidden',
   },
-  settlementHeader: {
-    backgroundColor: COLORS.primary,
+  settlementCardHeader: {
+    backgroundColor: 'rgba(26, 86, 219, 0.15)',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(26, 86, 219, 0.2)',
   },
-  settlementHeaderText: {
-    fontSize: 13,
+  settlementCardTitle: {
+    fontSize: 14,
     fontWeight: '700',
-    color: COLORS.white,
+    color: COLORS.textPrimary,
     textAlign: isRTL ? 'right' : 'left',
   },
-
-  // Shared table row styles
-  tableRow: {
+  settRow: {
     flexDirection: isRTL ? 'row-reverse' : 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 11,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.divider,
+    borderBottomColor: COLORS.border,
   },
-  tableRowShaded: {
-    backgroundColor: COLORS.surfaceBg,
-  },
-  tableRowLast: {
-    borderBottomWidth: 0,
-  },
-  tableLabel: {
-    fontSize: 12,
+  settLabel: {
+    fontSize: 13,
     color: COLORS.textSecondary,
     fontWeight: '500',
   },
-  tableValue: {
+  settValue: {
+    fontSize: 13,
+    color: COLORS.textPrimary,
+    fontWeight: '600',
+  },
+
+  // Info card — with alternating row colors
+  infoCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+    overflow: 'hidden',
+  },
+  infoRow: {
+    flexDirection: isRTL ? 'row-reverse' : 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  infoLabel: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    fontWeight: '500',
+  },
+  infoValue: {
     fontSize: 13,
     color: COLORS.textPrimary,
     fontWeight: '600',
     maxWidth: '60%',
     textAlign: isRTL ? 'left' : 'right',
   },
-
-  divider: {
-    height: 1,
-    backgroundColor: COLORS.border,
-    marginVertical: 14,
-  },
-
-  // Info card
-  infoCard: {
-    backgroundColor: COLORS.cardBg,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    overflow: 'hidden',
-  },
-})
-
-// ─── Transfer Bottom Sheet Styles ─────────────────────────────────────────────
-
-const transferStyles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: COLORS.cardBg,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 24,
-    paddingBottom: 36,
-    paddingTop: 12,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: COLORS.border,
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 16,
-    textAlign: isRTL ? 'right' : 'left',
-  },
-  ibanBox: {
-    backgroundColor: COLORS.darkBg,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  ibanLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: COLORS.textSecondary,
-    letterSpacing: 1,
-    marginBottom: 6,
-  },
-  ibanText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.white,
+  infoValueMono: {
     fontFamily: 'monospace',
-    letterSpacing: 1,
-    marginBottom: 8,
-    textAlign: isRTL ? 'right' : 'left',
-  },
-  copyHint: {
-    fontSize: 11,
-    color: COLORS.primary,
-    fontWeight: '600',
-    textAlign: isRTL ? 'right' : 'left',
-  },
-  bankBtn: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  bankBtnText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: COLORS.white,
-  },
-  closeBtn: {
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  closeBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontSize: 10,
   },
 })

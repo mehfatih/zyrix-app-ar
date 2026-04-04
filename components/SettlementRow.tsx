@@ -1,218 +1,81 @@
 // components/SettlementRow.tsx
 import React from 'react'
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  I18nManager,
-} from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet, I18nManager } from 'react-native'
 import { COLORS } from '../constants/colors'
 import { useTranslation } from '../hooks/useTranslation'
 import StatusBadge from './StatusBadge'
 
 const isRTL = I18nManager.isRTL
 
+const CARD_COLORS = [
+  { bg: 'rgba(26, 86, 219, 0.1)', border: 'rgba(26, 86, 219, 0.3)' },
+  { bg: 'rgba(139, 92, 246, 0.1)', border: 'rgba(139, 92, 246, 0.3)' },
+  { bg: 'rgba(13, 148, 136, 0.1)', border: 'rgba(13, 148, 136, 0.3)' },
+  { bg: 'rgba(245, 158, 11, 0.1)', border: 'rgba(245, 158, 11, 0.3)' },
+  { bg: 'rgba(99, 102, 241, 0.1)', border: 'rgba(99, 102, 241, 0.3)' },
+]
+
 export interface SettlementRowProps {
-  id: string
-  date: string
-  period: string
-  count: number
-  gross: number
-  commission: number
-  net: number
-  status: 'pending' | 'settled'
-  onPress?: () => void
+  id: string; date: string; period: string; count: number;
+  gross: number; commission: number; net: number;
+  status: 'pending' | 'settled'; onPress?: () => void;
 }
 
-export default function SettlementRow({
-  id,
-  date,
-  period,
-  count,
-  gross,
-  commission,
-  net,
-  status,
-  onPress,
-}: SettlementRowProps) {
+export default function SettlementRow({ id, date, period, count, gross, commission, net, status, onPress }: SettlementRowProps & { index?: number }) {
   const { t } = useTranslation()
+  // Use id hash for color selection
+  const colorIdx = id ? (id.charCodeAt(id.length - 1) || 0) % CARD_COLORS.length : 0
+  const colors = CARD_COLORS[colorIdx]
 
   return (
-    <TouchableOpacity
-      style={styles.container}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      {/* Top row — ID + date + badge */}
-      <View style={[styles.topRow, isRTL && styles.topRowRTL]}>
-        <View style={[styles.topLeft, isRTL && styles.topLeftRTL]}>
-          <Text style={styles.id}>{id}</Text>
-          <View style={styles.periodPill}>
-            <Text style={styles.periodText}>{period}</Text>
-          </View>
+    <TouchableOpacity style={[s.container, { backgroundColor: colors.bg, borderColor: colors.border }]} onPress={onPress} activeOpacity={0.7}>
+      <View style={[s.topRow, isRTL && s.topRowRTL]}>
+        <View style={[s.topLeft, isRTL && s.topLeftRTL]}>
+          <View style={s.periodPill}><Text style={s.periodText}>{period}</Text></View>
+          <Text style={s.date}>{date}</Text>
         </View>
-        <View style={[styles.topRight, isRTL && styles.topRightRTL]}>
-          <StatusBadge status={status} />
-          <Text style={styles.date}>{date}</Text>
-        </View>
+        <StatusBadge status={status} />
       </View>
-
-      {/* Divider */}
-      <View style={styles.divider} />
-
-      {/* Bottom row — financials */}
-      <View style={[styles.bottomRow, isRTL && styles.bottomRowRTL]}>
-        <FinancialCell
-          label={t('settlements.gross')}
-          value={`$${gross.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
-          color={COLORS.textPrimary}
-        />
-        <View style={styles.separator} />
-        <FinancialCell
-          label={t('settlements.commission')}
-          value={`-$${commission.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
-          color={COLORS.danger}
-        />
-        <View style={styles.separator} />
-        <FinancialCell
-          label={t('settlements.net')}
-          value={`$${net.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
-          color={COLORS.success}
-          bold
-        />
-        <View style={styles.separator} />
-        <FinancialCell
-          label="İşlem"
-          value={String(count)}
-          color={COLORS.textSecondary}
-        />
+      <View style={s.divider} />
+      <View style={[s.bottomRow, isRTL && s.bottomRowRTL]}>
+        <View style={s.cell}>
+          <Text style={s.cellLabel}>{t('settlements.net')}</Text>
+          <Text style={[s.cellValue, { color: COLORS.success }]}>{net.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</Text>
+        </View>
+        <View style={s.sep} />
+        <View style={s.cell}>
+          <Text style={s.cellLabel}>{t('settlements.commission')}</Text>
+          <Text style={[s.cellValue, { color: COLORS.danger }]}>-{commission.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</Text>
+        </View>
+        <View style={s.sep} />
+        <View style={s.cell}>
+          <Text style={s.cellLabel}>{t('settlements.gross')}</Text>
+          <Text style={[s.cellValue, { color: COLORS.textPrimary }]}>{gross.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</Text>
+        </View>
+        <View style={s.sep} />
+        <View style={s.cell}>
+          <Text style={s.cellLabel}>المعاملات</Text>
+          <Text style={[s.cellValue, { color: COLORS.textSecondary }]}>{count}</Text>
+        </View>
       </View>
     </TouchableOpacity>
   )
 }
 
-function FinancialCell({
-  label,
-  value,
-  color,
-  bold,
-}: {
-  label: string
-  value: string
-  color: string
-  bold?: boolean
-}) {
-  return (
-    <View style={styles.cell}>
-      <Text style={styles.cellLabel}>{label}</Text>
-      <Text style={[styles.cellValue, { color }, bold && styles.cellValueBold]}>
-        {value}
-      </Text>
-    </View>
-  )
-}
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: COLORS.white,
-    marginHorizontal: 16,
-    marginVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    overflow: 'hidden',
-  },
-
-  // Top row
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 12,
-  },
-  topRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  topLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flex: 1,
-  },
-  topLeftRTL: {
-    flexDirection: 'row-reverse',
-  },
-  topRight: {
-    alignItems: 'flex-end',
-    gap: 4,
-  },
-  topRightRTL: {
-    alignItems: 'flex-start',
-  },
-  id: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    fontFamily: 'monospace',
-  },
-  periodPill: {
-    backgroundColor: COLORS.primaryLight,
-    borderRadius: 20,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  periodText: {
-    fontSize: 11,
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-  date: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-  },
-
-  // Divider
-  divider: {
-    height: 1,
-    backgroundColor: COLORS.border,
-    marginHorizontal: 0,
-  },
-
-  // Bottom row
-  bottomRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  bottomRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  separator: {
-    width: 1,
-    backgroundColor: COLORS.border,
-    marginHorizontal: 12,
-  },
-  cell: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  cellLabel: {
-    fontSize: 10,
-    color: COLORS.textMuted,
-    fontWeight: '500',
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-    marginBottom: 4,
-  },
-  cellValue: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  cellValueBold: {
-    fontWeight: '800',
-    fontSize: 14,
-  },
+const s = StyleSheet.create({
+  container: { marginHorizontal: 16, marginVertical: 6, borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },
+  topRowRTL: { flexDirection: 'row-reverse' },
+  topLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  topLeftRTL: { flexDirection: 'row-reverse' },
+  periodPill: { backgroundColor: 'rgba(59, 130, 246, 0.15)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
+  periodText: { fontSize: 11, color: COLORS.primaryLight, fontWeight: '600' },
+  date: { fontSize: 11, color: COLORS.textMuted },
+  divider: { height: 1, backgroundColor: COLORS.border },
+  bottomRow: { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 10 },
+  bottomRowRTL: { flexDirection: 'row-reverse' },
+  sep: { width: 1, backgroundColor: COLORS.border, marginHorizontal: 6 },
+  cell: { flex: 1, alignItems: 'center' },
+  cellLabel: { fontSize: 9, color: COLORS.textMuted, fontWeight: '600', marginBottom: 3 },
+  cellValue: { fontSize: 12, fontWeight: '700' },
 })

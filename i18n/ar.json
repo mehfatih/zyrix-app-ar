@@ -79,7 +79,7 @@
     "fee": "العمولة",
     "net": "الصافي",
     "status": "الحالة",
-    "subtitle": "جميع المعاملات المعالجة عبر Zyrix",
+    "subtitle": "جميع المعاملات تمت معالجتها عبر تطبيق زايركس - Zyrix",
     "search": "ابحث بالمعرف أو العميل أو المبلغ…",
     "filter_all": "جميع الحالات",
     "filter_success": "ناجح",
@@ -87,7 +87,7 @@
     "filter_failed": "فاشل",
     "export": "تصدير CSV",
     "total_volume": "إجمالي الحجم (30 يوم)",
-    "total_count": "عدد المعاملات (30 يوم)",
+    "total_count": "عدد المعاملات",
     "success_rate": "معدل النجاح",
     "view": "عرض",
     "not_found": "المعاملة غير موجودة",
@@ -99,16 +99,7 @@
     "card": "البطاقة",
     "transaction_flow": "مسار المعاملة",
     "risk_amount": "مبلغ المخاطر",
-    "export_csv": "تصدير CSV",
-    "copied": "تم النسخ",
-    "refund_title": "استرداد",
-    "refund_confirm": "هل تريد بدء استرداد لهذه المعاملة؟",
-    "refund_action": "استرداد",
-    "dispute_title": "نزاع",
-    "dispute_confirm": "هل تريد فتح نزاع على هذه المعاملة؟",
-    "dispute_action": "فتح نزاع",
-    "share_title": "مشاركة",
-    "share_receipt": "مشاركة الإيصال"
+    "export_csv": "تصدير CSV"
   },
   "balance": {
     "title": "الرصيد",
@@ -205,27 +196,7 @@
     "logout": "تسجيل الخروج",
     "logoutConfirm": "هل أنت متأكد من تسجيل الخروج؟",
     "version": "الإصدار",
-    "webhooks": "ويب هوكس",
-    "email_reports": "تقارير البريد الإلكتروني",
-    "email_reports_sub": "استلام تقارير يومية عبر البريد",
-    "sms_alerts": "تنبيهات SMS",
-    "sms_alerts_sub": "إشعارات SMS للمعاملات الكبيرة",
-    "twofactor_active": "مفعّلة",
-    "twofactor_inactive": "غير مفعّلة",
-    "auto_logout": "تسجيل الخروج التلقائي",
-    "auto_logout_sub": "بعد 15 دقيقة من عدم النشاط",
-    "change_password": "تغيير كلمة المرور",
-    "integration": "التكامل",
-    "support": "الدعم",
-    "dark_mode": "الوضع الداكن",
-    "dark_mode_sub": "تبديل مظهر التطبيق",
-    "manage_2fa": "إدارة المصادقة الثنائية",
-    "manage_2fa_sub": "إعداد طرق التحقق المعتمدة",
-    "api_keys_sub": "إدارة مفاتيح الوصول",
-    "webhooks_sub": "إدارة إشعارات الويب هوكس",
-    "support_chat": "الدعم والمساعدة",
-    "support_sub": "تواصل مع فريق الدعم",
-    "notifications_sub": "دائماً"
+    "webhooks": "ويب هوكس"
   },
   "profile": {
     "title": "الملف الشخصي",
@@ -237,11 +208,7 @@
     "last_name": "اسم العائلة",
     "save": "حفظ",
     "cancel": "إلغاء",
-    "country": "الدولة",
-    "name_required": "الاسم مطلوب",
-    "email_invalid": "أدخل بريد إلكتروني صحيح",
-    "updated": "تم تحديث الملف الشخصي",
-    "close_account": "إغلاق الحساب"
+    "country": "الدولة"
   },
   "notifications": {
     "title": "الإشعارات",
@@ -382,5 +349,8 @@
     "sent_tab": "المرسلة",
     "received_tab": "المستلمة",
     "no_transfers": "لا توجد تحويلات"
+  },
+  "drawer": {
+    "merchant_panel": ""
   }
 }

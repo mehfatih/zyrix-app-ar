@@ -35,16 +35,7 @@ interface Dispute {
 
 type FilterKey = 'all' | DisputeStatus
 
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function daysUntil(dateStr: string): number {
-  const [d, m, y] = dateStr.split('.').map(Number)
-  const target = new Date(y, m - 1, d)
-  const today  = new Date(2026, 2, 23) // fixed to brief date
-  const diff   = Math.ceil((target.getTime() - today.getTime()) / 86_400_000)
-  return diff
-}
 
 function statusConfig(status: DisputeStatus): {
   label: string
@@ -54,35 +45,48 @@ function statusConfig(status: DisputeStatus): {
 } {
   switch (status) {
     case 'pending':
-      return { label: 'Pending',  bg: COLORS.warningBg, text: COLORS.warning, icon: '⏳' }
+      return { label: 'معلق',    bg: COLORS.warningBg, text: COLORS.warning, icon: '⏳' }
     case 'won':
-      return { label: 'Won',      bg: COLORS.successBg,  text: COLORS.success,  icon: '✓' }
+      return { label: 'مكسوب',   bg: COLORS.successBg, text: COLORS.success, icon: '✓' }
     case 'lost':
-      return { label: 'Lost',     bg: COLORS.dangerBg,   text: COLORS.danger,   icon: '✕' }
+      return { label: 'خسارة',   bg: COLORS.dangerBg,  text: COLORS.danger,  icon: '✕' }
   }
 }
 
 // ─── DisputeCard ──────────────────────────────────────────────────────────────
 
+const CARD_COLORS = [
+  { bg: 'rgba(26, 86, 219, 0.12)', border: 'rgba(26, 86, 219, 0.3)' },   // blue
+  { bg: 'rgba(139, 92, 246, 0.12)', border: 'rgba(139, 92, 246, 0.3)' },  // purple
+  { bg: 'rgba(13, 148, 136, 0.12)', border: 'rgba(13, 148, 136, 0.3)' },  // teal
+]
+
 function DisputeCard({
   dispute,
+  index,
   onRespond,
 }: {
   dispute: Dispute
+  index: number
   onRespond: (id: string) => void
 }) {
   const { t } = useTranslation()
   const cfg   = statusConfig(dispute.status)
-  const days  = daysUntil(dispute.deadline)
   const isPending = dispute.status === 'pending'
+  const colorSet = CARD_COLORS[index % CARD_COLORS.length]
 
-  const deadlineColor =
-    days <= 2 ? COLORS.danger :
-    days <= 5 ? COLORS.warning :
-    COLORS.textMuted
+  // Format date nicely
+  const formatDate = (dateStr: string) => {
+    try {
+      const d = new Date(dateStr)
+      return d.toLocaleDateString('ar-SA', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    } catch {
+      return dateStr
+    }
+  }
 
   return (
-    <View style={[card.container, dispute.urgent && card.containerUrgent]}>
+    <View style={[card.container, { backgroundColor: colorSet.bg, borderColor: colorSet.border }]}>
 
       {/* Urgent banner */}
       {dispute.urgent && (
@@ -94,9 +98,8 @@ function DisputeCard({
       {/* Top row — IDs + badge */}
       <View style={[card.topRow, isRTL && card.topRowRTL]}>
         <View style={[card.idGroup, isRTL && card.idGroupRTL]}>
-          <Text style={card.id}>{dispute.id}</Text>
           <View style={card.orderPill}>
-            <Text style={card.orderPillText}>{dispute.orderId}</Text>
+            <Text style={card.orderPillText}>{dispute.id}</Text>
           </View>
         </View>
 
@@ -117,37 +120,24 @@ function DisputeCard({
       {/* Divider */}
       <View style={card.divider} />
 
-      {/* Footer row — amount + deadline + button */}
+      {/* Footer row — amount + deadline */}
       <View style={[card.footer, isRTL && card.footerRTL]}>
-
-        {/* Amount */}
         <View style={card.footerCell}>
-          <Text style={card.footerCellLabel}>{	('disputes.amount_label')}</Text>
+          <Text style={card.footerCellLabel}>{t('disputes.amount_label')}</Text>
           <Text style={card.footerAmount}>
-            {dispute.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} $
+            {dispute.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س
           </Text>
         </View>
 
-        {/* Deadline */}
-        <View style={card.footerCell}>
-          <Text style={card.footerCellLabel}>{t('disputes.deadline')}</Text>
-          <Text style={[card.footerDeadline, { color: deadlineColor }]}>
-            {dispute.deadline}
-            {isPending && (
-              <Text style={[card.daysLeft, { color: deadlineColor }]}>
-                {' '}({days > 0 ? `${days}g` : 'Bugün'})
-              </Text>
-            )}
-          </Text>
-        </View>
+        {isPending && dispute.deadline && (
+          <View style={card.footerCell}>
+            <Text style={card.footerCellLabel}>{t('disputes.deadline')}</Text>
+            <Text style={card.footerDeadline}>
+              {formatDate(dispute.deadline)}
+            </Text>
+          </View>
+        )}
 
-        {/* Opened */}
-        <View style={card.footerCell}>
-          <Text style={card.footerCellLabel}>Açılış</Text>
-          <Text style={card.footerOpened}>{dispute.opened}</Text>
-        </View>
-
-        {/* Respond button — only for pending */}
         {isPending && (
           <>
             <View style={card.footerSpacer} />
@@ -177,16 +167,16 @@ export default function DisputesScreen() {
   const fetchData = async () => {
     try {
       const data = await disputesApi.list()
-      // Data guard — prevent crash if disputes is undefined or has unexpected shape
+      // Safely handle data
       const disputes = Array.isArray(data?.disputes) ? data.disputes : []
       setAllDisputes(disputes.map((d: any) => ({
-        id: d.id || d.disputeId || '',
-        orderId: d.disputeId || d.orderId || d.id || '',
-        opened: d.createdAt || '',
-        amount: parseFloat(d.amount) || 0,
-        reason: d.reason || '',
-        deadline: d.deadline || '',
-        status: (d.status === 'open' ? 'pending' : d.status) as DisputeStatus,
+        id: d.id ?? d.disputeId ?? '',
+        orderId: d.orderId ?? d.transactionId ?? '',
+        opened: d.opened ?? d.createdAt ?? '',
+        amount: typeof d.amount === 'number' ? d.amount : parseFloat(d.amount) || 0,
+        reason: d.reason ?? '',
+        deadline: d.deadline ?? d.respondBy ?? '',
+        status: d.status ?? 'pending',
         urgent: d.urgent ?? false,
       })))
     } catch (err) { console.warn(err) }
@@ -196,15 +186,18 @@ export default function DisputesScreen() {
   React.useEffect(() => { fetchData() }, [])
   const onRefresh = () => { setRefreshing(true); fetchData() }
 
+  // Reorder filters: أرباح (won) - معلق - خسارة - الكل
   const FILTERS: { key: FilterKey; label: string }[] = [
-    { key: 'all',     label: t('disputes.filter_all') },
+    { key: 'won',     label: 'أرباح' },
     { key: 'pending', label: t('disputes.filter_pending') },
-    { key: 'won',     label: t('disputes.filter_won') },
     { key: 'lost',    label: t('disputes.filter_lost') },
+    { key: 'all',     label: t('disputes.filter_all') },
   ]
 
   const pendingCount = allDisputes.filter((d) => d.status === 'pending').length
   const urgentCount  = allDisputes.filter((d) => d.urgent).length
+  const wonCount     = allDisputes.filter((d) => d.status === 'won').length
+  const lostCount    = allDisputes.filter((d) => d.status === 'lost').length
   const totalAmount  = allDisputes
     .filter((d) => d.status === 'pending')
     .reduce((s, d) => s + d.amount, 0)
@@ -220,9 +213,17 @@ export default function DisputesScreen() {
 
   // ── Render ──
 
-  const renderItem = ({ item }: ListRenderItemInfo<Dispute>) => (
-    <DisputeCard dispute={item} onRespond={handleRespond} />
+  const renderItem = ({ item, index }: ListRenderItemInfo<Dispute>) => (
+    <DisputeCard dispute={item} index={index} onRespond={handleRespond} />
   )
+
+  // Chart bar helper
+  const maxVal = Math.max(wonCount, pendingCount, lostCount, 1)
+  const barData = [
+    { label: 'أرباح', value: wonCount, color: COLORS.success },
+    { label: 'معلق', value: pendingCount, color: COLORS.warning },
+    { label: 'خسارة', value: lostCount, color: COLORS.danger },
+  ]
 
   const renderHeader = () => (
     <>
@@ -242,7 +243,7 @@ export default function DisputesScreen() {
             {urgentCount > 0 && (
               <View style={styles.urgentPill}>
                 <Text style={styles.urgentPillText}>
-                  {urgentCount} acil
+                  {urgentCount} {t('disputes.urgent')}
                 </Text>
               </View>
             )}
@@ -250,49 +251,76 @@ export default function DisputesScreen() {
         )}
       </View>
 
-      {/* KPI row */}
+      {/* KPI row — each with unique color */}
       <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
         <KpiMini
           label={t('disputes.filter_pending')}
           value={String(pendingCount)}
           color={COLORS.warning}
+          bg="rgba(217, 119, 6, 0.15)"
+          borderColor="rgba(217, 119, 6, 0.3)"
         />
         <KpiMini
           label={t('disputes.urgent')}
           value={String(urgentCount)}
           color={COLORS.danger}
+          bg="rgba(220, 38, 38, 0.15)"
+          borderColor="rgba(220, 38, 38, 0.3)"
         />
         <KpiMini
           label={t('disputes.risk_amount')}
-          value={`$${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
-          color={COLORS.textPrimary}
+          value={`${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س`}
+          color={COLORS.primaryLight}
+          bg="rgba(59, 130, 246, 0.15)"
+          borderColor="rgba(59, 130, 246, 0.3)"
         />
       </View>
 
-      {/* Filter tabs */}
-      <View style={[styles.filterRow, isRTL && styles.filterRowRTL]}>
-        {FILTERS.map((f) => (
-          <TouchableOpacity
-            key={f.key}
-            style={[
-              styles.filterTab,
-              filter === f.key && styles.filterTabActive,
-              f.key === 'pending' && filter === f.key && styles.filterTabPending,
-              f.key === 'won'     && filter === f.key && styles.filterTabWon,
-              f.key === 'lost'    && filter === f.key && styles.filterTabLost,
-            ]}
-            onPress={() => setFilter(f.key)}
-          >
-            <Text
-              style={[
-                styles.filterTabText,
-                filter === f.key && styles.filterTabTextActive,
-              ]}
-            >
-              {f.label}
-            </Text>
-          </TouchableOpacity>
+      {/* Mini bar chart */}
+      <View style={styles.chartContainer}>
+        {barData.map((bar, i) => (
+          <View key={i} style={styles.chartBarGroup}>
+            <View style={styles.chartBarTrack}>
+              <View style={[styles.chartBarFill, {
+                backgroundColor: bar.color,
+                height: `${Math.max((bar.value / maxVal) * 100, 5)}%`,
+              }]} />
+            </View>
+            <Text style={[styles.chartBarValue, { color: bar.color }]}>{bar.value}</Text>
+            <Text style={styles.chartBarLabel}>{bar.label}</Text>
+          </View>
         ))}
+      </View>
+
+      {/* Filter tabs — right to left: أرباح - معلق - خسارة - الكل */}
+      <View style={styles.filterRow}>
+        {FILTERS.map((f) => {
+          const isActive = filter === f.key
+          let activeBg = 'rgba(59, 130, 246, 0.2)'
+          let activeBorder = COLORS.primaryLight
+          if (f.key === 'won')     { activeBg = COLORS.successBg; activeBorder = COLORS.success }
+          if (f.key === 'pending') { activeBg = COLORS.warningBg; activeBorder = COLORS.warning }
+          if (f.key === 'lost')    { activeBg = COLORS.dangerBg;  activeBorder = COLORS.danger  }
+          return (
+            <TouchableOpacity
+              key={f.key}
+              style={[
+                styles.filterTab,
+                isActive && { backgroundColor: activeBg, borderColor: activeBorder },
+              ]}
+              onPress={() => setFilter(f.key)}
+            >
+              <Text
+                style={[
+                  styles.filterTabText,
+                  isActive && styles.filterTabTextActive,
+                ]}
+              >
+                {f.label}
+              </Text>
+            </TouchableOpacity>
+          )
+        })}
       </View>
     </>
   )
@@ -326,13 +354,17 @@ function KpiMini({
   label,
   value,
   color,
+  bg,
+  borderColor,
 }: {
   label: string
   value: string
   color: string
+  bg: string
+  borderColor: string
 }) {
   return (
-    <View style={mini.card}>
+    <View style={[mini.card, { backgroundColor: bg, borderColor }]}>
       <Text style={mini.label}>{label}</Text>
       <Text style={[mini.value, { color }]}>{value}</Text>
     </View>
@@ -344,7 +376,7 @@ function KpiMini({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.cardBg,
+    backgroundColor: COLORS.darkBg,
   },
   listContent: {
     paddingBottom: 40,
@@ -353,9 +385,9 @@ const styles = StyleSheet.create({
   // Header
   pageHeader: {
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 10,
-    backgroundColor: COLORS.white,
+    paddingTop: 20,
+    paddingBottom: 16,
+    backgroundColor: COLORS.deepBg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
     gap: 12,
@@ -411,56 +443,76 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 12,
     gap: 8,
-    backgroundColor: COLORS.cardBg,
+    backgroundColor: COLORS.darkBg,
   },
   kpiRowRTL: {
     flexDirection: 'row-reverse',
   },
 
+  // Chart
+  chartContainer: {
+    flexDirection: isRTL ? 'row-reverse' : 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-end',
+    backgroundColor: COLORS.cardBg,
+    marginHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 16,
+    height: 140,
+  },
+  chartBarGroup: {
+    alignItems: 'center',
+    flex: 1,
+    gap: 4,
+  },
+  chartBarTrack: {
+    width: 28,
+    height: 80,
+    backgroundColor: COLORS.surfaceBg,
+    borderRadius: 6,
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
+  },
+  chartBarFill: {
+    width: '100%',
+    borderRadius: 6,
+  },
+  chartBarValue: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  chartBarLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+
   // Filters
   filterRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    flexDirection: isRTL ? 'row' : 'row-reverse',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
     gap: 8,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  filterRowRTL: {
-    flexDirection: 'row-reverse',
+    backgroundColor: COLORS.darkBg,
   },
   filterTab: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
     backgroundColor: COLORS.cardBg,
     borderWidth: 1,
     borderColor: COLORS.border,
-  },
-  filterTabActive: {
-    backgroundColor: `${COLORS.primary}20`,
-    borderColor: COLORS.primary,
-  },
-  filterTabPending: {
-    backgroundColor: `${COLORS.warning}20`,
-    borderColor: COLORS.warning,
-  },
-  filterTabWon: {
-    backgroundColor: `${COLORS.success}20`,
-    borderColor: COLORS.success,
-  },
-  filterTabLost: {
-    backgroundColor: `${COLORS.danger}20`,
-    borderColor: COLORS.danger,
+    alignItems: 'center',
   },
   filterTabText: {
     fontSize: 13,
     color: COLORS.textSecondary,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   filterTabTextActive: {
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textPrimary,
   },
 
@@ -482,20 +534,16 @@ const styles = StyleSheet.create({
 
 const card = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.white,
     marginHorizontal: 16,
     marginTop: 12,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.border,
     overflow: 'hidden',
   },
   containerUrgent: {
     borderColor: COLORS.warning,
     borderWidth: 1.5,
   },
-
-  // Urgent banner
   urgentBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -514,8 +562,6 @@ const card = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.warning,
   },
-
-  // Top row
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -535,24 +581,19 @@ const card = StyleSheet.create({
   idGroupRTL: {
     flexDirection: 'row-reverse',
   },
-  id: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    fontFamily: 'monospace',
-  },
   orderPill: {
-    backgroundColor: COLORS.cardBg,
+    backgroundColor: COLORS.cardBgLight,
     borderRadius: 20,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
   orderPillText: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
+    fontSize: 12,
+    color: COLORS.textPrimary,
+    fontWeight: '600',
+    fontFamily: 'monospace',
   },
   badge: {
     borderRadius: 20,
@@ -563,8 +604,6 @@ const card = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-
-  // Reason
   reasonRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -586,14 +625,10 @@ const card = StyleSheet.create({
     fontWeight: '500',
     flex: 1,
   },
-
-  // Divider
   divider: {
     height: 1,
     backgroundColor: COLORS.border,
   },
-
-  // Footer
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -614,7 +649,6 @@ const card = StyleSheet.create({
     fontSize: 10,
     color: COLORS.textMuted,
     fontWeight: '600',
-    textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
   footerAmount: {
@@ -625,18 +659,8 @@ const card = StyleSheet.create({
   footerDeadline: {
     fontSize: 13,
     fontWeight: '600',
+    color: COLORS.warningLight,
   },
-  daysLeft: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  footerOpened: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
-  },
-
-  // Respond button
   respondBtn: {
     backgroundColor: COLORS.primary,
     borderRadius: 8,
@@ -653,10 +677,8 @@ const card = StyleSheet.create({
 const mini = StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: COLORS.white,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
     paddingHorizontal: 12,
     paddingVertical: 10,
     gap: 4,
@@ -665,7 +687,6 @@ const mini = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     color: COLORS.textMuted,
-    textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
   value: {

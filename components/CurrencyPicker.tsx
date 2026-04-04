@@ -1,6 +1,6 @@
 /**
  * Zyrix App — Currency Picker Component
- * Horizontal scrollable currency selector.
+ * Compact row of currency tabs — all visible without scrolling.
  */
 
 import React from 'react';
@@ -8,7 +8,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  ScrollView,
   StyleSheet,
   I18nManager,
 } from 'react-native';
@@ -29,18 +28,15 @@ export function CurrencyPicker({
   onSelect,
   codes,
 }: CurrencyPickerProps) {
+  // Preserve the order from `codes` array
   const items = codes
-    ? CURRENCIES.filter((c) => codes.includes(c.code))
+    ? codes.map((code) => CURRENCIES.find((c) => c.code === code)).filter(Boolean)
     : CURRENCIES;
 
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.container}
-      style={styles.scroll}
-    >
+    <View style={styles.container}>
       {items.map((item) => {
+        if (!item) return null;
         const isActive = item.code === selected;
         return (
           <TouchableOpacity
@@ -52,45 +48,44 @@ export function CurrencyPicker({
             <Text style={styles.flag}>{item.flag}</Text>
             <Text
               style={[styles.code, isActive && styles.codeActive]}
+              numberOfLines={1}
             >
               {item.code}
             </Text>
           </TouchableOpacity>
         );
       })}
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    flexGrow: 0,
-  },
   container: {
     flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
-    gap: SPACING.sm,
+    gap: 6,
     paddingVertical: SPACING.sm,
   },
   pill: {
+    flex: 1,
     flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: COLORS.cardBg,
     borderRadius: RADIUS.full,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
+    paddingVertical: 8,
     borderWidth: 1,
     borderColor: COLORS.border,
+    gap: 3,
   },
   pillActive: {
     backgroundColor: `${COLORS.primary}20`,
     borderColor: COLORS.primary,
   },
   flag: {
-    fontSize: 16,
-    marginEnd: SPACING.xs,
+    fontSize: 14,
   },
   code: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: 12,
     fontWeight: FONT_WEIGHT.medium,
     color: COLORS.textSecondary,
   },

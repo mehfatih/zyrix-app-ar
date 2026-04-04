@@ -19,9 +19,14 @@ import ChartCard from '../../components/ChartCard'
 
 const isRTL = I18nManager.isRTL
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 type RangeKey = '7d' | '30d' | '90d'
+
+// Arabic range labels
+const RANGE_LABELS: Record<RangeKey, string> = {
+  '7d': '٧ أيام',
+  '30d': '٣٠ يوم',
+  '90d': '٩٠ يوم',
+}
 
 interface AnalyticsData {
   range: string
@@ -32,93 +37,38 @@ interface AnalyticsData {
   countries: { label: string; value: number }[]
 }
 
-// ─── KPI Configuration (unique accent colors) ───────────────────────────────
-
-type KpiKey = 'volume' | 'successRate' | 'avgTx' | 'customers'
-
-interface KpiConfig {
-  key: KpiKey
-  labelKey: string
-  color: string
-  unit: string
-  chartType: 'bar' | 'line'
-  dataKey: 'volume' | 'successRate'
-}
-
-const KPI_CONFIG: KpiConfig[] = [
-  { key: 'volume',      labelKey: 'analytics.volume',       color: COLORS.primary,          unit: '$', chartType: 'bar',  dataKey: 'volume' },
-  { key: 'successRate', labelKey: 'analytics.success_rate',  color: COLORS.success,          unit: '%', chartType: 'line', dataKey: 'successRate' },
-  { key: 'avgTx',       labelKey: 'analytics.avg_tx',        color: COLORS.products.crypto,  unit: '$', chartType: 'bar',  dataKey: 'volume' },
-  { key: 'customers',   labelKey: 'analytics.customers',     color: COLORS.warning,          unit: '',  chartType: 'bar',  dataKey: 'volume' },
-]
+const METHOD_COLORS = [COLORS.primary, COLORS.products.crypto, COLORS.products.cod, COLORS.success]
+const COUNTRY_COLORS = [COLORS.chart.blue, COLORS.chart.green, COLORS.chart.orange, COLORS.chart.purple, COLORS.chart.cyan]
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function RangeToggle({
-  active,
-  onChange,
-}: {
-  active: RangeKey
-  onChange: (k: RangeKey) => void
-}) {
+function RangeToggle({ active, onChange }: { active: RangeKey; onChange: (k: RangeKey) => void }) {
   const keys: RangeKey[] = ['7d', '30d', '90d']
   return (
     <View style={[toggle.wrapper, isRTL && toggle.wrapperRTL]}>
       {keys.map((k) => (
-        <TouchableOpacity
-          key={k}
-          style={[toggle.btn, active === k && toggle.btnActive]}
-          onPress={() => onChange(k)}
-        >
-          <Text style={[toggle.label, active === k && toggle.labelActive]}>
-            {k}
-          </Text>
+        <TouchableOpacity key={k} style={[toggle.btn, active === k && toggle.btnActive]} onPress={() => onChange(k)}>
+          <Text style={[toggle.label, active === k && toggle.labelActive]}>{RANGE_LABELS[k]}</Text>
         </TouchableOpacity>
       ))}
     </View>
   )
 }
 
-function DonutLegend({
-  data,
-  colors,
-}: {
-  data: { label: string; value: number }[]
-  colors: string[]
-}) {
+function DonutLegend({ data, colors }: { data: { label: string; value: number }[]; colors: string[] }) {
   return (
-    <View style={donut.container}>
-      {/* Simple segmented bar */}
-      <View style={donut.bar}>
+    <View style={donutS.container}>
+      <View style={donutS.bar}>
         {data.map((d, i) => (
-          <View
-            key={i}
-            style={[
-              donut.segment,
-              {
-                flex: d.value,
-                backgroundColor: colors[i % colors.length],
-                borderRadius: i === 0 ? 4 : i === data.length - 1 ? 4 : 0,
-              },
-            ]}
-          />
+          <View key={i} style={[donutS.segment, { flex: d.value, backgroundColor: colors[i % colors.length], borderRadius: i === 0 ? 4 : i === data.length - 1 ? 4 : 0 }]} />
         ))}
       </View>
-      {/* Legend rows */}
-      <View style={donut.legend}>
+      <View style={donutS.legend}>
         {data.map((d, i) => (
-          <View
-            key={i}
-            style={[donut.legendRow, isRTL && donut.legendRowRTL]}
-          >
-            <View
-              style={[
-                donut.dot,
-                { backgroundColor: colors[i % colors.length] },
-              ]}
-            />
-            <Text style={donut.legendLabel}>{d.label}</Text>
-            <Text style={donut.legendValue}>{d.value}%</Text>
+          <View key={i} style={[donutS.legendRow, isRTL && donutS.legendRowRTL]}>
+            <View style={[donutS.dot, { backgroundColor: colors[i % colors.length] }]} />
+            <Text style={donutS.legendLabel}>{d.label}</Text>
+            <Text style={donutS.legendValue}>{d.value}%</Text>
           </View>
         ))}
       </View>
@@ -135,64 +85,23 @@ export default function AnalyticsScreen() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
-  const [selectedKpi, setSelectedKpi] = useState<KpiKey>('volume')
 
   const fetchData = useCallback(async (selectedRange: RangeKey) => {
     try {
       setError(null)
       const result = await analyticsApi.getData(selectedRange)
-      if (!result || !result.kpi || !result.volume || !result.successRate || !result.methods || !result.countries) {
-        throw new Error(t('common.error'))
-      }
       setData(result)
     } catch (err: unknown) {
-      let message = t('common.error')
-      if (err instanceof Error) {
-        message = err.message
-      } else if (typeof err === 'string') {
-        message = err
-      } else if (err && typeof err === 'object' && 'error' in err) {
-        message = String((err as Record<string, unknown>).error)
-      }
-      setError(message)
+      setError(err instanceof Error ? err.message : String(err) || t('common.error'))
     } finally {
       setLoading(false)
       setRefreshing(false)
     }
   }, [t])
 
-  useEffect(() => {
-    setLoading(true)
-    fetchData(range)
-  }, [range])
+  useEffect(() => { setLoading(true); fetchData(range) }, [range])
+  const onRefresh = useCallback(() => { setRefreshing(true); fetchData(range) }, [range, fetchData])
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true)
-    fetchData(range)
-  }, [range, fetchData])
-
-  const handleRangeChange = (newRange: RangeKey) => {
-    setRange(newRange)
-  }
-
-  // Get active KPI config
-  const activeKpi = KPI_CONFIG.find(k => k.key === selectedKpi) ?? KPI_CONFIG[0]
-
-  // Method colors for donut
-  const METHOD_COLORS = [COLORS.primary, COLORS.products.crypto, COLORS.products.cod, COLORS.success]
-
-  // Get KPI display value
-  const getKpiValue = (key: KpiKey): string => {
-    if (!data) return '—'
-    switch (key) {
-      case 'volume': return `$${(data.kpi.volume / 1000).toFixed(1)}k`
-      case 'successRate': return `${data.kpi.successRate}%`
-      case 'avgTx': return `$${data.kpi.avgTx.toFixed(1)}`
-      case 'customers': return String(data.kpi.customers)
-    }
-  }
-
-  // Loading state
   if (loading && !data) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -204,7 +113,6 @@ export default function AnalyticsScreen() {
     )
   }
 
-  // Error state
   if (error && !data) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -222,134 +130,55 @@ export default function AnalyticsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={COLORS.primary}
-            colors={[COLORS.primary]}
-          />
-        }
-      >
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} colors={[COLORS.primary]} />}>
 
-        {/* ── Page header ── */}
+        {/* Header */}
         <View style={styles.pageHeader}>
           <View style={[styles.headerRow, isRTL && styles.headerRowRTL]}>
-            <Text style={[styles.pageSubtitle, isRTL && styles.textRight]}>
-              {t('analytics.subtitle')}
-            </Text>
-            <RangeToggle active={range} onChange={handleRangeChange} />
+            <View>
+              <Text style={[styles.pageTitle, isRTL && styles.textRight]}>{t('analytics.title')}</Text>
+              <Text style={[styles.pageSubtitle, isRTL && styles.textRight]}>{t('analytics.subtitle')}</Text>
+            </View>
+            <RangeToggle active={range} onChange={setRange} />
           </View>
         </View>
 
         <View style={styles.body}>
 
-          {/* ── Interactive KPI Cards ── */}
+          {/* KPI Row — each with unique color */}
           <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
-            {KPI_CONFIG.slice(0, 2).map((kpi) => (
-              <TouchableOpacity
-                key={kpi.key}
-                style={[
-                  styles.kpiCard,
-                  selectedKpi === kpi.key && { borderColor: kpi.color, borderWidth: 2 },
-                ]}
-                onPress={() => setSelectedKpi(kpi.key)}
-                activeOpacity={0.7}
-              >
-                <KpiCard
-                  label={t(kpi.labelKey)}
-                  value={getKpiValue(kpi.key)}
-                  color={kpi.color}
-                  valueColor={selectedKpi === kpi.key ? kpi.color : undefined}
-                  style={{ borderWidth: 0 }}
-                />
-              </TouchableOpacity>
-            ))}
+            <KpiCard label={t('analytics.volume')} value={`${(data.kpi.volume / 1000).toFixed(1)}k ر.س`} icon="💳" color={COLORS.primary}
+              style={{ flex: 1, backgroundColor: 'rgba(26, 86, 219, 0.15)', borderColor: 'rgba(26, 86, 219, 0.3)' }} compact />
+            <KpiCard label={t('analytics.success_rate')} value={`${data.kpi.successRate}%`} icon="✅" color={COLORS.success} valueColor={COLORS.success}
+              style={{ flex: 1, backgroundColor: 'rgba(5, 150, 105, 0.15)', borderColor: 'rgba(5, 150, 105, 0.3)' }} compact />
           </View>
           <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
-            {KPI_CONFIG.slice(2, 4).map((kpi) => (
-              <TouchableOpacity
-                key={kpi.key}
-                style={[
-                  styles.kpiCard,
-                  selectedKpi === kpi.key && { borderColor: kpi.color, borderWidth: 2 },
-                ]}
-                onPress={() => setSelectedKpi(kpi.key)}
-                activeOpacity={0.7}
-              >
-                <KpiCard
-                  label={t(kpi.labelKey)}
-                  value={getKpiValue(kpi.key)}
-                  color={kpi.color}
-                  valueColor={selectedKpi === kpi.key ? kpi.color : undefined}
-                  style={{ borderWidth: 0 }}
-                />
-              </TouchableOpacity>
-            ))}
+            <KpiCard label={t('analytics.avg_tx')} value={`${data.kpi.avgTx.toFixed(1)} ر.س`} icon="📊" color={COLORS.chart.purple}
+              style={{ flex: 1, backgroundColor: 'rgba(139, 92, 246, 0.15)', borderColor: 'rgba(139, 92, 246, 0.3)' }} compact />
+            <KpiCard label={t('analytics.customers')} value={String(data.kpi.customers)} icon="👥" color={COLORS.chart.orange} valueColor={COLORS.chart.orange}
+              style={{ flex: 1, backgroundColor: 'rgba(245, 158, 11, 0.15)', borderColor: 'rgba(245, 158, 11, 0.3)' }} compact />
           </View>
 
-          {/* ── Dynamic Chart (changes based on selected KPI) ── */}
-          <ChartCard
-            title={t(activeKpi.labelKey)}
-            subtitle={`${range} · ${activeKpi.unit || '#'}`}
-            data={data[activeKpi.dataKey]}
-            color={activeKpi.color}
-            unit={activeKpi.unit}
-            showAverage={activeKpi.key === 'volume'}
-            type={activeKpi.chartType}
-          />
+          {/* Volume chart */}
+          <ChartCard title={t('analytics.volume')} subtitle={`${RANGE_LABELS[range]} · ر.س`}
+            data={data.volume} color={COLORS.primary} unit="ر.س" showAverage type="bar"
+            style={{ backgroundColor: COLORS.surfaceBg, borderColor: COLORS.primaryLight + '30' }} />
 
-          {/* ── Payment Methods (framed section) ── */}
-          <View style={styles.framedSection}>
-            <View style={styles.framedHeader}>
-              <Text style={[styles.framedTitle, isRTL && styles.textRight]}>
-                {t('analytics.payment_methods')}
-              </Text>
-            </View>
-            <View style={styles.framedBody}>
-              <DonutLegend data={data.methods} colors={METHOD_COLORS} />
-            </View>
+          {/* Success rate chart */}
+          <ChartCard title={t('analytics.success_rate')} subtitle={`${RANGE_LABELS[range]} · %`}
+            data={data.successRate} color={COLORS.success} unit="%" type="line" />
+
+          {/* Payment methods */}
+          <View style={styles.card}>
+            <Text style={[styles.cardTitle, isRTL && styles.textRight]}>{t('analytics.payment_methods')}</Text>
+            <DonutLegend data={data.methods} colors={METHOD_COLORS} />
           </View>
 
-          {/* ── Countries (framed section with unique bar colors) ── */}
-          <View style={styles.framedSection}>
-            <View style={styles.framedHeader}>
-              <Text style={[styles.framedTitle, isRTL && styles.textRight]}>
-                {t('analytics.countries')}
-              </Text>
-            </View>
-            <View style={styles.framedBody}>
-              {(() => {
-                const COUNTRY_COLORS = [
-                  COLORS.chart.blue, COLORS.chart.green, COLORS.chart.orange,
-                  COLORS.chart.purple, COLORS.chart.cyan, COLORS.chart.red,
-                ]
-                const maxVal = Math.max(...data.countries.map(c => c.value), 1)
-                return (
-                  <View style={{ gap: 10, paddingVertical: 8 }}>
-                    {data.countries.map((c, i) => {
-                      const pct = Math.max((c.value / maxVal) * 100, 5)
-                      const barColor = COUNTRY_COLORS[i % COUNTRY_COLORS.length]
-                      return (
-                        <View key={i} style={{ gap: 4 }}>
-                          <View style={[{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, isRTL && { flexDirection: 'row-reverse' }]}>
-                            <Text style={{ fontSize: 12, color: COLORS.textSecondary, fontWeight: '500' }}>{c.label}</Text>
-                            <Text style={{ fontSize: 12, color: barColor, fontWeight: '700' }}>{c.value}%</Text>
-                          </View>
-                          <View style={{ height: 8, backgroundColor: COLORS.divider, borderRadius: 4, overflow: 'hidden' }}>
-                            <View style={{ width: `${pct}%`, height: '100%', backgroundColor: barColor, borderRadius: 4 }} />
-                          </View>
-                        </View>
-                      )
-                    })}
-                  </View>
-                )
-              })()}
-            </View>
-          </View>
+          {/* Countries chart */}
+          <ChartCard title={t('analytics.countries')} subtitle={`${RANGE_LABELS[range]} · %`}
+            data={data.countries} color={COLORS.products.crypto} unit="%"  type="bar"
+            style={{ backgroundColor: 'rgba(124, 58, 237, 0.08)', borderColor: 'rgba(124, 58, 237, 0.25)' }} />
 
         </View>
       </ScrollView>
@@ -357,182 +186,44 @@ export default function AnalyticsScreen() {
   )
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.cardBg,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: COLORS.textSecondary,
-  },
-  errorText: {
-    fontSize: 15,
-    color: COLORS.danger,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  retryBtn: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryText: {
-    color: COLORS.white,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  pageHeader: {
-    paddingHorizontal: 16,
-    paddingTop: 6,
-    paddingBottom: 6,
-    backgroundColor: COLORS.cardBg,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  headerRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  pageTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
-  pageSubtitle: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-  },
-  textRight: {
-    textAlign: 'right',
-  },
-  body: {
-    padding: 16,
-    gap: 0,
-  },
-  kpiRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 8,
-  },
-  kpiRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  kpiCard: {
-    flex: 1,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    overflow: 'hidden',
-  },
-  framedSection: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    overflow: 'hidden',
-    marginBottom: 12,
-  },
-  framedHeader: {
-    backgroundColor: COLORS.surfaceBg,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  framedTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-  },
-  framedBody: {
-    backgroundColor: COLORS.cardBg,
-    padding: 16,
-  },
+  safeArea: { flex: 1, backgroundColor: COLORS.darkBg },
+  scrollContent: { paddingBottom: 40 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  loadingText: { marginTop: 12, fontSize: 14, color: COLORS.textSecondary },
+  errorText: { fontSize: 15, color: COLORS.danger, textAlign: 'center', marginBottom: 16 },
+  retryBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
+  retryText: { color: COLORS.white, fontSize: 14, fontWeight: '600' },
+  pageHeader: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16, backgroundColor: COLORS.deepBg, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  headerRowRTL: { flexDirection: 'row-reverse' },
+  pageTitle: { fontSize: 22, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 4 },
+  pageSubtitle: { fontSize: 13, color: COLORS.textSecondary },
+  textRight: { textAlign: 'right' },
+  body: { padding: 16, gap: 0 },
+  kpiRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  kpiRowRTL: { flexDirection: 'row-reverse' },
+  card: { backgroundColor: COLORS.cardBg, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, padding: 16, marginBottom: 12 },
+  cardTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 14 },
 })
 
 const toggle = StyleSheet.create({
-  wrapper: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.cardBg,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    overflow: 'hidden',
-  },
-  wrapperRTL: {
-    flexDirection: 'row-reverse',
-  },
-  btn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  btnActive: {
-    backgroundColor: COLORS.primary,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-  },
-  labelActive: {
-    color: COLORS.white,
-  },
+  wrapper: { flexDirection: 'row', backgroundColor: COLORS.cardBg, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden' },
+  wrapperRTL: { flexDirection: 'row-reverse' },
+  btn: { paddingHorizontal: 12, paddingVertical: 6 },
+  btnActive: { backgroundColor: COLORS.primary },
+  label: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
+  labelActive: { color: COLORS.white },
 })
 
-const donut = StyleSheet.create({
-  container: {
-    gap: 12,
-  },
-  bar: {
-    flexDirection: 'row',
-    height: 10,
-    borderRadius: 5,
-    overflow: 'hidden',
-    gap: 2,
-  },
-  segment: {
-    height: '100%',
-  },
-  legend: {
-    gap: 8,
-  },
-  legendRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  legendRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  legendLabel: {
-    flex: 1,
-    fontSize: 13,
-    color: COLORS.textSecondary,
-  },
-  legendValue: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-  },
+const donutS = StyleSheet.create({
+  container: { gap: 12 },
+  bar: { flexDirection: 'row', height: 10, borderRadius: 5, overflow: 'hidden', gap: 2 },
+  segment: { height: '100%' },
+  legend: { gap: 8 },
+  legendRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  legendRowRTL: { flexDirection: 'row-reverse' },
+  dot: { width: 10, height: 10, borderRadius: 5 },
+  legendLabel: { flex: 1, fontSize: 13, color: COLORS.textSecondary },
+  legendValue: { fontSize: 13, fontWeight: '700', color: COLORS.textPrimary },
 })

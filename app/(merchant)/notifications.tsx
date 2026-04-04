@@ -5,17 +5,15 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-
   ScrollView,
   RefreshControl,
   I18nManager,
   SafeAreaView,
-
+  Alert,
 } from 'react-native'
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { notificationsApi } from '../../services/api'
-import { useToast } from '../../components/Toast'
 
 const isRTL = I18nManager.isRTL
 
@@ -34,7 +32,6 @@ interface Notification {
   amount?: number
   currency?: string
 }
-
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -55,49 +52,42 @@ function NotifCard({
   notif,
   onPress,
   onMarkRead,
-  index = 0,
 }: {
   notif: Notification
   onPress: (id: string) => void
   onMarkRead: (id: string) => void
-  index?: number
 }) {
   const cfg = typeConfig(notif.type)
-  const isEven = index % 2 === 0
 
   return (
     <TouchableOpacity
-      style={[
-        card.container,
-        isEven ? card.containerEven : card.containerOdd,
-        !notif.read && card.containerUnread,
-      ]}
+      style={[cardS.container, !notif.read && cardS.containerUnread]}
       onPress={() => onPress(notif.id)}
       onLongPress={() => onMarkRead(notif.id)}
       activeOpacity={0.72}
     >
       {/* Unread dot */}
-      {!notif.read && <View style={card.unreadDot} />}
+      {!notif.read && <View style={cardS.unreadDot} />}
 
       {/* Icon bubble */}
-      <View style={[card.iconBubble, { backgroundColor: cfg.bg }]}>
-        <Text style={card.iconText}>{cfg.icon}</Text>
+      <View style={[cardS.iconBubble, { backgroundColor: cfg.bg }]}>
+        <Text style={cardS.iconText}>{cfg.icon}</Text>
       </View>
 
       {/* Content */}
-      <View style={[card.content, isRTL && card.contentRTL]}>
-        <View style={[card.topRow, isRTL && card.topRowRTL]}>
+      <View style={[cardS.content, isRTL && cardS.contentRTL]}>
+        <View style={[cardS.topRow, isRTL && cardS.topRowRTL]}>
           <Text
-            style={[card.title, !notif.read && card.titleUnread, isRTL && card.titleRTL]}
+            style={[cardS.title, !notif.read && cardS.titleUnread, isRTL && cardS.titleRTL]}
             numberOfLines={1}
           >
             {notif.title}
           </Text>
-          <Text style={card.time}>{notif.time}</Text>
+          <Text style={cardS.time}>{notif.time}</Text>
         </View>
 
         <Text
-          style={[card.body, isRTL && card.bodyRTL]}
+          style={[cardS.body, isRTL && cardS.bodyRTL]}
           numberOfLines={2}
         >
           {notif.body}
@@ -105,9 +95,9 @@ function NotifCard({
 
         {/* Amount pill */}
         {notif.amount !== undefined && (
-          <View style={[card.amountRow, isRTL && card.amountRowRTL]}>
-            <View style={[card.amountPill, { borderColor: cfg.color }]}>
-              <Text style={[card.amountText, { color: cfg.color }]}>
+          <View style={[cardS.amountRow, isRTL && cardS.amountRowRTL]}>
+            <View style={[cardS.amountPill, { borderColor: cfg.color }]}>
+              <Text style={[cardS.amountText, { color: cfg.color }]}>
                 {notif.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}{' '}
                 {notif.currency}
               </Text>
@@ -123,7 +113,6 @@ function NotifCard({
 
 export default function NotificationsScreen() {
   const { t } = useTranslation()
-  const { showToast } = useToast()
 
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [filter, setFilter] = useState<FilterKey>('all')
@@ -158,12 +147,11 @@ export default function NotificationsScreen() {
   )
 
   const handlePress = (id: string) => {
-    // Mark as read on open
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
     )
     const notif = notifications.find((n) => n.id === id)
-    if (notif) showToast(notif.title, 'info')
+    if (notif) Alert.alert(notif.title, notif.body)
   }
 
   const handleMarkRead = (id: string) => {
@@ -178,10 +166,6 @@ export default function NotificationsScreen() {
   }
 
   // ── Render ──
-
-  const renderItem = ({ item }: { item: Notification }) => (
-    <NotifCard notif={item} onPress={handlePress} onMarkRead={handleMarkRead} />
-  )
 
   const renderHeader = () => (
     <>
@@ -204,9 +188,9 @@ export default function NotificationsScreen() {
         </View>
       </View>
 
-      {/* Filter tabs — horizontal scroll */}
+      {/* Filter tabs — 2 rows of 3 */}
       <View style={styles.filterWrapper}>
-        <View style={[styles.filterRow, isRTL && styles.filterRowRTL]}>
+        <View style={styles.filterGrid}>
           {FILTERS.map((f) => (
             <TouchableOpacity
               key={f.key}
@@ -222,6 +206,7 @@ export default function NotificationsScreen() {
                   styles.filterTabText,
                   filter === f.key && styles.filterTabTextActive,
                 ]}
+                numberOfLines={1}
               >
                 {f.label}
               </Text>
@@ -251,8 +236,8 @@ export default function NotificationsScreen() {
           <Text style={[styles.groupLabel, isRTL && styles.groupLabelRTL]}>
             {t('notifications.unread')} ({unread.length})
           </Text>
-          {unread.map((n, idx) => (
-            <NotifCard key={n.id} notif={n} onPress={handlePress} onMarkRead={handleMarkRead} index={idx} />
+          {unread.map((n) => (
+            <NotifCard key={n.id} notif={n} onPress={handlePress} onMarkRead={handleMarkRead} />
           ))}
         </>
       )}
@@ -261,8 +246,8 @@ export default function NotificationsScreen() {
           <Text style={[styles.groupLabel, isRTL && styles.groupLabelRTL]}>
             {t('notifications.earlier')}
           </Text>
-          {read.map((n, idx) => (
-            <NotifCard key={n.id} notif={n} onPress={handlePress} onMarkRead={handleMarkRead} index={idx} />
+          {read.map((n) => (
+            <NotifCard key={n.id} notif={n} onPress={handlePress} onMarkRead={handleMarkRead} />
           ))}
         </>
       )}
@@ -289,7 +274,7 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.cardBg,
+    backgroundColor: COLORS.darkBg,
   },
   listContent: {
     paddingBottom: 40,
@@ -298,9 +283,9 @@ const styles = StyleSheet.create({
   // Header
   pageHeader: {
     paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 8,
-    backgroundColor: COLORS.surfaceBg,
+    paddingTop: 20,
+    paddingBottom: 16,
+    backgroundColor: COLORS.deepBg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -342,52 +327,49 @@ const styles = StyleSheet.create({
   markAllText: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: COLORS.primaryLight,
   },
 
-  // Filters
+  // Filters — 2 rows x 3 columns grid
   filterWrapper: {
     backgroundColor: COLORS.surfaceBg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
-    paddingVertical: 8,
+    paddingVertical: 12,
     paddingHorizontal: 12,
   },
-  filterRow: {
+  filterGrid: {
     flexDirection: 'row',
-    gap: 5,
-    flexWrap: 'nowrap',
+    flexWrap: 'wrap',
+    gap: 8,
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-  filterRowRTL: {
-    flexDirection: 'row-reverse',
   },
   filterTab: {
-    flexDirection: 'row',
+    flexDirection: isRTL ? 'row-reverse' : 'row',
     alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 16,
-    backgroundColor: COLORS.cardBgLight,
+    justifyContent: 'center',
+    gap: 5,
+    width: '30%',
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: COLORS.cardBg,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
   filterTabActive: {
-    backgroundColor: COLORS.primaryLight,
-    borderColor: COLORS.primary,
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    borderColor: COLORS.primaryLight,
   },
   filterIcon: {
-    fontSize: 10,
+    fontSize: 14,
   },
   filterTabText: {
-    fontSize: 10,
+    fontSize: 12,
     color: COLORS.textSecondary,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   filterTabTextActive: {
-    color: COLORS.primary,
+    color: COLORS.primaryLight,
     fontWeight: '700',
   },
 
@@ -399,9 +381,8 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 6,
     marginLeft: 20,
-    paddingHorizontal: 4,
   },
   groupLabelRTL: {
     textAlign: 'right',
@@ -425,25 +406,20 @@ const styles = StyleSheet.create({
   },
 })
 
-const card = StyleSheet.create({
+const cardS = StyleSheet.create({
   container: {
     flexDirection: isRTL ? 'row-reverse' : 'row',
     alignItems: 'flex-start',
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
     paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    backgroundColor: COLORS.cardBg,
+    borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
     gap: 12,
     position: 'relative',
   },
-  containerEven: {
-    backgroundColor: COLORS.cardBg,
-  },
-  containerOdd: {
-    backgroundColor: COLORS.surfaceBg,
-  },
   containerUnread: {
-    backgroundColor: 'rgba(26, 86, 219, 0.12)',
+    backgroundColor: COLORS.surfaceBg,
   },
   unreadDot: {
     position: 'absolute',
@@ -453,20 +429,18 @@ const card = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primaryLight,
   },
   iconBubble: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
   },
   iconText: {
-    fontSize: 18,
+    fontSize: 20,
   },
   content: {
     flex: 1,

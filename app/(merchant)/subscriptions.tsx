@@ -16,6 +16,31 @@ interface Sub {
   status: string; nextBillingDate: string; billingCount: number; createdAt: string;
 }
 
+// Currency display in Arabic
+const CURRENCY_AR: Record<string, string> = {
+  SAR: 'ر.س',
+  AED: 'د.إ',
+  KWD: 'د.ك',
+  QAR: 'ر.ق',
+  USD: '$',
+}
+
+// Interval labels
+const INTERVAL_AR: Record<string, string> = {
+  monthly: 'شهري',
+  weekly: 'أسبوعي',
+  yearly: 'سنوي',
+  daily: 'يومي',
+}
+
+// Demo subscriptions
+const DEMO_SUBS: Sub[] = [
+  { id: '1', subscriptionId: 'ZRX-SUB-001', customerName: 'سارة القحطاني', amount: '2500', currency: 'SAR', interval: 'monthly', title: 'الباقة الماسية', status: 'active', nextBillingDate: '2026-05-01', billingCount: 3, createdAt: '2026-02-01' },
+  { id: '2', subscriptionId: 'ZRX-SUB-002', customerName: 'نورا السالم', amount: '1500', currency: 'SAR', interval: 'monthly', title: 'الباقة الذهبية', status: 'active', nextBillingDate: '2026-04-15', billingCount: 5, createdAt: '2025-11-15' },
+  { id: '3', subscriptionId: 'ZRX-SUB-003', customerName: 'ريم العتيبي', amount: '800', currency: 'SAR', interval: 'monthly', title: 'الباقة الفضية', status: 'paused', nextBillingDate: '2026-04-24', billingCount: 2, createdAt: '2026-02-24' },
+  { id: '4', subscriptionId: 'ZRX-SUB-004', customerName: 'فاطمة حسين', amount: '350', currency: 'SAR', interval: 'monthly', title: 'الباقة البرونزية', status: 'active', nextBillingDate: '2026-04-20', billingCount: 1, createdAt: '2026-03-20' },
+]
+
 export default function SubscriptionsScreen() {
   const { t } = useTranslation()
   const [subs, setSubs] = useState<Sub[]>([])
@@ -28,8 +53,10 @@ export default function SubscriptionsScreen() {
   const fetchData = useCallback(async () => {
     try {
       const res = await subscriptionsApi.list()
-      setSubs(res.subscriptions)
-    } catch (_e) { /* error */ }
+      setSubs(res.subscriptions && res.subscriptions.length > 0 ? res.subscriptions : DEMO_SUBS)
+    } catch (_e) {
+      setSubs(DEMO_SUBS)
+    }
     finally { setLoading(false); setRefreshing(false) }
   }, [])
 
@@ -84,18 +111,18 @@ export default function SubscriptionsScreen() {
         {subs.length === 0 ? (
           <View style={s.center}><Text style={s.emptyText}>{t('subscriptions.no_subs')}</Text></View>
         ) : (
-          subs.map((sub: any) => (
+          subs.map(sub => (
             <View key={sub.id} style={s.card}>
               <View style={[s.cardRow, isRTL && s.cardRowRTL]}>
                 <View style={{ flex: 1 }}>
                   <Text style={s.cardTitle}>{sub.title}</Text>
                   <Text style={s.cardCustomer}>{sub.customerName}</Text>
-                  <Text style={s.cardId}>{sub.subscriptionId} · {t(`subscriptions.${sub.interval}`)}</Text>
+                  <Text style={s.cardId}>{sub.subscriptionId} · {INTERVAL_AR[sub.interval] ?? sub.interval}</Text>
                 </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={s.cardAmount}>{sub.currency} {Number(sub.amount).toLocaleString()}</Text>
-                  <StatusBadge status={sub.status} />
-                  <Text style={s.cardDate}>{t('subscriptions.next_billing')}: {new Date(sub.nextBillingDate).toLocaleDateString()}</Text>
+                <View style={{ alignItems: isRTL ? 'flex-start' : 'flex-end' }}>
+                  <Text style={s.cardAmount}>{Number(sub.amount).toLocaleString()} {CURRENCY_AR[sub.currency] ?? sub.currency}</Text>
+                  <StatusBadge status={sub.status as any} />
+                  <Text style={s.cardDate}>{t('subscriptions.next_billing')}: {new Date(sub.nextBillingDate).toLocaleDateString('ar-SA')}</Text>
                 </View>
               </View>
               <View style={[s.cardActions, isRTL && s.cardRowRTL]}>
@@ -130,7 +157,7 @@ export default function SubscriptionsScreen() {
             <View style={[s.intervalRow, isRTL && s.cardRowRTL]}>
               {(['monthly', 'weekly', 'yearly'] as const).map(iv => (
                 <TouchableOpacity key={iv} style={[s.intervalBtn, form.interval === iv && s.intervalActive]} onPress={() => setForm({...form, interval: iv})}>
-                  <Text style={[s.intervalText, form.interval === iv && s.intervalTextActive]}>{t(`subscriptions.${iv}`)}</Text>
+                  <Text style={[s.intervalText, form.interval === iv && s.intervalTextActive]}>{INTERVAL_AR[iv] ?? iv}</Text>
                 </TouchableOpacity>
               ))}
             </View>

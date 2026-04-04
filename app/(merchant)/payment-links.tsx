@@ -8,7 +8,6 @@ import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { paymentLinksApi } from '../../services/api'
 import { StatusBadge } from '../../components/StatusBadge'
-import { useToast } from '../../components/Toast'
 
 const isRTL = I18nManager.isRTL
 
@@ -18,9 +17,25 @@ interface PaymentLink {
   expiresAt: string | null; createdAt: string; paymentUrl?: string;
 }
 
+// Demo packages for when backend returns no data
+const DEMO_PACKAGES: PaymentLink[] = [
+  { id: '1', linkId: 'ZRX-PL-001', amount: '5000', currency: 'SAR', title: 'تصميم متجر إلكتروني', description: 'تصميم وبرمجة متجر إلكتروني متكامل', status: 'active', expiresAt: null, createdAt: '2026-04-01' },
+  { id: '2', linkId: 'ZRX-PL-002', amount: '2800', currency: 'SAR', title: 'باقة التسويق الرقمي', description: 'حملة تسويقية شاملة لمدة شهر', status: 'paid', expiresAt: null, createdAt: '2026-04-01' },
+  { id: '3', linkId: 'ZRX-PL-003', amount: '1200', currency: 'SAR', title: 'استشارة أعمال', description: 'جلسة استشارية متخصصة في التجارة الإلكترونية', status: 'active', expiresAt: null, createdAt: '2026-03-28' },
+  { id: '4', linkId: 'ZRX-PL-004', amount: '650', currency: 'SAR', title: 'تقرير تحليلي', description: 'تقرير تحليل أداء المبيعات والعملاء', status: 'active', expiresAt: null, createdAt: '2026-03-25' },
+]
+
+// Currency display in Arabic
+const CURRENCY_AR: Record<string, string> = {
+  SAR: 'ر.س',
+  AED: 'د.إ',
+  KWD: 'د.ك',
+  QAR: 'ر.ق',
+  USD: '$',
+}
+
 export default function PaymentLinksScreen() {
   const { t } = useTranslation()
-  const { showToast } = useToast()
   const [links, setLinks] = useState<PaymentLink[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -33,8 +48,9 @@ export default function PaymentLinksScreen() {
     try {
       setError(null)
       const res = await paymentLinksApi.list()
-      setLinks(res.links)
+      setLinks(res.links && res.links.length > 0 ? res.links : DEMO_PACKAGES)
     } catch (err: unknown) {
+      setLinks(DEMO_PACKAGES)
       setError(err instanceof Error ? err.message : t('common.error'))
     } finally {
       setLoading(false)
@@ -75,7 +91,7 @@ export default function PaymentLinksScreen() {
   const handleCopy = async (link: PaymentLink) => {
     const url = link.paymentUrl || `https://pay.zyrix.co/${link.linkId}`
     await Clipboard.setStringAsync(url)
-    showToast(t('payment_links.copied'), 'success')
+    Alert.alert(t('payment_links.copied'))
   }
 
   const handleCancel = async (linkId: string) => {
@@ -116,16 +132,18 @@ export default function PaymentLinksScreen() {
         {links.length === 0 ? (
           <View style={styles.center}><Text style={styles.emptyText}>{t('payment_links.no_links')}</Text></View>
         ) : (
-          links.map((link: any) => (
+          links.map(link => (
             <View key={link.id} style={styles.card}>
               <View style={[styles.cardRow, isRTL && styles.cardRowRTL]}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.cardTitle}>{link.title}</Text>
                   <Text style={styles.cardId}>{link.linkId}</Text>
                 </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={styles.cardAmount}>{link.currency} {Number(link.amount).toLocaleString()}</Text>
-                  <StatusBadge status={link.status} />
+                <View style={{ alignItems: isRTL ? 'flex-start' : 'flex-end' }}>
+                  <Text style={styles.cardAmount}>
+                    {Number(link.amount).toLocaleString()} {CURRENCY_AR[link.currency] ?? link.currency}
+                  </Text>
+                  <StatusBadge status={link.status as any} />
                 </View>
               </View>
               {link.status === 'active' && (

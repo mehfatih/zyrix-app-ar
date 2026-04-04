@@ -1,11 +1,11 @@
 /**
  * Zyrix App — Status Badge Component
- * Visual indicator for transaction/settlement status.
+ * Visual indicator for transaction/settlement status with Arabic labels.
  */
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, getStatusColor } from '../constants/colors';
+import { COLORS } from '../constants/colors';
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../constants/theme';
 import type { TransactionStatus, SettlementStatus, RefundStatus } from '../types';
 
@@ -27,9 +27,28 @@ const STATUS_CONFIG: Record<BadgeStatus, { color: string; bg: string }> = {
   rejected: { color: COLORS.danger, bg: COLORS.dangerBg },
 };
 
+// Arabic labels for statuses
+const STATUS_LABELS: Record<string, string> = {
+  success: 'ناجحة',
+  pending: 'معلقة',
+  failed: 'فاشلة',
+  settled: 'تمت التسوية',
+  processing: 'قيد المعالجة',
+  completed: 'مكتملة',
+  rejected: 'مرفوضة',
+  active: 'نشط',
+  paused: 'متوقف',
+  paid: 'مدفوع',
+  cancelled: 'ملغي',
+  expired: 'منتهي',
+  won: 'مكسوب',
+  lost: 'خسارة',
+};
+
 export function StatusBadge({ status, label, size = 'sm' }: StatusBadgeProps) {
   const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
   const isMd = size === 'md';
+  const displayLabel = label ?? STATUS_LABELS[status] ?? status;
 
   return (
     <View
@@ -47,7 +66,7 @@ export function StatusBadge({ status, label, size = 'sm' }: StatusBadgeProps) {
           isMd && styles.textMd,
         ]}
       >
-        {label ?? status}
+        {displayLabel}
       </Text>
     </View>
   );
@@ -75,7 +94,6 @@ const styles = StyleSheet.create({
   text: {
     fontSize: FONT_SIZE.xs,
     fontWeight: FONT_WEIGHT.semibold,
-    textTransform: 'capitalize',
   },
   textMd: {
     fontSize: FONT_SIZE.sm,

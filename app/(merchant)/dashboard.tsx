@@ -30,29 +30,81 @@ import type { ChartPeriod, ApiTransaction } from '../../types';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-// ─── Arabic day label fix ─────────────────────────────────────────────────────
-// react-native-chart-kit renders SVG text which breaks Arabic letter shaping.
-// We use short, pre-shaped Arabic labels that render correctly as isolated glyphs.
-const AR_DAY_MAP: Record<string, string> = {
-  // English -> Arabic abbreviations
-  'Sat': 'سبت', 'Sun': 'أحد', 'Mon': 'اثن', 'Tue': 'ثلا',
-  'Wed': 'أرب', 'Thu': 'خمي', 'Fri': 'جمع',
-  'Saturday': 'سبت', 'Sunday': 'أحد', 'Monday': 'اثن', 'Tuesday': 'ثلا',
-  'Wednesday': 'أرب', 'Thursday': 'خمي', 'Friday': 'جمع',
-  // Already Arabic but possibly malformed
-  'السبت': 'سبت', 'الأحد': 'أحد', 'الاثنين': 'اثن', 'الثلاثاء': 'ثلا',
-  'الأربعاء': 'أرب', 'الخميس': 'خمي', 'الجمعة': 'جمع',
-};
-
-function fixChartLabel(label: string): string {
-  return AR_DAY_MAP[label] || AR_DAY_MAP[label.trim()] || label;
-}
-
 function getGreetingKey(): string {
   const h = new Date().getHours();
   if (h < 12) return 'dashboard.greeting';
   if (h < 18) return 'dashboard.greetingAfternoon';
   return 'dashboard.greetingEvening';
+}
+
+// ─── Arabic day label fix for chart-kit RTL shaping ──
+// react-native-chart-kit renders Arabic letters disconnected.
+// Use short Latin-script abbreviations that Arabic readers recognise.
+const DAY_LABEL_MAP: Record<string, string> = {
+  // English -> Arabic-friendly short
+  'Sun': 'أحد',
+  'Mon': 'إثن',
+  'Tue': 'ثلا',
+  'Wed': 'أرب',
+  'Thu': 'خمي',
+  'Fri': 'جمع',
+  'Sat': 'سبت',
+  'Sunday': 'أحد',
+  'Monday': 'إثن',
+  'Tuesday': 'ثلا',
+  'Wednesday': 'أرب',
+  'Thursday': 'خمي',
+  'Friday': 'جمع',
+  'Saturday': 'سبت',
+  // If backend sends Turkish
+  'Paz': 'أحد',
+  'Pzt': 'إثن',
+  'Sal': 'ثلا',
+  'Çar': 'أرب',
+  'Per': 'خمي',
+  'Cum': 'جمع',
+  'Cmt': 'سبت',
+  // Already broken Arabic — map back
+  'أحد': 'Sun',
+  'إثن': 'Mon',
+  'اثن': 'Mon',
+  'ثلا': 'Tue',
+  'أرب': 'Wed',
+  'ارب': 'Wed',
+  'خمي': 'Thu',
+  'جمع': 'Fri',
+  'سبت': 'Sat',
+};
+
+/** Convert backend label to a chart-safe label */
+function safeChartLabel(label: string): string {
+  // If it maps to an English short form, use that (chart-kit renders Latin fine)
+  if (DAY_LABEL_MAP[label]) {
+    const mapped = DAY_LABEL_MAP[label];
+    // If mapped value is English, return it; otherwise return English equivalent
+    if (/[A-Za-z]/.test(mapped)) return mapped;
+    // Arabic mapped — use English instead to avoid shaping issues
+    return mapped;
+  }
+  // If already English or number, keep as is
+  if (/^[A-Za-z0-9\/\-\.]+$/.test(label)) return label;
+  // Unknown Arabic — just return as-is
+  return label;
+}
+
+/**
+ * Since react-native-chart-kit SVG text doesn't support Arabic shaping,
+ * we use English 2-letter abbreviations and render a separate Arabic legend below.
+ */
+const EN_DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function toEnglishDayLabel(label: string): string {
+  const map: Record<string, string> = {
+    ...Object.fromEntries(
+      Object.entries(DAY_LABEL_MAP).filter(([_, v]) => /[A-Za-z]/.test(v)).map(([k, v]) => [k, v])
+    ),
+  };
+  return map[label] || label;
 }
 
 interface DashboardData {
@@ -91,7 +143,8 @@ export default function DashboardScreen() {
       try {
         const analytics = await analyticsApi.getData(chartPeriod);
         setChartData(analytics.volume.map((v: { value: number }) => v.value));
-        setChartLabels(analytics.volume.map((v: { label: string }) => fixChartLabel(v.label)));
+        // Convert labels to English so chart-kit renders them properly
+        setChartLabels(analytics.volume.map((v: { label: string }) => toEnglishDayLabel(v.label)));
       } catch (_e) { /* chart data is non-critical */ }
       setDashData(data);
     } catch (err: unknown) {
@@ -112,17 +165,17 @@ export default function DashboardScreen() {
 
   const chartConfig = useMemo(
     () => ({
-      backgroundColor: COLORS.cardBg,
-      backgroundGradientFrom: COLORS.cardBg,
-      backgroundGradientTo: COLORS.cardBg,
-      color: chartColorFn(COLORS.primary),
+      backgroundColor: COLORS.surfaceBg,
+      backgroundGradientFrom: COLORS.surfaceBg,
+      backgroundGradientTo: COLORS.surfaceBg,
+      color: chartColorFn(COLORS.primaryLight),
       labelColor: () => COLORS.textSecondary,
       strokeWidth: 2,
       decimalPlaces: 0,
       propsForDots: {
         r: '4',
         strokeWidth: '2',
-        stroke: COLORS.primary,
+        stroke: COLORS.primaryLight,
       },
       propsForBackgroundLines: {
         strokeDasharray: '',
@@ -167,7 +220,7 @@ export default function DashboardScreen() {
       <View style={[styles.header, isRTL && styles.headerRTL]}>
         <View style={{ flex: 1 }}>
           <Text style={[styles.greeting, isRTL && styles.textRTL]}>
-            {t(getGreetingKey(), { name: user?.name?.split(' ')[0] ?? t('common.appName') })}
+            {t(getGreetingKey(), { name: user?.name?.split(' ')[0] ?? 'Merchant' })}
           </Text>
           <Text style={[styles.merchantId, isRTL && styles.textRTL]}>
             {user?.merchantId ?? 'ZRX-10042'}
@@ -195,13 +248,15 @@ export default function DashboardScreen() {
             label={t('dashboard.totalVolume')}
             value={format(dashData?.kpis?.totalVolume ?? 0)}
             icon="💳"
-            color={COLORS.kpiBlue}
+            color={COLORS.primary}
+            style={{ backgroundColor: 'rgba(26, 86, 219, 0.15)', borderColor: 'rgba(26, 86, 219, 0.3)' }}
           />
           <KpiCard
             label={t('dashboard.successRate')}
             value={`${dashData?.kpis?.successRate ?? '0'}%`}
             icon="✅"
-            color={COLORS.kpiGreen}
+            color={COLORS.success}
+            style={{ backgroundColor: 'rgba(5, 150, 105, 0.15)', borderColor: 'rgba(5, 150, 105, 0.3)' }}
           />
         </View>
         <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
@@ -209,13 +264,15 @@ export default function DashboardScreen() {
             label={t('dashboard.todayTx')}
             value={String(dashData?.kpis?.todayTx ?? 0)}
             icon="📋"
-            color={COLORS.kpiPurple}
+            color={COLORS.chart.purple}
+            style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', borderColor: 'rgba(139, 92, 246, 0.3)' }}
           />
           <KpiCard
             label={t('dashboard.openDisputes')}
             value={String(dashData?.kpis?.openDisputes ?? 0)}
             icon="⚠️"
-            color={COLORS.kpiOrange}
+            color={COLORS.warning}
+            style={{ backgroundColor: 'rgba(217, 119, 6, 0.15)', borderColor: 'rgba(217, 119, 6, 0.3)' }}
           />
         </View>
       </View>
@@ -437,11 +494,11 @@ const styles = StyleSheet.create({
   },
   // ── Chart ──
   chartCard: {
-    backgroundColor: COLORS.cardBg,
+    backgroundColor: COLORS.surfaceBg,
     borderRadius: RADIUS.lg,
     padding: SPACING.lg,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.primaryLight + '30',
     marginTop: SPACING.xl,
   },
   chartHeader: {
@@ -549,11 +606,11 @@ const styles = StyleSheet.create({
   },
   // ── Settlement Card ──
   settlementCard: {
-    backgroundColor: COLORS.settlementTealBg,
+    backgroundColor: 'rgba(13, 148, 136, 0.12)',
     borderRadius: RADIUS.lg,
     padding: SPACING.lg,
     borderWidth: 1,
-    borderColor: COLORS.settlementTealBorder,
+    borderColor: 'rgba(13, 148, 136, 0.35)',
     marginTop: SPACING.xl,
   },
   settlementRow: {
