@@ -1,42 +1,32 @@
 // app/(merchant)/balance.tsx
 import React, { useState } from 'react'
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  I18nManager,
-  SafeAreaView,
-  Alert,
-  ActivityIndicator,
-  RefreshControl,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  I18nManager, SafeAreaView, Alert, ActivityIndicator, RefreshControl,
 } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
+import { useCurrency } from '../../hooks/useCurrency'
 import { balanceApi } from '../../services/api'
 import KpiCard from '../../components/KpiCard'
 import { QRCodeModal } from '../../components/QRCodeModal'
 
 const isRTL = I18nManager.isRTL
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
 function SectionTitle({ text }: { text: string }) {
-  return (
-    <Text style={[styles.sectionTitle, isRTL && styles.textRight]}>
-      {text}
-    </Text>
-  )
+  return <Text style={[styles.sectionTitle, isRTL && styles.textRight]}>{text}</Text>
 }
-
-// ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function BalanceScreen() {
   const { t } = useTranslation()
+  const { format, convert, currency } = useCurrency('SAR')
   const [ibanCopied, setIbanCopied] = useState(false)
-  const [balanceData, setBalanceData] = useState<{ available: number; incoming: number; outgoing: number; iban: string; company: string; nextSettlement: { id: string; date: string; net: number; commission: number; dateAmount?: number } | null } | null>(null)
+  const [balanceData, setBalanceData] = useState<{
+    available: number; incoming: number; outgoing: number;
+    iban: string; company: string;
+    nextSettlement: { id: string; date: string; net: number; commission: number; dateAmount?: number } | null
+  } | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -66,13 +56,8 @@ export default function BalanceScreen() {
     setTimeout(() => setIbanCopied(false), 2000)
   }
 
-  const handleTransfer = () => {
-    Alert.alert(t('balance.transfer'), bal.iban)
-  }
-
-  const handleQr = () => {
-    setShowQR(true)
-  }
+  const handleTransfer = () => Alert.alert(t('balance.transfer'), bal.iban)
+  const handleQr = () => setShowQR(true)
 
   if (loading && !balanceData) {
     return (
@@ -88,6 +73,8 @@ export default function BalanceScreen() {
   const commission = bal.nextSettlement?.commission ?? 0
   const maxFlow = Math.max(bal.incoming, Math.abs(bal.outgoing), 1)
 
+  const fmt = (amount: number) => format(convert(amount, 'SAR', currency), currency)
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
@@ -95,23 +82,14 @@ export default function BalanceScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
         showsVerticalScrollIndicator={false}
       >
-
-        {/* ── Page Header ── */}
         <View style={styles.pageHeader}>
-          <Text style={[styles.pageTitle, isRTL && styles.textRight]}>
-            {t('balance.title')}
-          </Text>
+          <Text style={[styles.pageTitle, isRTL && styles.textRight]}>{t('balance.title')}</Text>
         </View>
 
-        {/* ── Hero Card — Available Balance ── */}
         <View style={styles.heroCard}>
           <Text style={styles.heroLabel}>{t('balance.available')}</Text>
-          <Text style={styles.heroAmount}>
-            {bal.available.toLocaleString('en-US', { minimumFractionDigits: 2 })}{' '}
-            <Text style={styles.heroCurrency}>ر.س</Text>
-          </Text>
+          <Text style={styles.heroAmount}>{fmt(bal.available)}</Text>
 
-          {/* Action Buttons — each with unique color */}
           <View style={[styles.actionRow, isRTL && styles.actionRowRTL]}>
             <TouchableOpacity style={[styles.actionBtn, { backgroundColor: COLORS.primary, borderColor: COLORS.primary }]} onPress={handleTransfer} activeOpacity={0.75}>
               <Text style={styles.actionIcon}>↑</Text>
@@ -127,37 +105,26 @@ export default function BalanceScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* IBAN row — single line, small font */}
-          <TouchableOpacity
-            style={[styles.ibanRow, isRTL && styles.ibanRowRTL]}
-            onPress={handleCopyIban}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity style={[styles.ibanRow, isRTL && styles.ibanRowRTL]} onPress={handleCopyIban} activeOpacity={0.7}>
             <Text style={styles.ibanLabel}>IBAN</Text>
             <Text style={styles.ibanValue} numberOfLines={1} adjustsFontSizeToFit>{bal.iban}</Text>
             <Text style={[styles.ibanCopied, { opacity: ibanCopied ? 1 : 0 }]}>✓</Text>
           </TouchableOpacity>
         </View>
 
-        {/* ── Incoming / Outgoing ── */}
         <View style={[styles.flowRow, isRTL && styles.flowRowRTL]}>
           <View style={[styles.flowCard, { backgroundColor: 'rgba(5, 150, 105, 0.12)', borderColor: 'rgba(5, 150, 105, 0.3)' }]}>
             <View style={[styles.flowDot, { backgroundColor: COLORS.success }]} />
             <Text style={styles.flowLabel}>{t('balance.incoming')}</Text>
-            <Text style={[styles.flowAmount, { color: COLORS.success }]}>
-              +{bal.incoming.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س
-            </Text>
+            <Text style={[styles.flowAmount, { color: COLORS.success }]}>+{fmt(bal.incoming)}</Text>
           </View>
           <View style={[styles.flowCard, { backgroundColor: 'rgba(220, 38, 38, 0.12)', borderColor: 'rgba(220, 38, 38, 0.3)' }]}>
             <View style={[styles.flowDot, { backgroundColor: COLORS.danger }]} />
             <Text style={styles.flowLabel}>{t('balance.outgoing')}</Text>
-            <Text style={[styles.flowAmount, { color: COLORS.danger }]}>
-              -{Math.abs(bal.outgoing).toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س
-            </Text>
+            <Text style={[styles.flowAmount, { color: COLORS.danger }]}>-{fmt(Math.abs(bal.outgoing))}</Text>
           </View>
         </View>
 
-        {/* ── Flow Pivot Chart ── */}
         <View style={styles.chartContainer}>
           <View style={styles.chartBarGroup}>
             <View style={styles.chartBarTrack}>
@@ -173,7 +140,6 @@ export default function BalanceScreen() {
           </View>
         </View>
 
-        {/* ── Next Settlement Card ── */}
         <View style={styles.section}>
           <SectionTitle text={t('balance.next_settlement')} />
           <View style={styles.settlementCard}>
@@ -181,7 +147,7 @@ export default function BalanceScreen() {
               <Text style={styles.settlementCardTitle}>{t('balance.next_settlement')}</Text>
             </View>
             <View style={[styles.settRow, { backgroundColor: 'rgba(26, 86, 219, 0.08)' }]}>
-              <Text style={styles.settLabel}>📅  {t('settlements.date') || 'التاريخ'}</Text>
+              <Text style={styles.settLabel}>📅 {t('settlements.date') || 'التاريخ'}</Text>
               <Text style={styles.settValue}>{bal.nextSettlement?.date ?? '2026-04-07'}</Text>
             </View>
             <View style={[styles.settRow, { backgroundColor: 'rgba(26, 86, 219, 0.04)' }]}>
@@ -190,20 +156,19 @@ export default function BalanceScreen() {
             </View>
             <View style={[styles.settRow, { backgroundColor: 'rgba(26, 86, 219, 0.08)' }]}>
               <Text style={styles.settLabel}>{t('settlements.gross') || 'الإجمالي'}</Text>
-              <Text style={styles.settValue}>{bal.available.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</Text>
+              <Text style={styles.settValue}>{fmt(bal.available)}</Text>
             </View>
             <View style={[styles.settRow, { backgroundColor: 'rgba(26, 86, 219, 0.04)' }]}>
               <Text style={styles.settLabel}>{t('settlements.commission')}</Text>
-              <Text style={[styles.settValue, { color: COLORS.danger }]}>-{commission.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</Text>
+              <Text style={[styles.settValue, { color: COLORS.danger }]}>-{fmt(commission)}</Text>
             </View>
             <View style={[styles.settRow, { backgroundColor: 'rgba(26, 86, 219, 0.08)' }]}>
               <Text style={styles.settLabel}>{t('settlements.net')}</Text>
-              <Text style={[styles.settValue, { color: COLORS.success }]}>+{netAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</Text>
+              <Text style={[styles.settValue, { color: COLORS.success }]}>+{fmt(netAmount)}</Text>
             </View>
           </View>
         </View>
 
-        {/* ── Account Info / Profile ── */}
         <View style={styles.section}>
           <SectionTitle text={t('profile.title')} />
           <View style={styles.infoCard}>
@@ -224,6 +189,7 @@ export default function BalanceScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
       <QRCodeModal
         visible={showQR}
         onClose={() => setShowQR(false)}
@@ -235,278 +201,48 @@ export default function BalanceScreen() {
   )
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.darkBg,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-
-  // Header
-  pageHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-    backgroundColor: COLORS.deepBg,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  pageTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-  },
-  textRight: {
-    textAlign: 'right',
-  },
-
-  // Hero card — distinctive teal gradient
-  heroCard: {
-    margin: 16,
-    borderRadius: 16,
-    backgroundColor: 'rgba(13, 148, 136, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(13, 148, 136, 0.35)',
-    padding: 24,
-  },
-  heroLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 1,
-    color: COLORS.textSecondary,
-    marginBottom: 8,
-    textAlign: isRTL ? 'right' : 'left',
-  },
-  heroAmount: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: COLORS.white,
-    marginBottom: 24,
-    textAlign: isRTL ? 'right' : 'left',
-  },
-  heroCurrency: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: COLORS.textSecondary,
-  },
-
-  // Action buttons
-  actionRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 20,
-  },
-  actionRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  actionBtn: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 4,
-  },
-  actionIcon: {
-    fontSize: 18,
-    color: COLORS.white,
-  },
-  actionLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-
-  // IBAN — compact single line
-  ibanRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.cardBg,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    gap: 6,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  ibanRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  ibanLabel: {
-    fontSize: 10,
-    color: COLORS.textMuted,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  ibanValue: {
-    flex: 1,
-    fontSize: 10,
-    color: COLORS.textPrimary,
-    fontFamily: 'monospace',
-    letterSpacing: 0.5,
-  },
-  ibanCopied: {
-    fontSize: 14,
-    color: COLORS.success,
-    fontWeight: '700',
-  },
-
-  // Flow cards (incoming/outgoing)
-  flowRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    gap: 10,
-  },
-  flowRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  flowCard: {
-    flex: 1,
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 16,
-    alignItems: isRTL ? 'flex-end' : 'flex-start',
-  },
-  flowDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginBottom: 6,
-  },
-  flowLabel: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  flowAmount: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-
-  // Chart
-  chartContainer: {
-    flexDirection: isRTL ? 'row-reverse' : 'row',
-    justifyContent: 'space-around',
-    alignItems: 'flex-end',
-    backgroundColor: COLORS.cardBg,
-    marginHorizontal: 16,
-    marginTop: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: 16,
-    height: 120,
-  },
-  chartBarGroup: {
-    alignItems: 'center',
-    flex: 1,
-    gap: 4,
-  },
-  chartBarTrack: {
-    width: 36,
-    height: 65,
-    backgroundColor: COLORS.surfaceBg,
-    borderRadius: 6,
-    justifyContent: 'flex-end',
-    overflow: 'hidden',
-  },
-  chartBarFill: {
-    width: '100%',
-    borderRadius: 6,
-  },
-  chartBarLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-
-  // Section
-  section: {
-    marginTop: 20,
-    paddingHorizontal: 16,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.textSecondary,
-    letterSpacing: 0.5,
-    marginBottom: 10,
-  },
-
-  // Settlement card — with alternating row colors
-  settlementCard: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(26, 86, 219, 0.3)',
-    overflow: 'hidden',
-  },
-  settlementCardHeader: {
-    backgroundColor: 'rgba(26, 86, 219, 0.15)',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(26, 86, 219, 0.2)',
-  },
-  settlementCardTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    textAlign: isRTL ? 'right' : 'left',
-  },
-  settRow: {
-    flexDirection: isRTL ? 'row-reverse' : 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  settLabel: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
-  },
-  settValue: {
-    fontSize: 13,
-    color: COLORS.textPrimary,
-    fontWeight: '600',
-  },
-
-  // Info card — with alternating row colors
-  infoCard: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.3)',
-    overflow: 'hidden',
-  },
-  infoRow: {
-    flexDirection: isRTL ? 'row-reverse' : 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  infoLabel: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
-  },
-  infoValue: {
-    fontSize: 13,
-    color: COLORS.textPrimary,
-    fontWeight: '600',
-    maxWidth: '60%',
-    textAlign: isRTL ? 'left' : 'right',
-  },
-  infoValueMono: {
-    fontFamily: 'monospace',
-    fontSize: 10,
-  },
+  safeArea: { flex: 1, backgroundColor: COLORS.darkBg },
+  scrollContent: { paddingBottom: 40 },
+  pageHeader: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16, backgroundColor: COLORS.deepBg, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  pageTitle: { fontSize: 22, fontWeight: '700', color: COLORS.textPrimary },
+  textRight: { textAlign: 'right' },
+  heroCard: { margin: 16, borderRadius: 16, backgroundColor: 'rgba(13, 148, 136, 0.15)', borderWidth: 1, borderColor: 'rgba(13, 148, 136, 0.35)', padding: 24 },
+  heroLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 1, color: COLORS.textSecondary, marginBottom: 8, textAlign: isRTL ? 'right' : 'left' },
+  heroAmount: { fontSize: 36, fontWeight: '800', color: COLORS.white, marginBottom: 24, textAlign: isRTL ? 'right' : 'left' },
+  heroCurrency: { fontSize: 18, fontWeight: '500', color: COLORS.textSecondary },
+  actionRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+  actionRowRTL: { flexDirection: 'row-reverse' },
+  actionBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 12, borderWidth: 1, gap: 4 },
+  actionIcon: { fontSize: 18, color: COLORS.white },
+  actionLabel: { fontSize: 11, fontWeight: '600' },
+  ibanRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, gap: 6, borderWidth: 1, borderColor: COLORS.border },
+  ibanRowRTL: { flexDirection: 'row-reverse' },
+  ibanLabel: { fontSize: 10, color: COLORS.textMuted, fontWeight: '700', letterSpacing: 0.5 },
+  ibanValue: { flex: 1, fontSize: 10, color: COLORS.textPrimary, fontFamily: 'monospace', letterSpacing: 0.5 },
+  ibanCopied: { fontSize: 14, color: COLORS.success, fontWeight: '700' },
+  flowRow: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 6, gap: 10 },
+  flowRowRTL: { flexDirection: 'row-reverse' },
+  flowCard: { flex: 1, borderRadius: 14, borderWidth: 1, padding: 16, alignItems: isRTL ? 'flex-end' : 'flex-start' },
+  flowDot: { width: 8, height: 8, borderRadius: 4, marginBottom: 6 },
+  flowLabel: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600', marginBottom: 4 },
+  flowAmount: { fontSize: 18, fontWeight: '800' },
+  chartContainer: { flexDirection: isRTL ? 'row-reverse' : 'row', justifyContent: 'space-around', alignItems: 'flex-end', backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 10, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, padding: 16, height: 120 },
+  chartBarGroup: { alignItems: 'center', flex: 1, gap: 4 },
+  chartBarTrack: { width: 36, height: 65, backgroundColor: COLORS.surfaceBg, borderRadius: 6, justifyContent: 'flex-end', overflow: 'hidden' },
+  chartBarFill: { width: '100%', borderRadius: 6 },
+  chartBarLabel: { fontSize: 11, fontWeight: '700' },
+  section: { marginTop: 20, paddingHorizontal: 16 },
+  sectionTitle: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.5, marginBottom: 10 },
+  settlementCard: { borderRadius: 14, borderWidth: 1, borderColor: 'rgba(26, 86, 219, 0.3)', overflow: 'hidden' },
+  settlementCardHeader: { backgroundColor: 'rgba(26, 86, 219, 0.15)', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(26, 86, 219, 0.2)' },
+  settlementCardTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, textAlign: isRTL ? 'right' : 'left' },
+  settRow: { flexDirection: isRTL ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  settLabel: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '500' },
+  settValue: { fontSize: 13, color: COLORS.textPrimary, fontWeight: '600' },
+  infoCard: { borderRadius: 14, borderWidth: 1, borderColor: 'rgba(139, 92, 246, 0.3)', overflow: 'hidden' },
+  infoRow: { flexDirection: isRTL ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  infoLabel: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '500' },
+  infoValue: { fontSize: 13, color: COLORS.textPrimary, fontWeight: '600', maxWidth: '60%', textAlign: isRTL ? 'left' : 'right' },
+  infoValueMono: { fontFamily: 'monospace', fontSize: 10 },
 })

@@ -1,18 +1,12 @@
 // app/(merchant)/analytics.tsx
 import React, { useState, useEffect, useCallback } from 'react'
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  I18nManager,
-  SafeAreaView,
-  ActivityIndicator,
-  RefreshControl,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  I18nManager, SafeAreaView, ActivityIndicator, RefreshControl,
 } from 'react-native'
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
+import { useCurrency } from '../../hooks/useCurrency'
 import { analyticsApi } from '../../services/api'
 import KpiCard from '../../components/KpiCard'
 import ChartCard from '../../components/ChartCard'
@@ -28,12 +22,11 @@ const RANGE_LABELS: Record<RangeKey, string> = {
   '90d': '٩٠ يوم',
 }
 
-// ─── KPI config — label, color, data key, unit ───────────────────────────────
 const KPI_CONFIG = {
-  volume:      { color: COLORS.primary,        bgColor: 'rgba(26, 86, 219, 0.15)',   borderColor: 'rgba(26, 86, 219, 0.3)',   unit: 'ر.س' },
-  successRate: { color: COLORS.success,         bgColor: 'rgba(5, 150, 105, 0.15)',   borderColor: 'rgba(5, 150, 105, 0.3)',   unit: '%'   },
-  avgTx:       { color: COLORS.chart.purple,    bgColor: 'rgba(139, 92, 246, 0.15)', borderColor: 'rgba(139, 92, 246, 0.3)', unit: 'ر.س' },
-  customers:   { color: COLORS.chart.orange,    bgColor: 'rgba(245, 158, 11, 0.15)', borderColor: 'rgba(245, 158, 11, 0.3)', unit: ''    },
+  volume:      { color: COLORS.primary,        bgColor: 'rgba(26, 86, 219, 0.15)',   borderColor: 'rgba(26, 86, 219, 0.3)',   unit: '' },
+  successRate: { color: COLORS.success,         bgColor: 'rgba(5, 150, 105, 0.15)',   borderColor: 'rgba(5, 150, 105, 0.3)',   unit: '%' },
+  avgTx:       { color: COLORS.chart.purple,    bgColor: 'rgba(139, 92, 246, 0.15)', borderColor: 'rgba(139, 92, 246, 0.3)', unit: '' },
+  customers:   { color: COLORS.chart.orange,    bgColor: 'rgba(245, 158, 11, 0.15)', borderColor: 'rgba(245, 158, 11, 0.3)', unit: '' },
 }
 
 interface AnalyticsData {
@@ -47,8 +40,6 @@ interface AnalyticsData {
 
 const METHOD_COLORS  = [COLORS.primary, COLORS.products.crypto, COLORS.products.cod, COLORS.success]
 const COUNTRY_COLORS = [COLORS.chart.blue, COLORS.chart.green, COLORS.chart.orange, COLORS.chart.purple, COLORS.chart.cyan]
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function RangeToggle({ active, onChange }: { active: RangeKey; onChange: (k: RangeKey) => void }) {
   return (
@@ -68,8 +59,7 @@ function DonutLegend({ data, colors }: { data: { label: string; value: number }[
       <View style={donutS.bar}>
         {data.map((d, i) => (
           <View key={i} style={[donutS.segment, {
-            flex: d.value,
-            backgroundColor: colors[i % colors.length],
+            flex: d.value, backgroundColor: colors[i % colors.length],
             borderRadius: i === 0 ? 4 : i === data.length - 1 ? 4 : 0,
           }]} />
         ))}
@@ -87,14 +77,12 @@ function DonutLegend({ data, colors }: { data: { label: string; value: number }[
   )
 }
 
-// ─── Multi-series chart — عرض الكل ───────────────────────────────────────────
 function MultiSeriesChart({ data, range }: { data: AnalyticsData; range: RangeKey }) {
   const series = [
-    { key: 'volume'      as const, label: 'الحجم',       color: KPI_CONFIG.volume.color      },
-    { key: 'successRate' as const, label: 'نسبة النجاح', color: KPI_CONFIG.successRate.color  },
+    { key: 'volume'      as const, label: 'الحجم',       color: KPI_CONFIG.volume.color },
+    { key: 'successRate' as const, label: 'نسبة النجاح', color: KPI_CONFIG.successRate.color },
   ]
   const labels = data.volume.map((d) => d.label)
-  const max = Math.max(...data.volume.map((d) => d.value), 1)
 
   return (
     <View style={[styles.card, { marginBottom: 12 }]}>
@@ -102,7 +90,6 @@ function MultiSeriesChart({ data, range }: { data: AnalyticsData; range: RangeKe
       <Text style={[{ fontSize: 12, color: COLORS.textMuted, marginBottom: 12 }, isRTL && styles.textRight]}>
         {RANGE_LABELS[range]}
       </Text>
-      {/* Stacked bars — one per series */}
       {series.map((s) => {
         const seriesData = data[s.key]
         const seriesMax = Math.max(...seriesData.map((d) => d.value), 1)
@@ -117,13 +104,7 @@ function MultiSeriesChart({ data, range }: { data: AnalyticsData; range: RangeKe
                 const heightPct = (point.value / seriesMax) * 100
                 return (
                   <View key={i} style={{ flex: 1, alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                    <View style={{
-                      width: '100%',
-                      height: `${Math.max(heightPct, 4)}%`,
-                      backgroundColor: s.color,
-                      borderRadius: 3,
-                      opacity: heightPct < 20 ? 0.4 : 0.85,
-                    }} />
+                    <View style={{ width: '100%', height: `${Math.max(heightPct, 4)}%`, backgroundColor: s.color, borderRadius: 3, opacity: heightPct < 20 ? 0.4 : 0.85 }} />
                   </View>
                 )
               })}
@@ -140,54 +121,33 @@ function MultiSeriesChart({ data, range }: { data: AnalyticsData; range: RangeKe
   )
 }
 
-// ─── Interactive KPI Card ─────────────────────────────────────────────────────
-function SelectableKpiCard({
-  kpiKey, label, value, icon, active, onPress,
-}: {
-  kpiKey: ActiveKpi; label: string; value: string; icon: string;
-  active: boolean; onPress: () => void;
+function SelectableKpiCard({ kpiKey, label, value, icon, active, onPress }: {
+  kpiKey: ActiveKpi; label: string; value: string; icon: string; active: boolean; onPress: () => void;
 }) {
   const cfg = kpiKey !== 'all' ? KPI_CONFIG[kpiKey] : null
   return (
-    <TouchableOpacity
-      activeOpacity={0.75}
-      onPress={onPress}
-      style={[
-        { flex: 1 },
-        active && cfg && {
-          borderWidth: 2,
-          borderColor: cfg.color,
-          borderRadius: 14,
-        },
-      ]}
-    >
-      <KpiCard
-        label={label}
-        value={value}
-        icon={icon}
+    <TouchableOpacity activeOpacity={0.75} onPress={onPress}
+      style={[{ flex: 1 }, active && cfg && { borderWidth: 2, borderColor: cfg.color, borderRadius: 14 }]}>
+      <KpiCard label={label} value={value} icon={icon}
         color={cfg?.color ?? COLORS.primary}
         valueColor={active && cfg ? cfg.color : undefined}
-        style={{
-          backgroundColor: cfg?.bgColor ?? 'transparent',
-          borderColor: active && cfg ? cfg.color : cfg?.borderColor ?? COLORS.border,
-          borderWidth: active ? 0 : 1,
-        }}
-        compact
-      />
+        style={{ backgroundColor: cfg?.bgColor ?? 'transparent', borderColor: active && cfg ? cfg.color : cfg?.borderColor ?? COLORS.border, borderWidth: active ? 0 : 1 }}
+        compact />
     </TouchableOpacity>
   )
 }
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
-
 export default function AnalyticsScreen() {
   const { t } = useTranslation()
+  const { format, convert, currency } = useCurrency('SAR')
   const [range, setRange] = useState<RangeKey>('30d')
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [activeKpi, setActiveKpi] = useState<ActiveKpi>('all')
+
+  const fmt = (amount: number) => format(convert(amount, 'SAR', currency), currency)
 
   const fetchData = useCallback(async (selectedRange: RangeKey) => {
     try {
@@ -205,9 +165,7 @@ export default function AnalyticsScreen() {
   useEffect(() => { setLoading(true); fetchData(range) }, [range])
   const onRefresh = useCallback(() => { setRefreshing(true); fetchData(range) }, [range, fetchData])
 
-  const handleKpiPress = (key: ActiveKpi) => {
-    setActiveKpi((prev) => prev === key ? 'all' : key)
-  }
+  const handleKpiPress = (key: ActiveKpi) => setActiveKpi((prev) => prev === key ? 'all' : key)
 
   if (loading && !data) {
     return (
@@ -235,9 +193,8 @@ export default function AnalyticsScreen() {
 
   if (!data) return null
 
-  // ─── Derive active chart data ─────────────────────────────────────────────
   const activeColor = activeKpi !== 'all' ? KPI_CONFIG[activeKpi].color : COLORS.primary
-  const activeUnit  = activeKpi !== 'all' ? KPI_CONFIG[activeKpi].unit  : 'ر.س'
+  const activeUnit  = activeKpi !== 'all' ? KPI_CONFIG[activeKpi].unit  : ''
   const activeData  = activeKpi === 'volume'      ? data.volume
                     : activeKpi === 'successRate' ? data.successRate
                     : activeKpi === 'avgTx'       ? data.volume.map((d) => ({ ...d, value: d.value / (data.kpi.customers || 1) }))
@@ -251,7 +208,6 @@ export default function AnalyticsScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} colors={[COLORS.primary]} />}
       >
-        {/* Header */}
         <View style={styles.pageHeader}>
           <View style={[styles.headerRow, isRTL && styles.headerRowRTL]}>
             <View>
@@ -263,51 +219,28 @@ export default function AnalyticsScreen() {
         </View>
 
         <View style={styles.body}>
-
-          {/* ── KPI Cards — اضغط لتصفية الرسم البياني ── */}
           <View style={styles.kpiHint}>
             <Text style={styles.kpiHintText}>اضغط على مؤشر لعرض رسمه البياني</Text>
           </View>
 
           <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
-            <SelectableKpiCard
-              kpiKey="volume"
-              label={t('analytics.volume')}
-              value={`${(data.kpi.volume / 1000).toFixed(1)}k ر.س`}
-              icon="💳"
-              active={activeKpi === 'volume'}
-              onPress={() => handleKpiPress('volume')}
-            />
-            <SelectableKpiCard
-              kpiKey="successRate"
-              label={t('analytics.success_rate')}
-              value={`${data.kpi.successRate}%`}
-              icon="✅"
-              active={activeKpi === 'successRate'}
-              onPress={() => handleKpiPress('successRate')}
-            />
+            <SelectableKpiCard kpiKey="volume" label={t('analytics.volume')}
+              value={fmt(data.kpi.volume)} icon="💳"
+              active={activeKpi === 'volume'} onPress={() => handleKpiPress('volume')} />
+            <SelectableKpiCard kpiKey="successRate" label={t('analytics.success_rate')}
+              value={`${data.kpi.successRate}%`} icon="✅"
+              active={activeKpi === 'successRate'} onPress={() => handleKpiPress('successRate')} />
           </View>
 
           <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
-            <SelectableKpiCard
-              kpiKey="avgTx"
-              label={t('analytics.avg_tx')}
-              value={`${data.kpi.avgTx.toFixed(1)} ر.س`}
-              icon="📊"
-              active={activeKpi === 'avgTx'}
-              onPress={() => handleKpiPress('avgTx')}
-            />
-            <SelectableKpiCard
-              kpiKey="customers"
-              label={t('analytics.customers')}
-              value={String(data.kpi.customers)}
-              icon="👥"
-              active={activeKpi === 'customers'}
-              onPress={() => handleKpiPress('customers')}
-            />
+            <SelectableKpiCard kpiKey="avgTx" label={t('analytics.avg_tx')}
+              value={fmt(data.kpi.avgTx)} icon="📊"
+              active={activeKpi === 'avgTx'} onPress={() => handleKpiPress('avgTx')} />
+            <SelectableKpiCard kpiKey="customers" label={t('analytics.customers')}
+              value={String(data.kpi.customers)} icon="👥"
+              active={activeKpi === 'customers'} onPress={() => handleKpiPress('customers')} />
           </View>
 
-          {/* ── زر عرض الكل ── */}
           <TouchableOpacity
             style={[styles.allBtn, activeKpi === 'all' && styles.allBtnActive]}
             onPress={() => setActiveKpi('all')}
@@ -317,37 +250,26 @@ export default function AnalyticsScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* ── الرسم البياني — يتغير حسب الـ KPI المضغوط ── */}
           {activeKpi === 'all' ? (
             <MultiSeriesChart data={data} range={range} />
           ) : (
             <ChartCard
-              title={
-                activeKpi === 'volume'      ? t('analytics.volume')
-                : activeKpi === 'successRate' ? t('analytics.success_rate')
-                : activeKpi === 'avgTx'       ? t('analytics.avg_tx')
-                : t('analytics.customers')
-              }
+              title={activeKpi === 'volume' ? t('analytics.volume') : activeKpi === 'successRate' ? t('analytics.success_rate') : activeKpi === 'avgTx' ? t('analytics.avg_tx') : t('analytics.customers')}
               subtitle={`${RANGE_LABELS[range]} · ${activeUnit}`}
               data={activeData}
               color={activeColor}
               unit={activeUnit}
               showAverage={activeKpi === 'volume'}
               type={activeKpi === 'successRate' ? 'line' : 'bar'}
-              style={{
-                backgroundColor: activeKpi !== 'all' ? KPI_CONFIG[activeKpi].bgColor : COLORS.surfaceBg,
-                borderColor: activeColor + '50',
-              }}
+              style={{ backgroundColor: activeKpi !== 'all' ? KPI_CONFIG[activeKpi].bgColor : COLORS.surfaceBg, borderColor: activeColor + '50' }}
             />
           )}
 
-          {/* ── طرق الدفع ── */}
           <View style={styles.card}>
             <Text style={[styles.cardTitle, isRTL && styles.textRight]}>{t('analytics.payment_methods')}</Text>
             <DonutLegend data={data.methods} colors={METHOD_COLORS} />
           </View>
 
-          {/* ── الدول ── */}
           <ChartCard
             title={t('analytics.countries')}
             subtitle={`${RANGE_LABELS[range]} · %`}
@@ -357,14 +279,11 @@ export default function AnalyticsScreen() {
             type="bar"
             style={{ backgroundColor: 'rgba(124, 58, 237, 0.08)', borderColor: 'rgba(124, 58, 237, 0.25)' }}
           />
-
         </View>
       </ScrollView>
     </SafeAreaView>
   )
 }
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   safeArea:      { flex: 1, backgroundColor: COLORS.darkBg },

@@ -1,22 +1,14 @@
 // app/(merchant)/transactions.tsx
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  I18nManager,
-  SafeAreaView,
-  ListRenderItemInfo,
-  ActivityIndicator,
-  RefreshControl,
-  Linking,
+  View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput,
+  I18nManager, SafeAreaView, ListRenderItemInfo, ActivityIndicator,
+  RefreshControl, Linking,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
+import { useCurrency } from '../../hooks/useCurrency'
 import { transactionsApi } from '../../services/api'
 import KpiCard from '../../components/KpiCard'
 import TransactionRow from '../../components/TransactionRow'
@@ -25,13 +17,7 @@ import { useToast } from '../../components/Toast'
 
 const isRTL = I18nManager.isRTL
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-
-
-
-// ─── Filter Tabs ───────────────────────────────────────────────────────────────
-
-type FilterKey = 'all' | TransactionStatus
+type FilterKey = 'all' | 'success' | 'pending' | 'failed'
 
 interface FilterTab {
   key: FilterKey
@@ -45,10 +31,9 @@ const FILTERS: FilterTab[] = [
   { key: 'all',     labelKey: 'transactions.filter_all' },
 ]
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
-
 export default function TransactionsScreen() {
   const { t } = useTranslation()
+  const { format, convert, currency } = useCurrency('SAR')
   const router = useRouter()
   const { showToast } = useToast()
 
@@ -75,13 +60,10 @@ export default function TransactionsScreen() {
   }, [])
 
   useEffect(() => { fetchData() }, [])
-
   const onRefresh = () => { setRefreshing(true); fetchData() }
 
-  const totalVolume = stats.totalVolume
-  const successRate = Number(stats.successRate)
+  const fmt = (amount: number) => format(convert(amount, 'SAR', currency), currency)
 
-  // Filtered + searched list
   const filtered = useMemo(() => {
     return allTx.filter((tx) => {
       const matchesFilter = filter === 'all' || tx.status === filter
@@ -100,16 +82,11 @@ export default function TransactionsScreen() {
   }
 
   const renderItem = ({ item, index }: ListRenderItemInfo<Transaction>) => (
-    <TransactionRow
-      {...item}
-      index={index}
-      onPress={() => handleRowPress(item.id)}
-    />
+    <TransactionRow {...item} index={index} onPress={() => handleRowPress(item.id)} />
   )
 
   const renderHeader = () => (
     <>
-      {/* Page header — compact, no white bg */}
       <View style={styles.header}>
         <View style={[styles.headerTopRow, isRTL && styles.headerTopRowRTL]}>
           <View style={{ flex: 1 }}>
@@ -120,10 +97,8 @@ export default function TransactionsScreen() {
           <TouchableOpacity
             style={styles.csvBtn}
             onPress={() => {
-              const url = 'https://api.zyrix.co/api/export/transactions?format=csv';
-              Linking.openURL(url).catch(() => {
-                showToast(t('common.coming_soon'), 'info');
-              });
+              const url = 'https://api.zyrix.co/api/export/transactions?format=csv'
+              Linking.openURL(url).catch(() => showToast(t('common.coming_soon'), 'info'))
             }}
           >
             <Text style={styles.csvBtnText}>{t('transactions.export_csv')}</Text>
@@ -131,11 +106,10 @@ export default function TransactionsScreen() {
         </View>
       </View>
 
-      {/* KPI row */}
       <View style={styles.kpiRow}>
         <KpiCard
           label={t('transactions.success_rate')}
-          value={`${successRate}%`}
+          value={`${Number(stats.successRate)}%`}
           icon="✅"
           color={COLORS.kpiGreen}
           style={styles.kpiCard}
@@ -149,14 +123,13 @@ export default function TransactionsScreen() {
         />
         <KpiCard
           label={t('transactions.total_volume')}
-          value={`$${totalVolume.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+          value={fmt(stats.totalVolume)}
           icon="💳"
           color={COLORS.kpiBlue}
           style={styles.kpiCard}
         />
       </View>
 
-      {/* Search bar */}
       <View style={styles.searchWrapper}>
         <TextInput
           style={[styles.searchInput, isRTL && styles.searchInputRTL]}
@@ -168,23 +141,14 @@ export default function TransactionsScreen() {
         />
       </View>
 
-      {/* Filter tabs */}
       <View style={[styles.filterRow, isRTL && styles.filterRowRTL]}>
         {FILTERS.map((f) => (
           <TouchableOpacity
             key={f.key}
-            style={[
-              styles.filterTab,
-              filter === f.key && styles.filterTabActive,
-            ]}
+            style={[styles.filterTab, filter === f.key && styles.filterTabActive]}
             onPress={() => setFilter(f.key)}
           >
-            <Text
-              style={[
-                styles.filterTabText,
-                filter === f.key && styles.filterTabTextActive,
-              ]}
-            >
+            <Text style={[styles.filterTabText, filter === f.key && styles.filterTabTextActive]}>
               {t(f.labelKey)}
             </Text>
           </TouchableOpacity>
@@ -209,141 +173,33 @@ export default function TransactionsScreen() {
         ListEmptyComponent={renderEmpty}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
       />
     </SafeAreaView>
   )
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.cardBg,
-  },
-  listContent: {
-    paddingBottom: 32,
-  },
-
-  // Header
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
-    backgroundColor: COLORS.surfaceBg,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  headerTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  headerTopRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
-  },
-  csvBtn: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
-  },
-  csvBtnText: {
-    color: COLORS.white,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  textRight: {
-    textAlign: 'right',
-  },
-
-  // KPIs
-  kpiRow: {
-    flexDirection: isRTL ? 'row-reverse' : 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    gap: 8,
-    backgroundColor: COLORS.cardBg,
-  },
-  kpiCard: {
-    flex: 1,
-  },
-
-  // Search
-  searchWrapper: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: COLORS.cardBg,
-  },
-  searchInput: {
-    height: 40,
-    backgroundColor: COLORS.surfaceBg,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    fontSize: 13,
-    color: COLORS.textPrimary,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-  },
-  searchInputRTL: {
-    textAlign: 'right',
-  },
-
-  // Filters
-  filterRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
-    backgroundColor: COLORS.cardBg,
-    justifyContent: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  filterRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  filterTab: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: COLORS.cardBgLight,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-  },
-  filterTabActive: {
-    backgroundColor: `${COLORS.primary}30`,
-    borderColor: COLORS.primary,
-  },
-  filterTabText: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
-  },
-  filterTabTextActive: {
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-
-  // Empty
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  emptyText: {
-    fontSize: 32,
-    marginBottom: 12,
-  },
+  safeArea: { flex: 1, backgroundColor: COLORS.cardBg },
+  listContent: { paddingBottom: 32 },
+  header: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8, backgroundColor: COLORS.surfaceBg, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  headerTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  headerTopRowRTL: { flexDirection: 'row-reverse' },
+  subtitle: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '500' },
+  csvBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8 },
+  csvBtnText: { color: COLORS.white, fontSize: 11, fontWeight: '700' },
+  textRight: { textAlign: 'right' },
+  kpiRow: { flexDirection: isRTL ? 'row-reverse' : 'row', paddingHorizontal: 12, paddingVertical: 14, gap: 8, backgroundColor: COLORS.cardBg },
+  kpiCard: { flex: 1 },
+  searchWrapper: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: COLORS.cardBg },
+  searchInput: { height: 40, backgroundColor: COLORS.surfaceBg, borderRadius: 10, paddingHorizontal: 14, fontSize: 13, color: COLORS.textPrimary, borderWidth: 1, borderColor: COLORS.borderLight },
+  searchInputRTL: { textAlign: 'right' },
+  filterRow: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, gap: 8, backgroundColor: COLORS.cardBg, justifyContent: 'center', borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  filterRowRTL: { flexDirection: 'row-reverse' },
+  filterTab: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: COLORS.cardBgLight, borderWidth: 1, borderColor: COLORS.borderLight },
+  filterTabActive: { backgroundColor: `${COLORS.primary}30`, borderColor: COLORS.primary },
+  filterTabText: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '500' },
+  filterTabTextActive: { color: COLORS.primary, fontWeight: '600' },
+  emptyContainer: { alignItems: 'center', paddingVertical: 60 },
+  emptyText: { fontSize: 32, marginBottom: 12 },
 })

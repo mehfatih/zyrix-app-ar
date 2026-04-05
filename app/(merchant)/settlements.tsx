@@ -6,6 +6,7 @@ import {
 } from 'react-native'
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
+import { useCurrency } from '../../hooks/useCurrency'
 import { settlementsApi } from '../../services/api'
 import KpiCard from '../../components/KpiCard'
 import SettlementRow from '../../components/SettlementRow'
@@ -22,6 +23,7 @@ interface Settlement {
 
 export default function SettlementsScreen() {
   const { t } = useTranslation()
+  const { format, convert, currency } = useCurrency('SAR')
   const [filter, setFilter] = useState<FilterKey>('all')
   const [allSettlements, setAllSettlements] = useState<Settlement[]>([])
   const [loading, setLoading] = useState(true)
@@ -37,6 +39,8 @@ export default function SettlementsScreen() {
 
   React.useEffect(() => { fetchData() }, [])
   const onRefresh = () => { setRefreshing(true); fetchData() }
+
+  const fmt = (amount: number) => format(convert(amount, 'SAR', currency), currency)
 
   const FILTERS: { key: FilterKey; label: string; color: string; activeBg: string; activeBorder: string }[] = [
     { key: 'settled', label: t('settlements.filter_settled') || 'مكتمل', color: COLORS.success, activeBg: COLORS.successBg, activeBorder: COLORS.success },
@@ -60,7 +64,6 @@ export default function SettlementsScreen() {
 
   const renderHeader = () => (
     <>
-      {/* Header — compact, RTL aligned */}
       <View style={st.pageHeader}>
         <View style={[st.headerRow, isRTL && st.headerRowRTL]}>
           <Text style={[st.pageSubtitle, isRTL && st.textRight, { flex: 1 }]}>
@@ -73,45 +76,42 @@ export default function SettlementsScreen() {
         </View>
       </View>
 
-      {/* KPI row — each unique color */}
       <View style={[st.kpiRow, isRTL && st.kpiRowRTL]}>
-        <KpiCard label={t('settlements.net')} value={`${totalNet.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س`}
+        <KpiCard label={t('settlements.net')} value={fmt(totalNet)}
           icon="💰" color={COLORS.success} valueColor={COLORS.success}
           style={{ flex: 1, backgroundColor: 'rgba(5, 150, 105, 0.15)', borderColor: 'rgba(5, 150, 105, 0.3)' }} compact />
-        <KpiCard label={t('settlements.commission')} value={`-${totalComm.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س`}
+        <KpiCard label={t('settlements.commission')} value={`-${fmt(totalComm)}`}
           icon="📊" color={COLORS.danger} valueColor={COLORS.danger}
           style={{ flex: 1, backgroundColor: 'rgba(220, 38, 38, 0.15)', borderColor: 'rgba(220, 38, 38, 0.3)' }} compact />
-        <KpiCard label={t('settlements.gross')} value={`${totalGross.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س`}
+        <KpiCard label={t('settlements.gross')} value={fmt(totalGross)}
           icon="💳" color={COLORS.primary}
           style={{ flex: 1, backgroundColor: 'rgba(26, 86, 219, 0.15)', borderColor: 'rgba(26, 86, 219, 0.3)' }} compact />
       </View>
 
-      {/* Pivot bar chart */}
       <View style={st.chartContainer}>
         <View style={st.chartBarGroup}>
           <View style={st.chartBarTrack}>
             <View style={[st.chartBarFill, { backgroundColor: COLORS.success, height: `${Math.max((totalNet / maxKpi) * 100, 8)}%` }]} />
           </View>
           <Text style={[st.chartBarValue, { color: COLORS.success }]}>{(totalNet / 1000).toFixed(1)}k</Text>
-          <Text style={[st.chartBarLabel]}>{t('settlements.net')}</Text>
+          <Text style={st.chartBarLabel}>{t('settlements.net')}</Text>
         </View>
         <View style={st.chartBarGroup}>
           <View style={st.chartBarTrack}>
             <View style={[st.chartBarFill, { backgroundColor: COLORS.danger, height: `${Math.max((totalComm / maxKpi) * 100, 8)}%` }]} />
           </View>
           <Text style={[st.chartBarValue, { color: COLORS.danger }]}>{(totalComm / 1000).toFixed(1)}k</Text>
-          <Text style={[st.chartBarLabel]}>{t('settlements.commission')}</Text>
+          <Text style={st.chartBarLabel}>{t('settlements.commission')}</Text>
         </View>
         <View style={st.chartBarGroup}>
           <View style={st.chartBarTrack}>
             <View style={[st.chartBarFill, { backgroundColor: COLORS.primary, height: `${Math.max((totalGross / maxKpi) * 100, 8)}%` }]} />
           </View>
           <Text style={[st.chartBarValue, { color: COLORS.primary }]}>{(totalGross / 1000).toFixed(1)}k</Text>
-          <Text style={[st.chartBarLabel]}>{t('settlements.gross')}</Text>
+          <Text style={st.chartBarLabel}>{t('settlements.gross')}</Text>
         </View>
       </View>
 
-      {/* Filter tabs — centered */}
       <View style={st.filterWrapper}>
         <View style={st.filterRow}>
           {FILTERS.map((f) => {
@@ -127,7 +127,6 @@ export default function SettlementsScreen() {
         </View>
       </View>
 
-      {/* Column headers */}
       <View style={[st.colHeaders, isRTL && st.colHeadersRTL]}>
         <Text style={[st.colHeader, { flex: 2 }]}>{t('settlements.period') || 'الفترة'}</Text>
         <Text style={[st.colHeader, st.colHeaderCenter]}>{t('settlements.gross')}</Text>
@@ -146,10 +145,12 @@ export default function SettlementsScreen() {
 
   return (
     <SafeAreaView style={st.safeArea}>
-      <FlatList refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+      <FlatList
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
         data={filtered} keyExtractor={(item) => item.id} renderItem={renderItem}
         ListHeaderComponent={renderHeader} ListEmptyComponent={renderEmpty}
-        contentContainerStyle={st.listContent} showsVerticalScrollIndicator={false} />
+        contentContainerStyle={st.listContent} showsVerticalScrollIndicator={false}
+      />
     </SafeAreaView>
   )
 }
@@ -167,25 +168,21 @@ const st = StyleSheet.create({
   exportLabel: { fontSize: 12, color: COLORS.white, fontWeight: '600' },
   kpiRow: { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 12, gap: 8 },
   kpiRowRTL: { flexDirection: 'row-reverse' },
-  // Chart
   chartContainer: { flexDirection: isRTL ? 'row-reverse' : 'row', justifyContent: 'space-around', alignItems: 'flex-end', backgroundColor: COLORS.cardBg, marginHorizontal: 12, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, padding: 16, height: 140 },
   chartBarGroup: { alignItems: 'center', flex: 1, gap: 4 },
   chartBarTrack: { width: 32, height: 80, backgroundColor: COLORS.surfaceBg, borderRadius: 6, justifyContent: 'flex-end', overflow: 'hidden' },
   chartBarFill: { width: '100%', borderRadius: 6 },
   chartBarValue: { fontSize: 11, fontWeight: '800' },
   chartBarLabel: { fontSize: 9, fontWeight: '600', color: COLORS.textSecondary },
-  // Filters
   filterWrapper: { backgroundColor: COLORS.surfaceBg, paddingHorizontal: 12, paddingVertical: 10, borderWidth: 1, borderColor: COLORS.border, marginHorizontal: 12, marginTop: 10, borderRadius: 12 },
   filterRow: { flexDirection: isRTL ? 'row' : 'row-reverse', gap: 8, justifyContent: 'center' },
   filterTab: { flex: 1, paddingVertical: 10, borderRadius: 12, backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center' },
   filterTabText: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '600' },
-  // Column headers
   colHeaders: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, backgroundColor: COLORS.cardBg, borderBottomWidth: 1, borderBottomColor: COLORS.border, marginTop: 8 },
   colHeadersRTL: { flexDirection: 'row-reverse' },
   colHeader: { fontSize: 10, fontWeight: '700', color: COLORS.textMuted, letterSpacing: 0.5, flex: 1 },
   colHeaderCenter: { textAlign: 'center' },
   colHeaderRight: { textAlign: isRTL ? 'left' : 'right' },
-  // Empty
   emptyContainer: { alignItems: 'center', paddingVertical: 60, gap: 8 },
   emptyIcon: { fontSize: 36 },
   emptyText: { fontSize: 15, color: COLORS.textMuted },
