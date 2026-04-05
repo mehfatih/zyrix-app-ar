@@ -17,6 +17,7 @@ import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { useAuth } from '../../hooks/useAuth'
 import { merchantApi } from '../../services/api'
+import Icon, { type IconName } from '../../components/Icon'
 
 const isRTL = I18nManager.isRTL
 
@@ -31,19 +32,19 @@ interface ToggleState {
   autoLogout: boolean
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
 function SectionHeader({ title }: { title: string }) {
   return <Text style={[sh.text, isRTL && sh.textRTL]}>{title}</Text>
 }
 
-function SettingRow({ icon, label, sublabel, onPress, rightElement, destructive, showChevron = true, bgColor }: {
-  icon: string; label: string; sublabel?: string; onPress?: () => void;
+function SettingRow({ iconName, label, sublabel, onPress, rightElement, destructive, showChevron = true, bgColor }: {
+  iconName: IconName; label: string; sublabel?: string; onPress?: () => void;
   rightElement?: React.ReactNode; destructive?: boolean; showChevron?: boolean; bgColor?: string;
 }) {
   return (
     <TouchableOpacity style={[rowS.container, isRTL && rowS.containerRTL]} onPress={onPress} activeOpacity={onPress ? 0.65 : 1}>
-      <View style={[rowS.iconBubble, destructive && rowS.iconBubbleDestructive]}><Text style={rowS.icon}>{icon}</Text></View>
+      <View style={[rowS.iconBubble, destructive && rowS.iconBubbleDestructive]}>
+        <Icon name={iconName} size={16} color={destructive ? COLORS.danger : COLORS.textSecondary} />
+      </View>
       <View style={[rowS.labels, isRTL && rowS.labelsRTL]}>
         <Text style={[rowS.label, destructive && rowS.labelDestructive]}>{label}</Text>
         {sublabel ? <Text style={rowS.sublabel}>{sublabel}</Text> : null}
@@ -77,8 +78,6 @@ function LanguagePicker({ current, onChange }: { current: Language; onChange: (l
     </View>
   )
 }
-
-// ─── Chat Support Modal (simple inline) ───────────────────────────────────────
 
 function SupportChat({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const [msg, setMsg] = useState('')
@@ -120,8 +119,6 @@ function SupportChat({ visible, onClose }: { visible: boolean; onClose: () => vo
   )
 }
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
-
 export default function SettingsScreen() {
   const { t } = useTranslation()
   const router = useRouter()
@@ -134,7 +131,7 @@ export default function SettingsScreen() {
   })
 
   const setToggle = (key: keyof ToggleState) => (val: boolean) =>
-    setToggles((prev) => ({ ...prev, [key]: val }))
+    setToggles((prev: any) => ({ ...prev, [key]: val }))
 
   const handleLanguageChange = async (lang: Language) => {
     setLanguage(lang)
@@ -148,14 +145,13 @@ export default function SettingsScreen() {
     ])
   }
 
-  const handleApiKeys = () => router.push('/(merchant)/settings' as any)
-  const handleWebhooks = () => router.push('/(merchant)/settings' as any)
+  const handleApiKeys = () => router.push('/(merchant)/api-keys' as any)
+  const handleWebhooks = () => Alert.alert('قريباً', t('common.coming_soon'))
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-        {/* Header — compact, centered name */}
         <View style={styles.pageHeader}>
           <Text style={styles.pageTitle}>{t('settings.title')}</Text>
           <Text style={styles.merchantId}>ZRX-10042 · Zyrix Global Gateway</Text>
@@ -163,7 +159,6 @@ export default function SettingsScreen() {
 
         <View style={styles.body}>
 
-          {/* ── Language — no globe, compact buttons ── */}
           <SectionHeader title={t('settings.language')} />
           <SettingsGroup bgColor="rgba(26, 86, 219, 0.1)">
             <View style={styles.langPickerWrapper}>
@@ -171,71 +166,62 @@ export default function SettingsScreen() {
             </View>
           </SettingsGroup>
 
-          {/* ── Dark Mode ── */}
           <SettingsGroup bgColor="rgba(139, 92, 246, 0.1)">
-            <SettingRow icon="🌙" label="الوضع الليلي" sublabel="قريباً" showChevron={false}
+            <SettingRow iconName="zap" label={t('common.coming_soon')} sublabel="الوضع الليلي" showChevron={false}
               rightElement={<Switch value={false} disabled trackColor={{ false: COLORS.border, true: COLORS.primary }} thumbColor={COLORS.textMuted} />} />
           </SettingsGroup>
 
-          {/* ── Notifications ── */}
           <SectionHeader title={t('settings.notifications')} />
           <SettingsGroup bgColor="rgba(5, 150, 105, 0.1)">
-            <SettingRow icon="🔔" label={t('settings.notifications')} sublabel="دائماً" showChevron={false}
+            <SettingRow iconName="bell" label={t('settings.notifications')} sublabel="دائماً" showChevron={false}
               rightElement={<Switch value={toggles.pushNotifications} onValueChange={setToggle('pushNotifications')} trackColor={{ false: COLORS.border, true: COLORS.primary }} thumbColor={COLORS.textPrimary} />} />
             <Divider />
-            <SettingRow icon="📧" label="استلام تقارير يومية عبر البريد" showChevron={false}
+            <SettingRow iconName="mail" label={t('settings.email_reports')} sublabel={t('settings.email_reports')} showChevron={false}
               rightElement={<Switch value={toggles.emailReports} onValueChange={setToggle('emailReports')} trackColor={{ false: COLORS.border, true: COLORS.primary }} thumbColor={COLORS.textPrimary} />} />
             <Divider />
-            <SettingRow icon="💬" label="إشعارات SMS للمعاملات الكبيرة" showChevron={false}
+            <SettingRow iconName="message-square" label={t('settings.sms_alerts')} sublabel={t('settings.sms_alerts_sub')} showChevron={false}
               rightElement={<Switch value={toggles.smsAlerts} onValueChange={setToggle('smsAlerts')} trackColor={{ false: COLORS.border, true: COLORS.primary }} thumbColor={COLORS.textPrimary} />} />
           </SettingsGroup>
 
-          {/* ── Security ── */}
           <SectionHeader title={t('settings.security')} />
           <SettingsGroup bgColor="rgba(217, 119, 6, 0.1)">
-            <SettingRow icon="🔐" label="المصادقة الثنائية" sublabel={toggles.twoFactor ? 'مفعّلة' : 'معطّلة'} showChevron={false}
+            <SettingRow iconName="lock" label={t('settings.two_factor')} sublabel={toggles.twoFactor ? t('settings.two_factor_active') : t('settings.two_factor_inactive')} showChevron={false}
               rightElement={<Switch value={toggles.twoFactor} onValueChange={setToggle('twoFactor')} trackColor={{ false: COLORS.border, true: COLORS.success }} thumbColor={COLORS.textPrimary} />} />
             <Divider />
-            <SettingRow icon="👆" label={t('settings.biometric')} sublabel={t('settings.security')} showChevron={false}
+            <SettingRow iconName="fingerprint" label={t('settings.biometric')} sublabel={t('settings.security')} showChevron={false}
               rightElement={<Switch value={toggles.biometric} onValueChange={setToggle('biometric')} trackColor={{ false: COLORS.border, true: COLORS.success }} thumbColor={COLORS.textPrimary} />} />
             <Divider />
-            <SettingRow icon="⏱" label="القفل التلقائي" sublabel="بعد 15 دقيقة من عدم النشاط" showChevron={false}
+            <SettingRow iconName="clock" label={t('settings.auto_logout')} sublabel={t('settings.auto_logout_sub')} showChevron={false}
               rightElement={<Switch value={toggles.autoLogout} onValueChange={setToggle('autoLogout')} trackColor={{ false: COLORS.border, true: COLORS.success }} thumbColor={COLORS.textPrimary} />} />
             <Divider />
-            <SettingRow icon="🔑" label="تغيير كلمة المرور" onPress={() => Alert.alert(t('settings.security'), 'سيتم إرسال رابط إعادة التعيين')} />
+            <SettingRow iconName="key" label={t('settings.change_password')} onPress={() => Alert.alert(t('settings.security'), t('common.coming_soon'))} />
           </SettingsGroup>
 
-          {/* ── Integration ── */}
-          <SectionHeader title="التكامل" />
+          <SectionHeader title={t('settings.integration')} />
           <SettingsGroup bgColor="rgba(13, 148, 136, 0.1)">
-            <SettingRow icon="⚙️" label="إدارة مفاتيح الوصول" sublabel={t('settings.apiKeys')} onPress={handleApiKeys} />
+            <SettingRow iconName="settings" label={t('settings.apiKeys')} sublabel={t('settings.api_keys_sub')} onPress={handleApiKeys} />
             <Divider />
-            <SettingRow icon="🔗" label="إدارة إشعارات الويب هوكس" sublabel={t('settings.webhooks')} onPress={handleWebhooks} />
+            <SettingRow iconName="link" label={t('settings.webhooks')} sublabel={t('notifications.title')} onPress={handleWebhooks} />
           </SettingsGroup>
 
-          {/* ── Support ── */}
-          <SectionHeader title="الدعم" />
+          <SectionHeader title={t('settings.support')} />
           <SettingsGroup bgColor="rgba(99, 102, 241, 0.1)">
-            <SettingRow icon="💬" label="تواصل مع فريق الدعم" onPress={() => setShowChat(true)} />
+            <SettingRow iconName="message-square" label={t('settings.support_label')} onPress={() => setShowChat(true)} />
             <Divider />
-            <SettingRow icon="📋" label={t('settings.version')} sublabel="1.0.0 (build 42)" showChevron={false} />
+            <SettingRow iconName="info" label={t('settings.version_label')} sublabel="1.0.0 (build 42)" showChevron={false} />
           </SettingsGroup>
 
-          {/* ── Logout ── */}
           <SettingsGroup bgColor="rgba(220, 38, 38, 0.08)">
-            <SettingRow icon="🚶" label={t('settings.logout')} onPress={handleLogout} destructive showChevron={false} />
+            <SettingRow iconName="log-out" label={t('settings.logout')} onPress={handleLogout} destructive showChevron={false} />
           </SettingsGroup>
 
         </View>
       </ScrollView>
 
-      {/* Support Chat */}
       <SupportChat visible={showChat} onClose={() => setShowChat(false)} />
     </SafeAreaView>
   )
 }
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.darkBg },

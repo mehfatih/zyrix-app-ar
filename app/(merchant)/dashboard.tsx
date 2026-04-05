@@ -26,7 +26,7 @@ import { dashboardApi, analyticsApi } from '../../services/api';
 import { KpiCard } from '../../components/KpiCard';
 import { StatusBadge } from '../../components/StatusBadge';
 import { CurrencyPicker } from '../../components/CurrencyPicker';
-import type { ChartPeriod, ApiTransaction } from '../../types';
+import type { ChartPeriod, CurrencyCode, ApiTransaction } from '../../types';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -37,74 +37,19 @@ function getGreetingKey(): string {
   return 'dashboard.greetingEvening';
 }
 
-// ─── Arabic day label fix for chart-kit RTL shaping ──
-// react-native-chart-kit renders Arabic letters disconnected.
-// Use short Latin-script abbreviations that Arabic readers recognise.
 const DAY_LABEL_MAP: Record<string, string> = {
-  // English -> Arabic-friendly short
-  'Sun': 'أحد',
-  'Mon': 'إثن',
-  'Tue': 'ثلا',
-  'Wed': 'أرب',
-  'Thu': 'خمي',
-  'Fri': 'جمع',
-  'Sat': 'سبت',
-  'Sunday': 'أحد',
-  'Monday': 'إثن',
-  'Tuesday': 'ثلا',
-  'Wednesday': 'أرب',
-  'Thursday': 'خمي',
-  'Friday': 'جمع',
-  'Saturday': 'سبت',
-  // If backend sends Turkish
-  'Paz': 'أحد',
-  'Pzt': 'إثن',
-  'Sal': 'ثلا',
-  'Çar': 'أرب',
-  'Per': 'خمي',
-  'Cum': 'جمع',
-  'Cmt': 'سبت',
-  // Already broken Arabic — map back
-  'أحد': 'Sun',
-  'إثن': 'Mon',
-  'اثن': 'Mon',
-  'ثلا': 'Tue',
-  'أرب': 'Wed',
-  'ارب': 'Wed',
-  'خمي': 'Thu',
-  'جمع': 'Fri',
-  'سبت': 'Sat',
+  'Sun': 'أحد', 'Mon': 'إثن', 'Tue': 'ثلا', 'Wed': 'أرب',
+  'Thu': 'خمي', 'Fri': 'جمع', 'Sat': 'سبت',
+  'Sunday': 'أحد', 'Monday': 'إثن', 'Tuesday': 'ثلا', 'Wednesday': 'أرب',
+  'Thursday': 'خمي', 'Friday': 'جمع', 'Saturday': 'سبت',
 };
 
-/** Convert backend label to a chart-safe label */
-function safeChartLabel(label: string): string {
-  // If it maps to an English short form, use that (chart-kit renders Latin fine)
-  if (DAY_LABEL_MAP[label]) {
-    const mapped = DAY_LABEL_MAP[label];
-    // If mapped value is English, return it; otherwise return English equivalent
-    if (/[A-Za-z]/.test(mapped)) return mapped;
-    // Arabic mapped — use English instead to avoid shaping issues
-    return mapped;
-  }
-  // If already English or number, keep as is
-  if (/^[A-Za-z0-9\/\-\.]+$/.test(label)) return label;
-  // Unknown Arabic — just return as-is
-  return label;
-}
-
-/**
- * Since react-native-chart-kit SVG text doesn't support Arabic shaping,
- * we use English 2-letter abbreviations and render a separate Arabic legend below.
- */
-const EN_DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
 function toEnglishDayLabel(label: string): string {
-  const map: Record<string, string> = {
-    ...Object.fromEntries(
-      Object.entries(DAY_LABEL_MAP).filter(([_, v]) => /[A-Za-z]/.test(v)).map(([k, v]) => [k, v])
-    ),
-  };
-  return map[label] || label;
+  if (/^[A-Za-z]{2,3}$/.test(label)) return label;
+  const entry = Object.entries(DAY_LABEL_MAP).find(([_, v]) => v === label);
+  if (entry) return entry[0].substring(0, 3);
+  if (/^[A-Za-z]+$/.test(label)) return label.substring(0, 3);
+  return label;
 }
 
 interface DashboardData {
@@ -126,7 +71,7 @@ interface DashboardData {
 export default function DashboardScreen() {
   const router = useRouter();
   const { t, isRTL } = useTranslation();
-  const { currency, setCurrency, format } = useCurrency('SAR');
+  const { currency, setCurrency, format, convert } = useCurrency('SAR');
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('7d');
@@ -135,6 +80,7 @@ export default function DashboardScreen() {
   const [_error, setError] = useState<string | null>(null);
   const [chartData, setChartData] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
   const [chartLabels, setChartLabels] = useState<string[]>(['', '', '', '', '', '', '']);
+  const BASE_CURRENCY: CurrencyCode = 'SAR';
 
   const fetchData = useCallback(async () => {
     try {
@@ -143,7 +89,6 @@ export default function DashboardScreen() {
       try {
         const analytics = await analyticsApi.getData(chartPeriod);
         setChartData(analytics.volume.map((v: { value: number }) => v.value));
-        // Convert labels to English so chart-kit renders them properly
         setChartLabels(analytics.volume.map((v: { label: string }) => toEnglishDayLabel(v.label)));
       } catch (_e) { /* chart data is non-critical */ }
       setDashData(data);
@@ -163,6 +108,11 @@ export default function DashboardScreen() {
     fetchData();
   };
 
+  const formatAmount = useCallback((amount: number): string => {
+    const converted = convert(amount, BASE_CURRENCY, currency);
+    return format(converted, currency);
+  }, [convert, format, currency, BASE_CURRENCY]);
+
   const chartConfig = useMemo(
     () => ({
       backgroundColor: COLORS.surfaceBg,
@@ -172,16 +122,8 @@ export default function DashboardScreen() {
       labelColor: () => COLORS.textSecondary,
       strokeWidth: 2,
       decimalPlaces: 0,
-      propsForDots: {
-        r: '4',
-        strokeWidth: '2',
-        stroke: COLORS.primaryLight,
-      },
-      propsForBackgroundLines: {
-        strokeDasharray: '',
-        stroke: COLORS.divider,
-        strokeWidth: 1,
-      },
+      propsForDots: { r: '4', strokeWidth: '2', stroke: COLORS.primaryLight },
+      propsForBackgroundLines: { strokeDasharray: '', stroke: COLORS.divider, strokeWidth: 1 },
     }),
     [],
   );
@@ -191,8 +133,8 @@ export default function DashboardScreen() {
   const quickActions = [
     { icon: '🔗', label: t('dashboard.payment_links'), route: '/(merchant)/payment-links' },
     { icon: '🔔', label: t('dashboard.notifications_action'), route: '/(merchant)/notifications' },
-    { icon: '⚠️', label: t('dashboard.disputes_action'), route: '/(merchant)/disputes' },
-    { icon: '🔄', label: t('dashboard.subscriptions'), route: '/(merchant)/subscriptions' },
+    { icon: '💵', label: 'كاش COD', route: '/(merchant)/cod' },
+    { icon: '💱', label: 'أسعار الصرف', route: '/(merchant)/fx' },
   ];
 
   if (loading && !dashData) {
@@ -209,11 +151,7 @@ export default function DashboardScreen() {
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
       refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={COLORS.primary}
-        />
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
       }
     >
       {/* ── Header ── */}
@@ -238,15 +176,15 @@ export default function DashboardScreen() {
       <CurrencyPicker
         selected={currency}
         onSelect={setCurrency}
-        codes={['SAR', 'AED', 'KWD', 'QAR', 'USD']}
+        codes={['SAR', 'AED', 'KWD', 'QAR', 'IQD', 'USD', 'EUR']}
       />
 
-      {/* ── KPI Cards (2x2 grid) ── */}
+      {/* ── KPI Cards ── */}
       <View style={styles.kpiGrid}>
         <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
           <KpiCard
             label={t('dashboard.totalVolume')}
-            value={format(dashData?.kpis?.totalVolume ?? 0)}
+            value={formatAmount(dashData?.kpis?.totalVolume ?? 0)}
             icon="💳"
             color={COLORS.primary}
             style={{ backgroundColor: 'rgba(26, 86, 219, 0.15)', borderColor: 'rgba(26, 86, 219, 0.3)' }}
@@ -297,7 +235,7 @@ export default function DashboardScreen() {
         </View>
       </View>
 
-      {/* ── Payment Volume Chart ── */}
+      {/* ── Chart ── */}
       <View style={styles.chartCard}>
         <View style={[styles.chartHeader, isRTL && styles.chartHeaderRTL]}>
           <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
@@ -307,18 +245,10 @@ export default function DashboardScreen() {
             {periods.map((p) => (
               <TouchableOpacity
                 key={p}
-                style={[
-                  styles.periodPill,
-                  chartPeriod === p && styles.periodPillActive,
-                ]}
+                style={[styles.periodPill, chartPeriod === p && styles.periodPillActive]}
                 onPress={() => setChartPeriod(p)}
               >
-                <Text
-                  style={[
-                    styles.periodText,
-                    chartPeriod === p && styles.periodTextActive,
-                  ]}
-                >
+                <Text style={[styles.periodText, chartPeriod === p && styles.periodTextActive]}>
                   {t(`dashboard.period${p}`)}
                 </Text>
               </TouchableOpacity>
@@ -347,22 +277,21 @@ export default function DashboardScreen() {
         <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
           {t('dashboard.recentTransactions')}
         </Text>
-        <TouchableOpacity
-          onPress={() => router.push('/(merchant)/transactions')}
-        >
+        <TouchableOpacity onPress={() => router.push('/(merchant)/transactions')}>
           <Text style={styles.viewAllText}>{t('dashboard.viewAll')}</Text>
         </TouchableOpacity>
       </View>
 
       {(dashData?.recentTransactions ?? []).map((tx: ApiTransaction) => (
-        <TouchableOpacity key={tx.id} style={[styles.txRow, isRTL && styles.txRowRTL]} activeOpacity={0.7}>
+        <TouchableOpacity
+          key={tx.id}
+          style={[styles.txRow, isRTL && styles.txRowRTL]}
+          activeOpacity={0.7}
+        >
           <View style={[styles.txLeft, isRTL && styles.txLeftRTL]}>
             <Text style={styles.txFlag}>{tx.countryFlag ?? '🌍'}</Text>
             <View style={{ flex: 1 }}>
-              <Text
-                style={[styles.txName, isRTL && styles.textRTL]}
-                numberOfLines={1}
-              >
+              <Text style={[styles.txName, isRTL && styles.textRTL]} numberOfLines={1}>
                 {tx.customerName ?? 'Customer'}
               </Text>
               <Text style={[styles.txDate, isRTL && styles.textRTL]}>
@@ -371,20 +300,15 @@ export default function DashboardScreen() {
             </View>
           </View>
           <View style={[styles.txRight, isRTL && styles.txRightRTL]}>
-            <Text
-              style={[
-                styles.txAmount,
-                { color: tx.isCredit ? COLORS.success : COLORS.danger },
-              ]}
-            >
-              {tx.isCredit ? '+' : '-'}{format(parseFloat(tx.amount))}
+            <Text style={[styles.txAmount, { color: tx.isCredit ? COLORS.success : COLORS.danger }]}>
+              {tx.isCredit ? '+' : '-'}{formatAmount(parseFloat(tx.amount))}
             </Text>
             <StatusBadge status={tx.status} />
           </View>
         </TouchableOpacity>
       ))}
 
-      {/* ── Next Settlement Card ── */}
+      {/* ── Next Settlement ── */}
       <View style={styles.settlementCard}>
         <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
           {t('dashboard.nextSettlement')}
@@ -395,247 +319,63 @@ export default function DashboardScreen() {
             <Text style={styles.settlementPeriod}>16–22 Mar</Text>
           </View>
           <View style={{ alignItems: isRTL ? 'flex-start' : 'flex-end' }}>
-            <Text style={styles.settlementAmount}>{format(2042.45)}</Text>
+            <Text style={styles.settlementAmount}>{formatAmount(2042.45)}</Text>
             <StatusBadge status="pending" />
           </View>
         </View>
       </View>
 
-      {/* Bottom spacing */}
       <View style={{ height: 100 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.darkBg,
-  },
-  scrollContent: {
-    paddingHorizontal: LAYOUT.screenPaddingH,
-    paddingTop: SPACING['5xl'],
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING.lg,
-  },
-  headerRTL: {
-    flexDirection: 'row-reverse',
-  },
-  greeting: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-  },
-  merchantId: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textMuted,
-    marginTop: 2,
-  },
-  notifButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: COLORS.cardBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  notifIcon: {
-    fontSize: 18,
-  },
-  textRTL: {
-    textAlign: 'right',
-    writingDirection: 'rtl',
-  },
-  kpiGrid: {
-    gap: SPACING.sm,
-    marginTop: SPACING.lg,
-  },
-  kpiRow: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-  },
-  kpiRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  // ── Quick Actions ──
-  quickActionsContainer: {
-    marginTop: SPACING.xl,
-  },
-  quickGrid: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    marginTop: SPACING.md,
-  },
-  quickGridRTL: {
-    flexDirection: 'row-reverse',
-  },
-  quickBtn: {
-    flex: 1,
-    backgroundColor: COLORS.cardBg,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingVertical: SPACING.md,
-    alignItems: 'center',
-    gap: 4,
-  },
-  quickIcon: {
-    fontSize: 22,
-  },
-  quickLabel: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  // ── Chart ──
-  chartCard: {
-    backgroundColor: COLORS.surfaceBg,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.lg,
-    borderWidth: 1,
-    borderColor: COLORS.primaryLight + '30',
-    marginTop: SPACING.xl,
-  },
-  chartHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  chartHeaderRTL: {
-    flexDirection: 'row-reverse',
-  },
-  periodRow: {
-    flexDirection: 'row',
-    gap: SPACING.xs,
-  },
-  periodPill: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
-    borderRadius: RADIUS.full,
-  },
-  periodPillActive: {
-    backgroundColor: `${COLORS.primary}20`,
-  },
-  periodText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textMuted,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  periodTextActive: {
-    color: COLORS.primaryLight,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  chart: {
-    borderRadius: RADIUS.md,
-    marginLeft: -SPACING.md,
-  },
-  // ── Section ──
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: SPACING.xl,
-    marginBottom: SPACING.md,
-  },
-  sectionHeaderRTL: {
-    flexDirection: 'row-reverse',
-  },
-  sectionTitle: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary,
-  },
-  viewAllText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.primaryLight,
-  },
-  // ── Transaction Row ──
-  txRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: COLORS.cardBg,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  txRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  txLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: SPACING.sm,
-  },
-  txLeftRTL: {
-    flexDirection: 'row-reverse',
-  },
-  txFlag: {
-    fontSize: 24,
-  },
-  txName: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textPrimary,
-  },
-  txDate: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textMuted,
-    marginTop: 2,
-  },
-  txRight: {
-    alignItems: 'flex-end',
-    gap: SPACING.xs,
-  },
-  txRightRTL: {
-    alignItems: 'flex-start',
-  },
-  txAmount: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.bold,
-  },
-  // ── Settlement Card ──
-  settlementCard: {
-    backgroundColor: 'rgba(13, 148, 136, 0.12)',
-    borderRadius: RADIUS.lg,
-    padding: SPACING.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(13, 148, 136, 0.35)',
-    marginTop: SPACING.xl,
-  },
-  settlementRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: SPACING.md,
-  },
-  settlementRowRTL: {
-    flexDirection: 'row-reverse',
-  },
-  settlementLabel: {
-    fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary,
-  },
-  settlementPeriod: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textMuted,
-    marginTop: 2,
-  },
-  settlementAmount: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.success,
-    marginBottom: SPACING.xs,
-  },
+  container: { flex: 1, backgroundColor: COLORS.darkBg },
+  scrollContent: { paddingHorizontal: LAYOUT.screenPaddingH, paddingTop: SPACING['5xl'] },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.lg },
+  headerRTL: { flexDirection: 'row-reverse' },
+  greeting: { fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary },
+  merchantId: { fontSize: FONT_SIZE.sm, color: COLORS.textMuted, marginTop: 2 },
+  notifButton: { width: 42, height: 42, borderRadius: 21, backgroundColor: COLORS.cardBg, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.border },
+  notifIcon: { fontSize: 18 },
+  textRTL: { textAlign: 'right', writingDirection: 'rtl' },
+  kpiGrid: { gap: SPACING.sm, marginTop: SPACING.lg },
+  kpiRow: { flexDirection: 'row', gap: SPACING.sm },
+  kpiRowRTL: { flexDirection: 'row-reverse' },
+  quickActionsContainer: { marginTop: SPACING.xl },
+  quickGrid: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.md },
+  quickGridRTL: { flexDirection: 'row-reverse' },
+  quickBtn: { flex: 1, backgroundColor: COLORS.cardBg, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, paddingVertical: SPACING.md, alignItems: 'center', gap: 4 },
+  quickIcon: { fontSize: 22 },
+  quickLabel: { fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.medium },
+  chartCard: { backgroundColor: COLORS.surfaceBg, borderRadius: RADIUS.lg, padding: SPACING.lg, borderWidth: 1, borderColor: COLORS.primaryLight + '30', marginTop: SPACING.xl },
+  chartHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.md },
+  chartHeaderRTL: { flexDirection: 'row-reverse' },
+  periodRow: { flexDirection: 'row', gap: SPACING.xs },
+  periodPill: { paddingHorizontal: SPACING.sm, paddingVertical: SPACING.xs, borderRadius: RADIUS.full },
+  periodPillActive: { backgroundColor: `${COLORS.primary}20` },
+  periodText: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, fontWeight: FONT_WEIGHT.medium },
+  periodTextActive: { color: COLORS.primaryLight, fontWeight: FONT_WEIGHT.semibold },
+  chart: { borderRadius: RADIUS.md, marginLeft: -SPACING.md },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: SPACING.xl, marginBottom: SPACING.md },
+  sectionHeaderRTL: { flexDirection: 'row-reverse' },
+  sectionTitle: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold, color: COLORS.textPrimary },
+  viewAllText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium, color: COLORS.primaryLight },
+  txRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm, borderWidth: 1, borderColor: COLORS.border },
+  txRowRTL: { flexDirection: 'row-reverse' },
+  txLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: SPACING.sm },
+  txLeftRTL: { flexDirection: 'row-reverse' },
+  txFlag: { fontSize: 24 },
+  txName: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium, color: COLORS.textPrimary },
+  txDate: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2 },
+  txRight: { alignItems: 'flex-end', gap: SPACING.xs },
+  txRightRTL: { alignItems: 'flex-start' },
+  txAmount: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold },
+  settlementCard: { backgroundColor: 'rgba(13, 148, 136, 0.12)', borderRadius: RADIUS.lg, padding: SPACING.lg, borderWidth: 1, borderColor: 'rgba(13, 148, 136, 0.35)', marginTop: SPACING.xl },
+  settlementRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: SPACING.md },
+  settlementRowRTL: { flexDirection: 'row-reverse' },
+  settlementLabel: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold, color: COLORS.textPrimary },
+  settlementPeriod: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2 },
+  settlementAmount: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.success, marginBottom: SPACING.xs },
 });

@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, I18nManager, SafeAreaView, ActivityIndicator, RefreshControl, Alert, Modal, Linking } from 'react-native'
+import {
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput,
+  I18nManager, SafeAreaView, ActivityIndicator, RefreshControl, Alert, Modal, Linking,
+} from 'react-native'
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { invoicesApi } from '../../services/api'
@@ -25,6 +28,14 @@ const CARD_BG = [
   { bg: 'rgba(99, 102, 241, 0.1)', border: 'rgba(99, 102, 241, 0.25)' },
 ]
 
+interface InvoiceItem {
+  description: string
+  quantity: string
+  unitPrice: string
+}
+
+const emptyItem = (): InvoiceItem => ({ description: '', quantity: '1', unitPrice: '' })
+
 export default function InvoicesScreen() {
   const { t } = useTranslation()
   const [invoices, setInvoices] = useState<any[]>([])
@@ -32,7 +43,9 @@ export default function InvoicesScreen() {
   const [refreshing, setRefreshing] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
   const [creating, setCreating] = useState(false)
-  const [form, setForm] = useState({ customerName: '', itemDesc: '', quantity: '1', unitPrice: '' })
+  const [customerName, setCustomerName] = useState('')
+  const [items, setItems] = useState<InvoiceItem[]>([emptyItem()])
+  const [taxRate, setTaxRate] = useState('15')
 
   const fetchData = useCallback(async () => {
     try {
@@ -41,15 +54,56 @@ export default function InvoicesScreen() {
     } catch (_e) { setInvoices(DEMO_INVOICES) }
     finally { setLoading(false); setRefreshing(false) }
   }, [])
+
   useEffect(() => { fetchData() }, [fetchData])
 
+  // ─── Item helpers ─────────────────────────────────────────
+  const updateItem = (index: number, field: keyof InvoiceItem, value: string) => {
+    setItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item))
+  }
+
+  const addItem = () => setItems(prev => [...prev, emptyItem()])
+
+  const removeItem = (index: number) => {
+    if (items.length === 1) return
+    setItems(prev => prev.filter((_, i) => i !== index))
+  }
+
+  // ─── Calculated totals ────────────────────────────────────
+  const subtotal = items.reduce((sum, item) => {
+    const qty = parseInt(item.quantity) || 0
+    const price = parseFloat(item.unitPrice) || 0
+    return sum + qty * price
+  }, 0)
+
+  const taxAmount = subtotal * (parseFloat(taxRate) / 100)
+  const total = subtotal + taxAmount
+
+  // ─── Create invoice ───────────────────────────────────────
   const handleCreate = async () => {
-    if (!form.customerName || !form.itemDesc || !form.unitPrice) return
+    if (!customerName.trim()) { Alert.alert('خطأ', 'أدخل اسم العميل'); return }
+    const validItems = items.filter(i => i.description.trim() && i.unitPrice.trim())
+    if (validItems.length === 0) { Alert.alert('خطأ', 'أضف بنداً واحداً على الأقل'); return }
+
     setCreating(true)
     try {
-      await invoicesApi.create({ customerName: form.customerName, items: [{ description: form.itemDesc, quantity: parseInt(form.quantity) || 1, unitPrice: parseFloat(form.unitPrice) }] })
-      setShowCreate(false); setForm({ customerName: '', itemDesc: '', quantity: '1', unitPrice: '' }); fetchData()
-    } catch (e: unknown) { Alert.alert(t('common.error'), e instanceof Error ? e.message : '') }
+      await invoicesApi.create({
+        customerName: customerName.trim(),
+        items: validItems.map(i => ({
+          description: i.description.trim(),
+          quantity: parseInt(i.quantity) || 1,
+          unitPrice: parseFloat(i.unitPrice),
+        })),
+        taxRate: parseFloat(taxRate) || 0,
+      })
+      setShowCreate(false)
+      setCustomerName('')
+      setItems([emptyItem()])
+      setTaxRate('15')
+      fetchData()
+    } catch (e: unknown) {
+      Alert.alert(t('common.error'), e instanceof Error ? e.message : '')
+    }
     setCreating(false)
   }
 
@@ -67,15 +121,24 @@ export default function InvoicesScreen() {
   }
 
   const handleEInvoice = (inv: any) => {
-    Alert.alert('الفاتورة الإلكترونية', `تم إنشاء الفاتورة الإلكترونية رقم ${inv.invoiceId} وفق معايير هيئة الزكاة والضريبة والجمارك (ZATCA)\n\nالعميل: ${inv.customerName}\nالمبلغ: ${Number(inv.total).toLocaleString('en-US')} ر.س\n\nسيتم إرسالها للعميل عبر البريد الإلكتروني.`)
+    Alert.alert(
+      'الفاتورة الإلكترونية',
+      `تم إنشاء الفاتورة الإلكترونية رقم ${inv.invoiceId} وفق معايير ZATCA\n\nالعميل: ${inv.customerName}\nالمبلغ: ${Number(inv.total).toLocaleString('en-US')} ر.س\n\nسيتم إرسالها للعميل عبر البريد الإلكتروني.`
+    )
   }
 
-  if (loading) return <SafeAreaView style={st.safe}><View style={st.center}><ActivityIndicator size="large" color={COLORS.primary} /></View></SafeAreaView>
+  if (loading) return (
+    <SafeAreaView style={st.safe}>
+      <View style={st.center}><ActivityIndicator size="large" color={COLORS.primary} /></View>
+    </SafeAreaView>
+  )
 
   return (
     <SafeAreaView style={st.safe}>
-      <ScrollView contentContainerStyle={st.scroll} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchData() }} tintColor={COLORS.primary} />}>
-
+      <ScrollView
+        contentContainerStyle={st.scroll}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchData() }} tintColor={COLORS.primary} />}
+      >
         {/* Header */}
         <View style={st.header}>
           <Text style={st.headerTitle}>{t('invoices.title')}</Text>
@@ -113,14 +176,19 @@ export default function InvoicesScreen() {
               </View>
               <View style={[st.cardActions, isRTL && st.cardRowRTL]}>
                 <TouchableOpacity style={st.actionBtn} onPress={() => handleDownloadExcel(inv)}>
-                  <Text style={st.actionText}>📥 تحميل Excel</Text>
+                  <Text style={st.actionText}>📥 Excel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[st.actionBtn, { backgroundColor: 'rgba(13, 148, 136, 0.15)', borderColor: 'rgba(13, 148, 136, 0.3)', borderWidth: 1 }]} onPress={() => handleEInvoice(inv)}>
-                  <Text style={[st.actionText, { color: '#0D9488' }]}>📄 فاتورة إلكترونية</Text>
+                  <Text style={[st.actionText, { color: '#0D9488' }]}>📄 إلكترونية</Text>
                 </TouchableOpacity>
                 {inv.status === 'draft' && (
                   <TouchableOpacity style={[st.actionBtn, { backgroundColor: COLORS.primaryLight + '20' }]} onPress={() => handleAction(inv.invoiceId, 'send')}>
-                    <Text style={[st.actionText]}>📤 إرسال</Text>
+                    <Text style={st.actionText}>📤 إرسال</Text>
+                  </TouchableOpacity>
+                )}
+                {inv.status === 'sent' && (
+                  <TouchableOpacity style={[st.actionBtn, { backgroundColor: COLORS.successBg }]} onPress={() => handleAction(inv.invoiceId, 'mark-paid')}>
+                    <Text style={[st.actionText, { color: COLORS.success }]}>✓ تم الدفع</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -129,21 +197,118 @@ export default function InvoicesScreen() {
         })}
       </ScrollView>
 
+      {/* Create Modal — Multi-items */}
       <Modal visible={showCreate} transparent animationType="slide">
-        <View style={st.modalOverlay}><View style={st.modal}>
-          <Text style={st.modalTitle}>{t('invoices.create')}</Text>
-          <TextInput placeholder="اسم العميل" value={form.customerName} onChangeText={v => setForm({...form, customerName: v})} style={st.input} placeholderTextColor={COLORS.textMuted} textAlign="right" />
-          <TextInput placeholder="وصف الخدمة" value={form.itemDesc} onChangeText={v => setForm({...form, itemDesc: v})} style={st.input} placeholderTextColor={COLORS.textMuted} textAlign="right" />
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <TextInput placeholder="الكمية" value={form.quantity} onChangeText={v => setForm({...form, quantity: v})} style={[st.input, { flex: 1 }]} placeholderTextColor={COLORS.textMuted} keyboardType="number-pad" textAlign="right" />
-            <TextInput placeholder="السعر" value={form.unitPrice} onChangeText={v => setForm({...form, unitPrice: v})} style={[st.input, { flex: 2 }]} placeholderTextColor={COLORS.textMuted} keyboardType="decimal-pad" textAlign="right" />
+        <View style={st.modalOverlay}>
+          <View style={st.modal}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={st.modalTitle}>{t('invoices.create')}</Text>
+
+              {/* Customer */}
+              <TextInput
+                placeholder="اسم العميل *"
+                value={customerName}
+                onChangeText={setCustomerName}
+                style={st.input}
+                placeholderTextColor={COLORS.textMuted}
+                textAlign="right"
+              />
+
+              {/* Items */}
+              <Text style={st.sectionLabel}>البنود</Text>
+              {items.map((item, index) => (
+                <View key={index} style={st.itemRow}>
+                  <View style={[st.itemHeader, isRTL && { flexDirection: 'row-reverse' }]}>
+                    <Text style={st.itemNumber}>بند {index + 1}</Text>
+                    {items.length > 1 && (
+                      <TouchableOpacity onPress={() => removeItem(index)}>
+                        <Text style={st.removeBtn}>✕ حذف</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  <TextInput
+                    placeholder="وصف الخدمة / المنتج *"
+                    value={item.description}
+                    onChangeText={v => updateItem(index, 'description', v)}
+                    style={st.input}
+                    placeholderTextColor={COLORS.textMuted}
+                    textAlign="right"
+                  />
+                  <View style={{ flexDirection: isRTL ? 'row-reverse' : 'row', gap: 8 }}>
+                    <TextInput
+                      placeholder="الكمية"
+                      value={item.quantity}
+                      onChangeText={v => updateItem(index, 'quantity', v)}
+                      style={[st.input, { flex: 1 }]}
+                      placeholderTextColor={COLORS.textMuted}
+                      keyboardType="number-pad"
+                      textAlign="center"
+                    />
+                    <TextInput
+                      placeholder="السعر *"
+                      value={item.unitPrice}
+                      onChangeText={v => updateItem(index, 'unitPrice', v)}
+                      style={[st.input, { flex: 2 }]}
+                      placeholderTextColor={COLORS.textMuted}
+                      keyboardType="decimal-pad"
+                      textAlign="right"
+                    />
+                  </View>
+                  {item.description && item.unitPrice ? (
+                    <Text style={st.itemSubtotal}>
+                      الإجمالي: {((parseInt(item.quantity) || 0) * (parseFloat(item.unitPrice) || 0)).toLocaleString('en-US')} ر.س
+                    </Text>
+                  ) : null}
+                </View>
+              ))}
+
+              {/* Add item button */}
+              <TouchableOpacity style={st.addItemBtn} onPress={addItem}>
+                <Text style={st.addItemBtnText}>+ إضافة بند جديد</Text>
+              </TouchableOpacity>
+
+              {/* Tax rate */}
+              <View style={[{ flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', gap: 8, marginBottom: 12 }]}>
+                <Text style={[st.sectionLabel, { marginBottom: 0, flex: 1 }]}>نسبة الضريبة (%)</Text>
+                <TextInput
+                  value={taxRate}
+                  onChangeText={setTaxRate}
+                  style={[st.input, { width: 80, marginBottom: 0, textAlign: 'center' }]}
+                  placeholderTextColor={COLORS.textMuted}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+
+              {/* Summary */}
+              {subtotal > 0 && (
+                <View style={st.summaryBox}>
+                  <View style={[st.summaryRow, isRTL && { flexDirection: 'row-reverse' }]}>
+                    <Text style={st.summaryLabel}>المجموع الفرعي</Text>
+                    <Text style={st.summaryValue}>{subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</Text>
+                  </View>
+                  <View style={[st.summaryRow, isRTL && { flexDirection: 'row-reverse' }]}>
+                    <Text style={st.summaryLabel}>ضريبة ({taxRate}%)</Text>
+                    <Text style={st.summaryValue}>{taxAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</Text>
+                  </View>
+                  <View style={[st.summaryDivider]} />
+                  <View style={[st.summaryRow, isRTL && { flexDirection: 'row-reverse' }]}>
+                    <Text style={[st.summaryLabel, { fontWeight: '700', color: COLORS.textPrimary }]}>الإجمالي</Text>
+                    <Text style={[st.summaryValue, { fontWeight: '800', color: COLORS.success, fontSize: 16 }]}>{total.toLocaleString('en-US', { minimumFractionDigits: 2 })} ر.س</Text>
+                  </View>
+                </View>
+              )}
+
+              <View style={st.modalActions}>
+                <TouchableOpacity style={st.modalCancel} onPress={() => { setShowCreate(false); setCustomerName(''); setItems([emptyItem()]); setTaxRate('15') }}>
+                  <Text style={{ color: COLORS.textSecondary }}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={st.modalSubmit} onPress={handleCreate} disabled={creating}>
+                  <Text style={{ color: COLORS.white, fontWeight: '700' }}>{creating ? '...' : t('invoices.create')}</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
-          <Text style={st.taxNote}>ضريبة القيمة المضافة 15% (VAT)</Text>
-          <View style={st.modalActions}>
-            <TouchableOpacity style={st.modalCancel} onPress={() => setShowCreate(false)}><Text style={{ color: COLORS.textSecondary }}>{t('common.cancel')}</Text></TouchableOpacity>
-            <TouchableOpacity style={st.modalSubmit} onPress={handleCreate} disabled={creating}><Text style={{ color: COLORS.white, fontWeight: '700' }}>{creating ? '...' : t('invoices.create')}</Text></TouchableOpacity>
-          </View>
-        </View></View>
+        </View>
       </Modal>
     </SafeAreaView>
   )
@@ -157,14 +322,12 @@ const st = StyleSheet.create({
   headerTitle: { fontSize: 20, fontWeight: '700', color: COLORS.textPrimary },
   createBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
   createBtnText: { color: COLORS.white, fontSize: 13, fontWeight: '600' },
-  // E-Invoice banner
   eInvoiceBanner: { flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', gap: 10, marginHorizontal: 16, marginTop: 12, padding: 14, backgroundColor: 'rgba(13, 148, 136, 0.12)', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(13, 148, 136, 0.3)' },
   eInvoiceIcon: { fontSize: 28 },
   eInvoiceTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, textAlign: isRTL ? 'right' : 'left' },
   eInvoiceDesc: { fontSize: 11, color: COLORS.textSecondary, marginTop: 2, textAlign: isRTL ? 'right' : 'left' },
   eInvoiceBadge: { backgroundColor: COLORS.successBg, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
   eInvoiceBadgeText: { fontSize: 11, fontWeight: '700', color: COLORS.success },
-  // Cards
   card: { marginHorizontal: 16, marginTop: 10, borderRadius: 14, borderWidth: 1, padding: 14 },
   cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   cardRowRTL: { flexDirection: 'row-reverse' },
@@ -173,13 +336,25 @@ const st = StyleSheet.create({
   cardItems: { fontSize: 11, color: COLORS.textSecondary, marginTop: 3 },
   cardAmount: { fontSize: 16, fontWeight: '700', color: COLORS.success, marginBottom: 4 },
   cardActions: { flexDirection: 'row', gap: 6, marginTop: 10, borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 10, flexWrap: 'wrap' },
-  actionBtn: { flex: 1, backgroundColor: COLORS.surfaceBg, paddingVertical: 8, borderRadius: 8, alignItems: 'center', minWidth: 90 },
+  actionBtn: { flex: 1, backgroundColor: COLORS.surfaceBg, paddingVertical: 8, borderRadius: 8, alignItems: 'center', minWidth: 80 },
   actionText: { fontSize: 11, fontWeight: '600', color: COLORS.primary },
-  // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-  modal: { backgroundColor: COLORS.cardBg, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24 },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 20, textAlign: 'center' },
-  input: { backgroundColor: COLORS.surfaceBg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, color: COLORS.textPrimary, fontSize: 15, marginBottom: 12 },
+  modal: { backgroundColor: COLORS.cardBg, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, maxHeight: '90%' },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 16, textAlign: 'center' },
+  input: { backgroundColor: COLORS.surfaceBg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 12, color: COLORS.textPrimary, fontSize: 14, marginBottom: 10 },
+  sectionLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 8, textAlign: isRTL ? 'right' : 'left' },
+  itemRow: { backgroundColor: COLORS.surfaceBg, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, padding: 12, marginBottom: 10 },
+  itemHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  itemNumber: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
+  removeBtn: { fontSize: 12, color: COLORS.danger, fontWeight: '600' },
+  itemSubtotal: { fontSize: 12, color: COLORS.success, fontWeight: '600', textAlign: isRTL ? 'right' : 'left', marginTop: 4 },
+  addItemBtn: { borderWidth: 1, borderColor: COLORS.primary, borderStyle: 'dashed', borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginBottom: 16 },
+  addItemBtnText: { color: COLORS.primary, fontWeight: '700', fontSize: 14 },
+  summaryBox: { backgroundColor: COLORS.deepBg, borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: COLORS.border },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  summaryLabel: { fontSize: 13, color: COLORS.textSecondary },
+  summaryValue: { fontSize: 13, color: COLORS.textPrimary, fontWeight: '600' },
+  summaryDivider: { height: 1, backgroundColor: COLORS.border, marginBottom: 8 },
   taxNote: { fontSize: 12, color: COLORS.textMuted, textAlign: 'center', marginBottom: 8 },
   modalActions: { flexDirection: 'row', gap: 12, marginTop: 8 },
   modalCancel: { flex: 1, paddingVertical: 14, borderRadius: 10, alignItems: 'center', backgroundColor: COLORS.surfaceBg },

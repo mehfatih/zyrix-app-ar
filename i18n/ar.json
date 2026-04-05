@@ -161,6 +161,9 @@
     "urgent": "عاجل",
     "respond": "الرد",
     "noDisputes": "لا توجد نزاعات مفتوحة",
+    "no_disputes": "لا توجد نزاعات",
+    "opened": "مفتوح",
+    "urgent_count": "عاجل",
     "warning": "نزاع بانتظار الرد",
     "filter_all": "الكل",
     "filter_pending": "معلق",
@@ -196,7 +199,21 @@
     "logout": "تسجيل الخروج",
     "logoutConfirm": "هل أنت متأكد من تسجيل الخروج؟",
     "version": "الإصدار",
-    "webhooks": "ويب هوكس"
+    "webhooks": "ويب هوكس",
+    "email_reports": "تقارير البريد الإلكتروني",
+    "sms_alerts": "تنبيهات SMS",
+    "sms_alerts_sub": "SMS للمعاملات الكبيرة",
+    "two_factor": "المصادقة الثنائية",
+    "two_factor_active": "مفعّل",
+    "two_factor_inactive": "غير مفعّل",
+    "change_password": "تغيير كلمة المرور",
+    "integration": "التكاملات",
+    "api_keys_sub": "مفاتيح API",
+    "support": "الدعم الفني",
+    "support_label": "تواصل مع الدعم",
+    "auto_logout": "تسجيل الخروج التلقائي",
+    "auto_logout_sub": "15 دقيقة من عدم النشاط",
+    "version_label": "الإصدار"
   },
   "profile": {
     "title": "الملف الشخصي",
@@ -208,7 +225,18 @@
     "last_name": "اسم العائلة",
     "save": "حفظ",
     "cancel": "إلغاء",
-    "country": "الدولة"
+    "country": "الدولة",
+    "timezone": "المنطقة الزمنية",
+    "edit": "تعديل",
+    "personal_info": "البيانات الشخصية",
+    "merchant_info": "بيانات التاجر",
+    "account": "الحساب",
+    "company_label": "الشركة",
+    "updated": "تم تحديث الملف الشخصي.",
+    "validation_name": "الاسم الأول والأخير لا يمكن أن يكونا فارغين.",
+    "validation_email": "أدخل بريداً إلكترونياً صحيحاً.",
+    "close_account": "إغلاق الحساب",
+    "close_account_sub": "لا يمكن التراجع عن هذا الإجراء"
   },
   "notifications": {
     "title": "الإشعارات",
@@ -237,11 +265,11 @@
     "settings": "الإعدادات"
   },
   "currency": {
-    "TRY": "ليرة تركية",
     "SAR": "ريال سعودي",
     "AED": "درهم إماراتي",
     "KWD": "دينار كويتي",
     "QAR": "ريال قطري",
+    "IQD": "دينار عراقي",
     "USD": "دولار أمريكي",
     "EUR": "يورو"
   },
@@ -288,13 +316,13 @@
     "no_subs": "لا توجد اشتراكات"
   },
   "onboarding": {
-    "welcome": "مرحباً بك في Zyrix!",
+    "welcome": "مرحباً بك في زايركس",
     "step1_title": "بيانات الشركة",
     "step2_title": "البيانات البنكية",
-    "step3_title": "التفضيلات",
+    "step3_title": "مراجعة وتأكيد",
     "company_name": "اسم الشركة",
     "tax_id": "الرقم الضريبي",
-    "iban": "رقم IBAN",
+    "iban": "الآيبان",
     "next": "التالي",
     "back": "رجوع",
     "finish": "إنهاء",
@@ -302,15 +330,16 @@
   },
   "revenue_goals": {
     "title": "أهداف الإيرادات",
-    "create": "إنشاء هدف",
+    "create": "هدف جديد",
     "target": "المبلغ المستهدف",
-    "progress": "التقدم",
-    "days_left": "أيام متبقية",
-    "achieved": "تحقق!",
+    "no_goals": "لا توجد أهداف بعد",
+    "achieved": "تم التحقيق",
+    "days_left": "يوم متبقي",
     "monthly": "شهري",
     "quarterly": "ربع سنوي",
     "yearly": "سنوي",
-    "no_goals": "لا توجد أهداف"
+    "progress": "التقدم",
+    "current": "المحقق حالياً"
   },
   "expenses": {
     "title": "المصروفات",
@@ -333,7 +362,7 @@
     "customer": "العميل",
     "items": "البنود",
     "subtotal": "المجموع الفرعي",
-    "tax": "الضريبة (KDV)",
+    "tax": "الضريبة",
     "total": "الإجمالي",
     "send": "إرسال",
     "mark_paid": "تم الدفع",

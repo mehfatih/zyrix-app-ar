@@ -1,31 +1,61 @@
 {
   "cli": {
-    "version": ">= 12.0.0"
+    "version": ">= 12.0.0",
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
       "android": {
         "buildType": "apk",
-        "image": "sdk-53"
+        "image": "sdk-53",
+        "gradleCommand": ":app:assembleDebug"
       }
     },
     "preview": {
       "distribution": "internal",
+      "ios": {
+        "buildConfiguration": "Release"
+      },
       "android": {
         "buildType": "apk",
-        "image": "sdk-53"
+        "image": "sdk-53",
+        "gradleCommand": ":app:assembleRelease"
       }
     },
     "production": {
+      "autoIncrement": true,
+      "ios": {
+        "buildConfiguration": "Release",
+        "image": "macos-ventura-14.5-xcode-16.2"
+      },
       "android": {
         "buildType": "app-bundle",
-        "image": "sdk-53"
+        "image": "sdk-53",
+        "gradleCommand": ":app:bundleRelease"
+      },
+      "env": {
+        "API_URL": "https://api.zyrix.co",
+        "APP_VARIANT": "production"
       }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "YOUR_APPLE_ID",
+        "ascAppId": "YOUR_ASC_APP_ID",
+        "appleTeamId": "YOUR_TEAM_ID"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-play-key.json",
+        "track": "production",
+        "releaseStatus": "draft"
+      }
+    }
   }
 }

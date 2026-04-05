@@ -4,6 +4,8 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, I18nMa
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { merchantApi } from '../../services/api'
+import { useRouter } from 'expo-router'
+import { useAuth } from '../../hooks/useAuth'
 
 const isRTL = I18nManager.isRTL
 
@@ -52,11 +54,14 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 export default function ProfileScreen() {
   const { t } = useTranslation()
+  const router = useRouter()
+  const { signOut } = useAuth()
   const [profile, setProfile] = useState<ProfileData>(INITIAL_PROFILE)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<ProfileData>(INITIAL_PROFILE)
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [deletingAccount, setDeletingAccount] = useState(false)
 
   const fetchProfile = async () => {
     try {
@@ -72,13 +77,51 @@ export default function ProfileScreen() {
 
   React.useEffect(() => { fetchProfile() }, [])
 
-  const set = (key: keyof ProfileData) => (val: string) => setDraft((prev) => ({ ...prev, [key]: val }))
+  const set = (key: keyof ProfileData) => (val: string) =>
+    setDraft((prev: any) => ({ ...prev, [key]: val }))
 
   const handleSave = () => {
-    if (!draft.firstName.trim() || !draft.lastName.trim()) { Alert.alert('تنبيه', 'الاسم مطلوب'); return }
-    if (!draft.email.includes('@')) { Alert.alert('تنبيه', 'بريد إلكتروني غير صحيح'); return }
+    if (!draft.firstName.trim() || !draft.lastName.trim()) {
+      Alert.alert('✗', t('profile.validation_name'))
+      return
+    }
+    if (!draft.email.includes('@')) {
+      Alert.alert('✗', t('profile.validation_email'))
+      return
+    }
     setSaving(true)
-    setTimeout(() => { setProfile(draft); setEditing(false); setSaving(false); Alert.alert('✓', 'تم تحديث الملف الشخصي') }, 800)
+    setTimeout(() => {
+      setProfile(draft)
+      setEditing(false)
+      setSaving(false)
+      Alert.alert('✓', t('profile.updated'))
+    }, 800)
+  }
+
+  const handleCloseAccount = () => {
+    Alert.alert(
+      t('profile.close_account'),
+      t('profile.close_account_sub'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('profile.close_account'),
+          style: 'destructive',
+          onPress: async () => {
+            setDeletingAccount(true)
+            try {
+              await merchantApi.deleteAccount()
+              await signOut()
+              router.replace('/(auth)/login')
+            } catch (_e) {
+              Alert.alert('✗', t('common.error') ?? 'حدث خطأ، حاول مرة أخرى')
+            } finally {
+              setDeletingAccount(false)
+            }
+          },
+        },
+      ],
+    )
   }
 
   return (
@@ -86,18 +129,20 @@ export default function ProfileScreen() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={st.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
-          {/* Avatar + name — compact, no white header */}
+          {/* Avatar + name */}
           <View style={st.avatarSection}>
             <Avatar firstName={profile.firstName} lastName={profile.lastName} onEdit={() => { setDraft(profile); setEditing(true) }} />
             <Text style={st.fullName}>{profile.firstName} {profile.lastName}</Text>
             <View style={st.merchantPill}><Text style={st.merchantPillText}>{profile.merchantId}</Text></View>
             {!editing ? (
               <TouchableOpacity style={st.editBtn} onPress={() => { setDraft(profile); setEditing(true) }}>
-                <Text style={st.editBtnText}>✏️ تعديل</Text>
+                <Text style={st.editBtnText}>✏️  {t('profile.edit')}</Text>
               </TouchableOpacity>
             ) : (
               <View style={st.editActions}>
-                <TouchableOpacity style={st.cancelBtn} onPress={() => setEditing(false)}><Text style={st.cancelBtnText}>{t('common.cancel')}</Text></TouchableOpacity>
+                <TouchableOpacity style={st.cancelBtn} onPress={() => setEditing(false)}>
+                  <Text style={st.cancelBtnText}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
                 <TouchableOpacity style={[st.saveBtn, saving && { opacity: 0.5 }]} onPress={handleSave} disabled={saving}>
                   <Text style={st.saveBtnText}>{saving ? '...' : t('profile.save')}</Text>
                 </TouchableOpacity>
@@ -106,7 +151,7 @@ export default function ProfileScreen() {
           </View>
 
           {/* Personal info */}
-          <Text style={st.sectionTitle}>البيانات الشخصية</Text>
+          <Text style={st.sectionTitle}>{t('profile.personal_info')}</Text>
           <View style={[st.card, { backgroundColor: 'rgba(26, 86, 219, 0.08)', borderColor: 'rgba(26, 86, 219, 0.2)' }]}>
             <CompactField label={t('profile.first_name')} value={editing ? draft.firstName : profile.firstName} onChangeText={set('firstName')} editable={editing} />
             <CompactField label={t('profile.last_name')} value={editing ? draft.lastName : profile.lastName} onChangeText={set('lastName')} editable={editing} />
@@ -115,25 +160,29 @@ export default function ProfileScreen() {
           </View>
 
           {/* Merchant info */}
-          <Text style={st.sectionTitle}>بيانات التاجر</Text>
+          <Text style={st.sectionTitle}>{t('profile.merchant_info')}</Text>
           <View style={[st.card, { backgroundColor: 'rgba(139, 92, 246, 0.08)', borderColor: 'rgba(139, 92, 246, 0.2)' }]}>
             <InfoRow label={t('profile.merchantId')} value={profile.merchantId} />
-            <InfoRow label={t('profile.company')} value={profile.company} />
+            <InfoRow label={t('profile.company_label')} value={profile.company} />
             <InfoRow label={t('profile.country')} value={profile.country} />
-            <InfoRow label="المنطقة الزمنية" value={profile.timezone} />
+            <InfoRow label={t('profile.timezone') ?? 'المنطقة الزمنية'} value={profile.timezone} />
           </View>
 
-          {/* Danger zone */}
-          <Text style={st.sectionTitle}>الحساب</Text>
-          <TouchableOpacity style={[st.card, { backgroundColor: 'rgba(220, 38, 38, 0.08)', borderColor: 'rgba(220, 38, 38, 0.2)' }]}
-            onPress={() => Alert.alert('إغلاق الحساب', 'هذا الإجراء لا يمكن التراجع عنه. هل أنت متأكد؟')} activeOpacity={0.7}>
+          {/* Account / Danger zone */}
+          <Text style={st.sectionTitle}>{t('profile.account')}</Text>
+          <TouchableOpacity
+            style={[st.card, { backgroundColor: 'rgba(220, 38, 38, 0.08)', borderColor: 'rgba(220, 38, 38, 0.2)' }]}
+            onPress={handleCloseAccount}
+            disabled={deletingAccount}
+            activeOpacity={0.7}
+          >
             <View style={[st.dangerRow, isRTL && st.dangerRowRTL]}>
               <Text style={st.dangerIcon}>⚠️</Text>
               <View style={{ flex: 1 }}>
-                <Text style={st.dangerLabel}>إغلاق الحساب</Text>
-                <Text style={st.dangerSub}>هذا الإجراء لا يمكن التراجع عنه</Text>
+                <Text style={st.dangerLabel}>{t('profile.close_account')}</Text>
+                <Text style={st.dangerSub}>{t('profile.close_account_sub')}</Text>
               </View>
-              <Text style={st.dangerChevron}>›</Text>
+              <Text style={st.dangerChevron}>{deletingAccount ? '...' : '›'}</Text>
             </View>
           </TouchableOpacity>
 

@@ -2,32 +2,33 @@
  * Zyrix App — Currency Hook
  * Handles currency selection, formatting, and display.
  */
-
 import { useState, useCallback, useMemo } from 'react';
 import type { CurrencyCode, CurrencyInfo } from '../types';
 
 // ─── Static currency data ────────────────────────
 const CURRENCIES: CurrencyInfo[] = [
-  { code: 'USD', symbol: '$', flag: '🇺🇸', name: 'US Dollar' },
   { code: 'SAR', symbol: '﷼', flag: '🇸🇦', name: 'Saudi Riyal' },
   { code: 'AED', symbol: 'د.إ', flag: '🇦🇪', name: 'UAE Dirham' },
   { code: 'KWD', symbol: 'د.ك', flag: '🇰🇼', name: 'Kuwaiti Dinar' },
   { code: 'QAR', symbol: '﷼', flag: '🇶🇦', name: 'Qatari Riyal' },
+  { code: 'IQD', symbol: 'ع.د', flag: '🇮🇶', name: 'Iraqi Dinar' },
+  { code: 'USD', symbol: '$', flag: '🇺🇸', name: 'US Dollar' },
   { code: 'EUR', symbol: '€', flag: '🇪🇺', name: 'Euro' },
 ];
 
 // ─── Demo exchange rates (vs USD base) ──────────
 const EXCHANGE_RATES: Record<CurrencyCode, number> = {
-  USD: 1,
   SAR: 3.75,
   AED: 3.67,
   KWD: 0.307,
   QAR: 3.64,
+  IQD: 1310.0,
+  USD: 1,
   EUR: 0.92,
 };
 
 // ─── Hook ────────────────────────────────────────
-export function useCurrency(defaultCurrency: CurrencyCode = 'USD') {
+export function useCurrency(defaultCurrency: CurrencyCode = 'SAR') {
   const [currency, setCurrency] = useState<CurrencyCode>(defaultCurrency);
 
   const currencyInfo = useMemo(

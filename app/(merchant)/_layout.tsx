@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../../constants/colors';
@@ -13,8 +13,6 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useDeepLinking } from '../../hooks/useDeepLinking';
 import { notificationsApi } from '../../services/api';
-import { HeaderBar } from '../../components/HeaderBar';
-import { NavigationDrawer } from '../../components/NavigationDrawer';
 
 function TabIcon({ icon, label, focused, badge }: { icon: string; label: string; focused: boolean; badge?: number }) {
   return (
@@ -32,8 +30,6 @@ function TabIcon({ icon, label, focused, badge }: { icon: string; label: string;
       <Text
         style={[styles.tabLabel, focused && styles.tabLabelActive]}
         numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.75}
       >
         {label}
       </Text>
@@ -45,10 +41,8 @@ export default function MerchantLayout() {
   usePushNotifications();
   useDeepLinking();
   const { t } = useTranslation();
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const [unreadCount, setUnreadCount] = useState(0);
-  const [drawerVisible, setDrawerVisible] = useState(false);
 
   useEffect(() => {
     const fetchUnread = async () => {
@@ -62,45 +56,14 @@ export default function MerchantLayout() {
     return () => clearInterval(interval);
   }, []);
 
-  // Android 15: account for navigation bar inset in edge-to-edge mode
   const tabBarHeight = Platform.select({
     ios: 84,
     android: 64 + insets.bottom,
     default: 64,
   });
 
-  // ─── Header Callbacks (Phase 6 Task 6.1) ──────
-  const handleMenuPress = () => {
-    setDrawerVisible(true);
-  };
-
-  const handleDrawerClose = () => {
-    setDrawerVisible(false);
-  };
-
-  const handleDrawerNavigate = (route: string) => {
-    router.push(route as any);
-  };
-
-  const handleMessagesPress = () => {
-    router.push('/(merchant)/notifications');
-  };
-
-  const handleSearchPress = () => {
-    router.push('/(merchant)/search');
-  };
-
   return (
-    <View style={styles.rootContainer}>
-      {/* Fixed Header Bar — Phase 6 Task 6.1 */}
-      <HeaderBar
-        onMenuPress={handleMenuPress}
-        onSearchPress={handleSearchPress}
-        onMessagesPress={handleMessagesPress}
-        unreadMessages={unreadCount}
-      />
-
-      <Tabs
+    <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: [
@@ -156,10 +119,6 @@ export default function MerchantLayout() {
         }}
       />
       {/* Hidden screens */}
-      <Tabs.Screen name="search" options={{ href: null }} />
-      <Tabs.Screen name="change-password" options={{ href: null }} />
-      <Tabs.Screen name="2fa-setup" options={{ href: null }} />
-      <Tabs.Screen name="help" options={{ href: null }} />
       <Tabs.Screen name="transaction-detail" options={{ href: null }} />
       <Tabs.Screen name="settlements" options={{ href: null }} />
       <Tabs.Screen name="refunds" options={{ href: null }} />
@@ -169,32 +128,24 @@ export default function MerchantLayout() {
       <Tabs.Screen name="payment-links" options={{ href: null }} />
       <Tabs.Screen name="onboarding" options={{ href: null }} />
       <Tabs.Screen name="subscriptions" options={{ href: null }} />
-      <Tabs.Screen name="revenue-goals" options={{ href: null }} />
+      <Tabs.Screen name="revenue-goals" options={{ href: null, tabBarButton: () => null }} />
       <Tabs.Screen name="expenses" options={{ href: null }} />
       <Tabs.Screen name="invoices" options={{ href: null }} />
+      <Tabs.Screen name="transfers" options={{ href: null }} />
+      <Tabs.Screen name="api-keys" options={{ href: null }} />
+      <Tabs.Screen name="webhooks" options={{ href: null }} />
+      <Tabs.Screen name="cod" options={{ href: null }} />
+      <Tabs.Screen name="fx" options={{ href: null }} />
     </Tabs>
-
-      {/* Navigation Drawer — Phase 6 Task 6.3 */}
-      <NavigationDrawer
-        visible={drawerVisible}
-        onClose={handleDrawerClose}
-        onNavigate={handleDrawerNavigate}
-      />
-    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  rootContainer: {
-    flex: 1,
-    backgroundColor: COLORS.darkBg,
-  },
   tabBar: {
     backgroundColor: COLORS.tabBarBg,
     borderTopColor: COLORS.border,
     borderTopWidth: 1,
     paddingTop: SPACING.sm,
-    // Android 15: no elevation shadow in edge-to-edge
     elevation: 0,
   },
   tabItem: {
@@ -210,7 +161,7 @@ const styles = StyleSheet.create({
     opacity: 1,
   },
   tabLabel: {
-    fontSize: 10,
+    fontSize: FONT_SIZE.xs,
     fontWeight: FONT_WEIGHT.medium,
     color: COLORS.tabInactive,
   },

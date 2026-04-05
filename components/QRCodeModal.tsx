@@ -29,7 +29,7 @@ export function QRCodeModal({ visible, onClose, value, title, subtitle }: QRCode
           {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
           <Text style={styles.value} numberOfLines={2}>{value}</Text>
           <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-            <Text style={styles.closeBtnText}>Close</Text>
+            <Text style={styles.closeBtnText}>إغلاق</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -40,9 +40,9 @@ export function QRCodeModal({ visible, onClose, value, title, subtitle }: QRCode
 const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center' },
   container: { backgroundColor: COLORS.white, borderRadius: 20, padding: 32, alignItems: 'center', width: 300 },
-  title: { fontSize: 18, fontWeight: '700', color: COLORS.darkBg, marginBottom: 8 },
+  title: { fontSize: 18, fontWeight: '700', color: COLORS.darkBg, marginBottom: 8, textAlign: 'center' },
   qrWrapper: { padding: 16, backgroundColor: COLORS.white, borderRadius: 12, marginBottom: 16 },
-  subtitle: { fontSize: 13, color: COLORS.textMuted, marginBottom: 4 },
+  subtitle: { fontSize: 13, color: COLORS.textMuted, marginBottom: 4, textAlign: 'center' },
   value: { fontSize: 11, color: COLORS.textMuted, textAlign: 'center', fontFamily: 'monospace', marginBottom: 16 },
   closeBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 40, paddingVertical: 12, borderRadius: 10 },
   closeBtnText: { color: COLORS.white, fontSize: 15, fontWeight: '600' },

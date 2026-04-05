@@ -133,11 +133,12 @@ export const getStatusColor = (status: 'success' | 'pending' | 'failed') => {
 
 // ─── Currency Flag Map ───────────────────────────
 export const CURRENCY_FLAGS: Record<string, string> = {
-  USD: '🇺🇸',
   SAR: '🇸🇦',
   AED: '🇦🇪',
   KWD: '🇰🇼',
   QAR: '🇶🇦',
+  IQD: '🇮🇶',
+  USD: '🇺🇸',
   EUR: '🇪🇺',
 };
 

@@ -14,7 +14,7 @@ export interface User {
   avatar?: string;
 }
 
-export type AppLanguage = 'ar' | 'en' | 'tr';
+export type AppLanguage = 'ar' | 'en';
 
 // ─── Transactions ────────────────────────────────
 export type TransactionStatus = 'success' | 'pending' | 'failed';
@@ -78,7 +78,7 @@ export interface Dispute {
 }
 
 // ─── Currency ────────────────────────────────────
-export type CurrencyCode = 'USD' | 'SAR' | 'AED' | 'KWD' | 'QAR' | 'EUR';
+export type CurrencyCode = 'SAR' | 'AED' | 'KWD' | 'QAR' | 'IQD' | 'USD' | 'EUR';
 
 export interface CurrencyInfo {
   code: CurrencyCode;
@@ -91,7 +91,7 @@ export interface CurrencyInfo {
 export interface KpiItem {
   label: string;
   value: string | number;
-  change?: number; // percentage, e.g. 18.3 = +18.3%
+  change?: number;
   changeLabel?: string;
   icon?: string;
   color?: string;
@@ -115,7 +115,7 @@ export type MerchantTabRoute =
 
 export interface TabItem {
   route: MerchantTabRoute;
-  labelKey: string; // i18n key
+  labelKey: string;
   icon: string;
 }
 
