@@ -1,34 +1,69 @@
 /**
  * Zyrix App — Dashboard Screen
- * Main merchant dashboard with KPIs, chart, recent transactions, and settlement info.
  */
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  RefreshControl,
-  I18nManager,
-  Dimensions,
-  ActivityIndicator,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  RefreshControl, Modal, Dimensions, ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { LineChart } from 'react-native-chart-kit';
+import { BarChart } from 'react-native-chart-kit';
 import { COLORS, chartColorFn } from '../../constants/colors';
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, LAYOUT } from '../../constants/theme';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useCurrency } from '../../hooks/useCurrency';
 import { useAuth } from '../../hooks/useAuth';
 import { dashboardApi, analyticsApi } from '../../services/api';
-import { KpiCard } from '../../components/KpiCard';
 import { StatusBadge } from '../../components/StatusBadge';
 import { CurrencyPicker } from '../../components/CurrencyPicker';
+import { HeaderBar } from '../../components/HeaderBar';
 import type { ChartPeriod, CurrencyCode, ApiTransaction } from '../../types';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+
+// ─── ألوان 4 KPI cards — كل بطاقة مختلفة تماماً ──
+const KPI_THEMES = [
+  // إجمالي الحجم — سيان
+  {
+    bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.40)',
+    accent: '#06B6D4', iconBg: 'rgba(6, 182, 212, 0.22)',
+    // 3 درجات للمقارنة: الشهر الثالث (أقدم) → الأول (أحدث)
+    shades: ['rgba(6,182,212,0.35)', 'rgba(6,182,212,0.60)', 'rgba(6,182,212,1.00)'],
+  },
+  // نسبة النجاح — زمردي
+  {
+    bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.40)',
+    accent: '#10B981', iconBg: 'rgba(16, 185, 129, 0.22)',
+    shades: ['rgba(16,185,129,0.35)', 'rgba(16,185,129,0.60)', 'rgba(16,185,129,1.00)'],
+  },
+  // معاملات اليوم — فوشيا
+  {
+    bg: 'rgba(236, 72, 153, 0.15)', border: 'rgba(236, 72, 153, 0.40)',
+    accent: '#EC4899', iconBg: 'rgba(236, 72, 153, 0.22)',
+    shades: ['rgba(236,72,153,0.35)', 'rgba(236,72,153,0.60)', 'rgba(236,72,153,1.00)'],
+  },
+  // نزاعات — أمبر
+  {
+    bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.40)',
+    accent: '#F59E0B', iconBg: 'rgba(245, 158, 11, 0.22)',
+    shades: ['rgba(245,158,11,0.35)', 'rgba(245,158,11,0.60)', 'rgba(245,158,11,1.00)'],
+  },
+];
+
+// ─── بيانات demo للمقارنة — 3 أشهر لكل KPI ─────────
+// الترتيب: [شهر-3 (الأقدم), شهر-2, شهر-1 (الأحدث)]
+// في الإنتاج تُستبدل بـ API call حقيقي
+const KPI_COMPARE_DATA = [
+  // إجمالي الحجم (ر.س)
+  { months: ['يناير', 'فبراير', 'مارس'], values: [64200, 78500, 86131], unit: 'ر.س', label: 'حجم المبيعات — آخر 3 أشهر' },
+  // نسبة النجاح (%)
+  { months: ['يناير', 'فبراير', 'مارس'], values: [48.2, 53.1, 56.7], unit: '%', label: 'نسبة النجاح — آخر 3 أشهر' },
+  // عدد المعاملات
+  { months: ['يناير', 'فبراير', 'مارس'], values: [210, 268, 312], unit: '', label: 'عدد المعاملات — آخر 3 أشهر' },
+  // النزاعات المفتوحة
+  { months: ['يناير', 'فبراير', 'مارس'], values: [7, 4, 2], unit: '', label: 'النزاعات المفتوحة — آخر 3 أشهر' },
+];
 
 function getGreetingKey(): string {
   const h = new Date().getHours();
@@ -53,26 +88,296 @@ function toEnglishDayLabel(label: string): string {
 }
 
 interface DashboardData {
-  kpis: {
-    totalVolume: number;
-    successRate: string;
-    todayTx: number;
-    openDisputes: number;
-  };
+  kpis: { totalVolume: number; successRate: string; todayTx: number; openDisputes: number };
   recentTransactions: ApiTransaction[];
-  balance: {
-    available: number;
-    incoming: number;
-    outgoing: number;
-  };
+  balance: { available: number; incoming: number; outgoing: number };
   unreadNotifications: number;
 }
+
+// ─── Colored KPI Card (قابلة للضغط) ──────────────
+
+function ColoredKpiCard({
+  label, value, icon, themeIndex, selected, onPress,
+}: {
+  label: string; value: string; icon: string;
+  themeIndex: number; selected: boolean; onPress: () => void;
+}) {
+  const theme = KPI_THEMES[themeIndex];
+  return (
+    <TouchableOpacity
+      style={[
+        kpiS.card,
+        { backgroundColor: theme.bg, borderColor: selected ? theme.accent : theme.border },
+        selected && kpiS.cardSelected,
+      ]}
+      onPress={onPress}
+      activeOpacity={0.75}
+    >
+      <View style={kpiS.iconRow}>
+        <View style={[kpiS.iconBubble, { backgroundColor: theme.iconBg }]}>
+          <Text style={kpiS.iconText}>{icon}</Text>
+        </View>
+        <Text style={kpiS.label} numberOfLines={1}>{label}</Text>
+      </View>
+      <Text style={[kpiS.value, { color: theme.accent }]} numberOfLines={1} adjustsFontSizeToFit>
+        {value}
+      </Text>
+      {/* شريط سفلي — أكثر سمكاً عند التحديد */}
+      <View style={[kpiS.accentBar, { backgroundColor: theme.accent, height: selected ? 4 : 3, opacity: selected ? 1 : 0.6 }]} />
+      {/* نقطة تحديد */}
+      {selected && <View style={[kpiS.selDot, { backgroundColor: theme.accent }]} />}
+    </TouchableOpacity>
+  );
+}
+
+const kpiS = StyleSheet.create({
+  card: {
+    flex: 1, borderRadius: RADIUS.lg, padding: SPACING.md,
+    borderWidth: 1.5, overflow: 'hidden', minHeight: 105,
+  },
+  cardSelected: {
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25, shadowRadius: 8, elevation: 6,
+  },
+  iconRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginBottom: SPACING.sm },
+  iconBubble: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  iconText: { fontSize: 14 },
+  label: { flex: 1, fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.medium },
+  value: { fontSize: FONT_SIZE['2xl'], fontWeight: FONT_WEIGHT.bold, marginBottom: SPACING.sm },
+  accentBar: { position: 'absolute', bottom: 0, left: 0, right: 0, borderRadius: 2 },
+  selDot: { position: 'absolute', top: 8, left: 8, width: 7, height: 7, borderRadius: 4 },
+});
+
+// ─── Pivot Chart — مقارنة 3 أشهر ─────────────────
+
+function PivotCompareChart({ themeIndex }: { themeIndex: number }) {
+  const theme  = KPI_THEMES[themeIndex];
+  const data   = KPI_COMPARE_DATA[themeIndex];
+  const shades = theme.shades; // [قديم، متوسط، حديث]
+
+  // نسوّي Y-axis labels بشكل مقروء
+  const formatY = (v: string) => {
+    const n = parseFloat(v);
+    if (isNaN(n)) return v;
+    if (n >= 1000) return `${(n / 1000).toFixed(0)}k`;
+    if (data.unit === '%') return `${n}%`;
+    return String(n);
+  };
+
+  // BarChart يدعم dataset واحد فقط في react-native-chart-kit
+  // نستخدم لون مختلف لكل bar عبر خاصية colors[]
+  const chartData = {
+    labels: data.months,
+    datasets: [{
+      data: data.values,
+      colors: shades.map((shade) => (_opacity: number) => shade),
+    }],
+  };
+
+  const config = {
+    backgroundColor: 'transparent',
+    backgroundGradientFrom: COLORS.cardBg,
+    backgroundGradientTo: COLORS.cardBg,
+    color: (_opacity = 1) => theme.accent,
+    labelColor: () => COLORS.textSecondary,
+    strokeWidth: 0,
+    decimalPlaces: data.unit === '%' ? 1 : 0,
+    propsForBackgroundLines: {
+      strokeDasharray: '4,4', stroke: COLORS.border, strokeWidth: 1,
+    },
+    formatYLabel: formatY,
+  };
+
+  // حساب التغيير من الشهر الثاني للثالث
+  const change = data.values[2] - data.values[1];
+  const changePct = data.values[1] !== 0
+    ? ((change / data.values[1]) * 100).toFixed(1)
+    : '0';
+  const isPositive = themeIndex === 3 ? change <= 0 : change >= 0; // للنزاعات، الانخفاض إيجابي
+
+  return (
+    <View style={[pivS.container, { borderColor: theme.border }]}>
+      {/* Header */}
+      <View style={pivS.headerRow}>
+        <View style={[pivS.dot, { backgroundColor: theme.accent }]} />
+        <Text style={[pivS.title, { color: theme.accent }]}>{data.label}</Text>
+        <View style={[pivS.changeBadge, { backgroundColor: isPositive ? 'rgba(16,185,129,0.15)' : 'rgba(220,38,38,0.15)' }]}>
+          <Text style={[pivS.changeText, { color: isPositive ? '#10B981' : '#F87171' }]}>
+            {isPositive ? '▲' : '▼'} {Math.abs(parseFloat(changePct))}%
+          </Text>
+        </View>
+      </View>
+
+      {/* تسمية توضيحية للألوان */}
+      <View style={pivS.legendRow}>
+        {data.months.map((month, i) => (
+          <View key={i} style={pivS.legendItem}>
+            <View style={[pivS.legendDot, { backgroundColor: shades[i] }]} />
+            <Text style={pivS.legendText}>{month}</Text>
+          </View>
+        ))}
+      </View>
+
+      {/* Bar Chart */}
+      <BarChart
+        data={chartData}
+        width={SCREEN_WIDTH - LAYOUT.screenPaddingH * 2 - SPACING.lg * 2}
+        height={160}
+        chartConfig={config}
+        withCustomBarColorFromData
+        flatColor
+        showValuesOnTopOfBars
+        withInnerLines
+        style={pivS.chart}
+        yAxisLabel=""
+        yAxisSuffix={data.unit === '%' ? '%' : ''}
+        fromZero
+      />
+
+      {/* Summary row */}
+      <View style={pivS.summaryRow}>
+        {data.values.map((val, i) => (
+          <View
+            key={i}
+            style={[
+              pivS.summaryCell,
+              i < 2 && { borderRightWidth: 1, borderRightColor: COLORS.border },
+              i === 2 && { backgroundColor: `${theme.accent}10` },
+            ]}
+          >
+            <Text style={pivS.sumLabel}>{data.months[i]}</Text>
+            <Text style={[pivS.sumValue, { color: i === 2 ? theme.accent : COLORS.textSecondary }]}>
+              {data.unit === '%'
+                ? `${val}%`
+                : val >= 1000
+                  ? `${(val / 1000).toFixed(1)}k`
+                  : String(val)}
+              {data.unit !== '' && data.unit !== '%' ? ` ${data.unit}` : ''}
+            </Text>
+          </View>
+        ))}
+      </View>
+
+      {/* نص تحليلي */}
+      <View style={[pivS.insightRow, { borderTopColor: theme.border }]}>
+        <Text style={[pivS.insightText, { color: COLORS.textMuted }]}>
+          💡 {isPositive
+            ? `تحسّن بنسبة ${Math.abs(parseFloat(changePct))}% مقارنةً بالشهر الماضي`
+            : `تراجع بنسبة ${Math.abs(parseFloat(changePct))}% مقارنةً بالشهر الماضي`}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const pivS = StyleSheet.create({
+  container: {
+    borderRadius: RADIUS.lg, borderWidth: 1.5,
+    backgroundColor: COLORS.cardBg, overflow: 'hidden',
+    marginTop: SPACING.md,
+  },
+  headerRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: SPACING.lg, paddingTop: SPACING.md, paddingBottom: SPACING.xs,
+    gap: SPACING.sm,
+  },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  title: { flex: 1, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
+  changeBadge: {
+    paddingHorizontal: SPACING.sm, paddingVertical: 3,
+    borderRadius: RADIUS.full,
+  },
+  changeText: { fontSize: 11, fontWeight: FONT_WEIGHT.bold },
+  legendRow: {
+    flexDirection: 'row', paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.sm, gap: SPACING.lg,
+  },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  legendDot: { width: 10, height: 10, borderRadius: 5 },
+  legendText: { fontSize: 10, color: COLORS.textMuted },
+  chart: { marginLeft: -SPACING.sm, borderRadius: RADIUS.md },
+  summaryRow: {
+    flexDirection: 'row', borderTopWidth: 1, borderTopColor: COLORS.border,
+  },
+  summaryCell: {
+    flex: 1, alignItems: 'center', paddingVertical: SPACING.sm,
+  },
+  sumLabel: { fontSize: 10, color: COLORS.textMuted, fontWeight: '600', marginBottom: 3 },
+  sumValue: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold },
+  insightRow: {
+    paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm,
+    borderTopWidth: 1,
+  },
+  insightText: { fontSize: FONT_SIZE.xs, lineHeight: 18 },
+});
+
+// ─── القائمة الجانبية ─────────────────────────────
+
+function SideMenu({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const router = useRouter();
+  const { t } = useTranslation();
+  const { user } = useAuth();
+
+  const menuItems = [
+    { icon: '🏠', label: t('tabs.dashboard'),            route: '/(merchant)/dashboard' },
+    { icon: '💳', label: t('tabs.transactions'),          route: '/(merchant)/transactions' },
+    { icon: '💰', label: t('tabs.balance'),               route: '/(merchant)/balance' },
+    { icon: '📊', label: t('tabs.analytics'),             route: '/(merchant)/analytics' },
+    { icon: '🔗', label: t('dashboard.payment_links'),    route: '/(merchant)/payment-links' },
+    { icon: '🔔', label: t('notifications.title'),        route: '/(merchant)/notifications' },
+    { icon: '⚠️', label: t('disputes.title'),             route: '/(merchant)/disputes' },
+    { icon: '↩',  label: t('refunds.title'),              route: '/(merchant)/refunds' },
+    { icon: '🏦', label: t('settlements.title'),          route: '/(merchant)/settlements' },
+    { icon: '💵', label: 'كاش COD',                       route: '/(merchant)/cod' },
+    { icon: '💱', label: 'أسعار الصرف',                   route: '/(merchant)/fx' },
+    { icon: '🎯', label: 'أهداف الإيرادات',               route: '/(merchant)/revenue-goals' },
+    { icon: '📄', label: 'الفواتير',                      route: '/(merchant)/invoices' },
+    { icon: '🔄', label: 'الاشتراكات',                    route: '/(merchant)/subscriptions' },
+    { icon: '⚙️', label: t('tabs.settings'),              route: '/(merchant)/settings' },
+    { icon: '👤', label: t('profile.title'),              route: '/(merchant)/profile' },
+  ];
+
+  const handleNavigate = (route: string) => { onClose(); setTimeout(() => router.push(route as any), 200); };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <TouchableOpacity style={sideMenu.overlay} activeOpacity={1} onPress={onClose} />
+      <View style={sideMenu.panel}>
+        <View style={sideMenu.header}>
+          <View style={sideMenu.logoRow}>
+            <View style={sideMenu.logoBubble}><Text style={sideMenu.logoLetter}>Z</Text></View>
+            <View>
+              <Text style={sideMenu.brandName}>Zyrix</Text>
+              <Text style={sideMenu.merchantId}>{user?.merchantId ?? 'ZRX-10042'}</Text>
+            </View>
+          </View>
+          <TouchableOpacity onPress={onClose} style={sideMenu.closeBtn}>
+            <Text style={sideMenu.closeBtnText}>✕</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={sideMenu.divider} />
+        <ScrollView style={sideMenu.scrollArea} showsVerticalScrollIndicator={false}>
+          {menuItems.map((item, idx) => (
+            <TouchableOpacity key={idx} style={sideMenu.item} onPress={() => handleNavigate(item.route)} activeOpacity={0.7}>
+              <Text style={sideMenu.itemIcon}>{item.icon}</Text>
+              <Text style={sideMenu.itemLabel}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
+
+// ─── Main Screen ──────────────────────────────────
 
 export default function DashboardScreen() {
   const router = useRouter();
   const { t, isRTL } = useTranslation();
   const { currency, setCurrency, format, convert } = useCurrency('SAR');
   const { user } = useAuth();
+  const [menuVisible, setMenuVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('7d');
   const [dashData, setDashData] = useState<DashboardData | null>(null);
@@ -80,6 +385,8 @@ export default function DashboardScreen() {
   const [_error, setError] = useState<string | null>(null);
   const [chartData, setChartData] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
   const [chartLabels, setChartLabels] = useState<string[]>(['', '', '', '', '', '', '']);
+  // الخانة المختارة افتراضياً: إجمالي الحجم (0)
+  const [selectedKpi, setSelectedKpi] = useState<number>(0);
   const BASE_CURRENCY: CurrencyCode = 'SAR';
 
   const fetchData = useCallback(async () => {
@@ -90,46 +397,21 @@ export default function DashboardScreen() {
         const analytics = await analyticsApi.getData(chartPeriod);
         setChartData(analytics.volume.map((v: { value: number }) => v.value));
         setChartLabels(analytics.volume.map((v: { label: string }) => toEnglishDayLabel(v.label)));
-      } catch (_e) { /* chart data is non-critical */ }
+      } catch (_e) {}
       setDashData(data);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : t('common.error');
-      setError(message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+      setError(err instanceof Error ? err.message : t('common.error'));
+    } finally { setLoading(false); setRefreshing(false); }
   }, [chartPeriod, t]);
 
   useEffect(() => { fetchData(); }, [chartPeriod]);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchData();
-  };
-
-  const formatAmount = useCallback((amount: number): string => {
-    const converted = convert(amount, BASE_CURRENCY, currency);
-    return format(converted, currency);
-  }, [convert, format, currency, BASE_CURRENCY]);
-
-  const chartConfig = useMemo(
-    () => ({
-      backgroundColor: COLORS.surfaceBg,
-      backgroundGradientFrom: COLORS.surfaceBg,
-      backgroundGradientTo: COLORS.surfaceBg,
-      color: chartColorFn(COLORS.primaryLight),
-      labelColor: () => COLORS.textSecondary,
-      strokeWidth: 2,
-      decimalPlaces: 0,
-      propsForDots: { r: '4', strokeWidth: '2', stroke: COLORS.primaryLight },
-      propsForBackgroundLines: { strokeDasharray: '', stroke: COLORS.divider, strokeWidth: 1 },
-    }),
-    [],
+  const onRefresh = () => { setRefreshing(true); fetchData(); };
+  const formatAmount = useCallback(
+    (amount: number) => format(convert(amount, BASE_CURRENCY, currency), currency),
+    [convert, format, currency],
   );
 
   const periods: ChartPeriod[] = ['7d', '30d', '90d'];
-
   const quickActions = [
     { icon: '🔗', label: t('dashboard.payment_links'), route: '/(merchant)/payment-links' },
     { icon: '🔔', label: t('dashboard.notifications_action'), route: '/(merchant)/notifications' },
@@ -137,208 +419,141 @@ export default function DashboardScreen() {
     { icon: '💱', label: 'أسعار الصرف', route: '/(merchant)/fx' },
   ];
 
+  // بيانات الـ KPI cards
+  const kpiCards = [
+    { label: t('dashboard.totalVolume'),  value: formatAmount(dashData?.kpis?.totalVolume ?? 0), icon: '💳', themeIndex: 0 },
+    { label: t('dashboard.successRate'),  value: `${dashData?.kpis?.successRate ?? '0'}%`,        icon: '✅', themeIndex: 1 },
+    { label: t('dashboard.todayTx'),      value: String(dashData?.kpis?.todayTx ?? 0),            icon: '📋', themeIndex: 2 },
+    { label: t('dashboard.openDisputes'), value: String(dashData?.kpis?.openDisputes ?? 0),       icon: '⚠️', themeIndex: 3 },
+  ];
+
   if (loading && !dashData) {
     return (
-      <View style={[styles.container, { alignItems: 'center', justifyContent: 'center' }]}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+      <View style={styles.container}>
+        <HeaderBar onMenuPress={() => setMenuVisible(true)} />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
       </View>
     );
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
-      }
-    >
-      {/* ── Header ── */}
-      <View style={[styles.header, isRTL && styles.headerRTL]}>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.greeting, isRTL && styles.textRTL]}>
-            {t(getGreetingKey(), { name: user?.name?.split(' ')[0] ?? 'Merchant' })}
-          </Text>
-          <Text style={[styles.merchantId, isRTL && styles.textRTL]}>
-            {user?.merchantId ?? 'ZRX-10042'}
-          </Text>
-        </View>
-        <TouchableOpacity
-          style={styles.notifButton}
-          onPress={() => router.push('/(merchant)/notifications')}
-        >
-          <Text style={styles.notifIcon}>🔔</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* ── Currency Picker ── */}
-      <CurrencyPicker
-        selected={currency}
-        onSelect={setCurrency}
-        codes={['SAR', 'AED', 'KWD', 'QAR', 'IQD', 'USD', 'EUR']}
+    <View style={styles.container}>
+      <HeaderBar
+        onMenuPress={() => setMenuVisible(true)}
+        onMessagesPress={() => router.push('/(merchant)/notifications')}
+        unreadMessages={dashData?.unreadNotifications ?? 0}
       />
+      <SideMenu visible={menuVisible} onClose={() => setMenuVisible(false)} />
 
-      {/* ── KPI Cards ── */}
-      <View style={styles.kpiGrid}>
-        <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
-          <KpiCard
-            label={t('dashboard.totalVolume')}
-            value={formatAmount(dashData?.kpis?.totalVolume ?? 0)}
-            icon="💳"
-            color={COLORS.primary}
-            style={{ backgroundColor: 'rgba(26, 86, 219, 0.15)', borderColor: 'rgba(26, 86, 219, 0.3)' }}
-          />
-          <KpiCard
-            label={t('dashboard.successRate')}
-            value={`${dashData?.kpis?.successRate ?? '0'}%`}
-            icon="✅"
-            color={COLORS.success}
-            style={{ backgroundColor: 'rgba(5, 150, 105, 0.15)', borderColor: 'rgba(5, 150, 105, 0.3)' }}
-          />
-        </View>
-        <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
-          <KpiCard
-            label={t('dashboard.todayTx')}
-            value={String(dashData?.kpis?.todayTx ?? 0)}
-            icon="📋"
-            color={COLORS.chart.purple}
-            style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', borderColor: 'rgba(139, 92, 246, 0.3)' }}
-          />
-          <KpiCard
-            label={t('dashboard.openDisputes')}
-            value={String(dashData?.kpis?.openDisputes ?? 0)}
-            icon="⚠️"
-            color={COLORS.warning}
-            style={{ backgroundColor: 'rgba(217, 119, 6, 0.15)', borderColor: 'rgba(217, 119, 6, 0.3)' }}
-          />
-        </View>
-      </View>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+      >
+        <CurrencyPicker selected={currency} onSelect={setCurrency} codes={['SAR', 'AED', 'KWD', 'QAR', 'USD']} />
 
-      {/* ── Quick Actions ── */}
-      <View style={styles.quickActionsContainer}>
-        <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
-          {t('dashboard.quick_actions')}
-        </Text>
-        <View style={[styles.quickGrid, isRTL && styles.quickGridRTL]}>
-          {quickActions.map((qa, idx) => (
-            <TouchableOpacity
-              key={idx}
-              style={styles.quickBtn}
-              onPress={() => router.push(qa.route as any)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.quickIcon}>{qa.icon}</Text>
-              <Text style={styles.quickLabel} numberOfLines={1}>{qa.label}</Text>
-            </TouchableOpacity>
-          ))}
+        {/* ── KPI Cards — 4 ألوان، قابلة للضغط ── */}
+        <View style={styles.kpiGrid}>
+          <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
+            {kpiCards.slice(0, 2).map((card, i) => (
+              <ColoredKpiCard
+                key={i}
+                label={card.label}
+                value={card.value}
+                icon={card.icon}
+                themeIndex={card.themeIndex}
+                selected={selectedKpi === i}
+                onPress={() => setSelectedKpi(i)}
+              />
+            ))}
+          </View>
+          <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
+            {kpiCards.slice(2, 4).map((card, i) => (
+              <ColoredKpiCard
+                key={i + 2}
+                label={card.label}
+                value={card.value}
+                icon={card.icon}
+                themeIndex={card.themeIndex}
+                selected={selectedKpi === i + 2}
+                onPress={() => setSelectedKpi(i + 2)}
+              />
+            ))}
+          </View>
         </View>
-      </View>
 
-      {/* ── Chart ── */}
-      <View style={styles.chartCard}>
-        <View style={[styles.chartHeader, isRTL && styles.chartHeaderRTL]}>
-          <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
-            {t('dashboard.paymentVolume')}
-          </Text>
-          <View style={styles.periodRow}>
-            {periods.map((p) => (
-              <TouchableOpacity
-                key={p}
-                style={[styles.periodPill, chartPeriod === p && styles.periodPillActive]}
-                onPress={() => setChartPeriod(p)}
-              >
-                <Text style={[styles.periodText, chartPeriod === p && styles.periodTextActive]}>
-                  {t(`dashboard.period${p}`)}
-                </Text>
+        {/* ── Pivot Chart — مقارنة 3 أشهر للخانة المختارة ── */}
+        <PivotCompareChart themeIndex={selectedKpi} />
+
+        {/* ── Quick Actions ── */}
+        <View style={styles.quickActionsContainer}>
+          <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>{t('dashboard.quick_actions')}</Text>
+          <View style={[styles.quickGrid, isRTL && styles.quickGridRTL]}>
+            {quickActions.map((qa, idx) => (
+              <TouchableOpacity key={idx} style={styles.quickBtn} onPress={() => router.push(qa.route as any)} activeOpacity={0.7}>
+                <Text style={styles.quickIcon}>{qa.icon}</Text>
+                <Text style={styles.quickLabel} numberOfLines={1}>{qa.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
-        <LineChart
-          data={{
-            labels: chartLabels.length > 0 ? chartLabels : [''],
-            datasets: [{ data: chartData.length > 0 ? chartData : [0] }],
-          }}
-          width={SCREEN_WIDTH - SPACING.lg * 4}
-          height={180}
-          chartConfig={chartConfig}
-          bezier
-          withInnerLines={false}
-          withOuterLines={false}
-          withHorizontalLabels
-          withVerticalLabels
-          style={styles.chart}
-        />
-      </View>
 
-      {/* ── Recent Transactions ── */}
-      <View style={[styles.sectionHeader, isRTL && styles.sectionHeaderRTL]}>
-        <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
-          {t('dashboard.recentTransactions')}
-        </Text>
-        <TouchableOpacity onPress={() => router.push('/(merchant)/transactions')}>
-          <Text style={styles.viewAllText}>{t('dashboard.viewAll')}</Text>
-        </TouchableOpacity>
-      </View>
+        {/* ── Recent Transactions ── */}
+        <View style={[styles.sectionHeader, isRTL && styles.sectionHeaderRTL]}>
+          <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>{t('dashboard.recentTransactions')}</Text>
+          <TouchableOpacity onPress={() => router.push('/(merchant)/transactions')}>
+            <Text style={styles.viewAllText}>{t('dashboard.viewAll')}</Text>
+          </TouchableOpacity>
+        </View>
 
-      {(dashData?.recentTransactions ?? []).map((tx: ApiTransaction) => (
-        <TouchableOpacity
-          key={tx.id}
-          style={[styles.txRow, isRTL && styles.txRowRTL]}
-          activeOpacity={0.7}
-        >
-          <View style={[styles.txLeft, isRTL && styles.txLeftRTL]}>
-            <Text style={styles.txFlag}>{tx.countryFlag ?? '🌍'}</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.txName, isRTL && styles.textRTL]} numberOfLines={1}>
-                {tx.customerName ?? 'Customer'}
+        {(dashData?.recentTransactions ?? []).map((tx: ApiTransaction) => (
+          <TouchableOpacity key={tx.id} style={[styles.txRow, isRTL && styles.txRowRTL]} activeOpacity={0.7}>
+            <View style={[styles.txLeft, isRTL && styles.txLeftRTL]}>
+              <Text style={styles.txFlag}>{tx.countryFlag ?? '🌍'}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.txName, isRTL && styles.textRTL]} numberOfLines={1}>{tx.customerName ?? 'Customer'}</Text>
+                <Text style={[styles.txDate, isRTL && styles.textRTL]}>{new Date(tx.createdAt).toLocaleDateString('ar-SA')}</Text>
+              </View>
+            </View>
+            <View style={[styles.txRight, isRTL && styles.txRightRTL]}>
+              <Text style={[styles.txAmount, { color: tx.isCredit ? COLORS.success : COLORS.danger }]}>
+                {tx.isCredit ? '+' : '-'}{formatAmount(parseFloat(tx.amount))}
               </Text>
-              <Text style={[styles.txDate, isRTL && styles.textRTL]}>
-                {new Date(tx.createdAt).toLocaleDateString()}
-              </Text>
+              <StatusBadge status={tx.status} />
+            </View>
+          </TouchableOpacity>
+        ))}
+
+        {/* ── Next Settlement ── */}
+        <View style={styles.settlementCard}>
+          <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>{t('dashboard.nextSettlement')}</Text>
+          <View style={[styles.settlementRow, isRTL && styles.settlementRowRTL]}>
+            <View>
+              <Text style={styles.settlementLabel}>23.03.2026</Text>
+              <Text style={styles.settlementPeriod}>16–22 Mar</Text>
+            </View>
+            <View style={{ alignItems: isRTL ? 'flex-start' : 'flex-end' }}>
+              <Text style={styles.settlementAmount}>{formatAmount(2042.45)}</Text>
+              <StatusBadge status="pending" />
             </View>
           </View>
-          <View style={[styles.txRight, isRTL && styles.txRightRTL]}>
-            <Text style={[styles.txAmount, { color: tx.isCredit ? COLORS.success : COLORS.danger }]}>
-              {tx.isCredit ? '+' : '-'}{formatAmount(parseFloat(tx.amount))}
-            </Text>
-            <StatusBadge status={tx.status} />
-          </View>
-        </TouchableOpacity>
-      ))}
-
-      {/* ── Next Settlement ── */}
-      <View style={styles.settlementCard}>
-        <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
-          {t('dashboard.nextSettlement')}
-        </Text>
-        <View style={[styles.settlementRow, isRTL && styles.settlementRowRTL]}>
-          <View>
-            <Text style={styles.settlementLabel}>23.03.2026</Text>
-            <Text style={styles.settlementPeriod}>16–22 Mar</Text>
-          </View>
-          <View style={{ alignItems: isRTL ? 'flex-start' : 'flex-end' }}>
-            <Text style={styles.settlementAmount}>{formatAmount(2042.45)}</Text>
-            <StatusBadge status="pending" />
-          </View>
         </View>
-      </View>
 
-      <View style={{ height: 100 }} />
-    </ScrollView>
+        <View style={{ height: 100 }} />
+      </ScrollView>
+    </View>
   );
 }
 
+// ─── Styles ───────────────────────────────────────
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.darkBg },
-  scrollContent: { paddingHorizontal: LAYOUT.screenPaddingH, paddingTop: SPACING['5xl'] },
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.lg },
-  headerRTL: { flexDirection: 'row-reverse' },
-  greeting: { fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary },
-  merchantId: { fontSize: FONT_SIZE.sm, color: COLORS.textMuted, marginTop: 2 },
-  notifButton: { width: 42, height: 42, borderRadius: 21, backgroundColor: COLORS.cardBg, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.border },
-  notifIcon: { fontSize: 18 },
+  scrollView: { flex: 1 },
+  scrollContent: { paddingHorizontal: LAYOUT.screenPaddingH, paddingTop: SPACING.lg },
   textRTL: { textAlign: 'right', writingDirection: 'rtl' },
   kpiGrid: { gap: SPACING.sm, marginTop: SPACING.lg },
   kpiRow: { flexDirection: 'row', gap: SPACING.sm },
@@ -349,15 +564,6 @@ const styles = StyleSheet.create({
   quickBtn: { flex: 1, backgroundColor: COLORS.cardBg, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, paddingVertical: SPACING.md, alignItems: 'center', gap: 4 },
   quickIcon: { fontSize: 22 },
   quickLabel: { fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.medium },
-  chartCard: { backgroundColor: COLORS.surfaceBg, borderRadius: RADIUS.lg, padding: SPACING.lg, borderWidth: 1, borderColor: COLORS.primaryLight + '30', marginTop: SPACING.xl },
-  chartHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.md },
-  chartHeaderRTL: { flexDirection: 'row-reverse' },
-  periodRow: { flexDirection: 'row', gap: SPACING.xs },
-  periodPill: { paddingHorizontal: SPACING.sm, paddingVertical: SPACING.xs, borderRadius: RADIUS.full },
-  periodPillActive: { backgroundColor: `${COLORS.primary}20` },
-  periodText: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, fontWeight: FONT_WEIGHT.medium },
-  periodTextActive: { color: COLORS.primaryLight, fontWeight: FONT_WEIGHT.semibold },
-  chart: { borderRadius: RADIUS.md, marginLeft: -SPACING.md },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: SPACING.xl, marginBottom: SPACING.md },
   sectionHeaderRTL: { flexDirection: 'row-reverse' },
   sectionTitle: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold, color: COLORS.textPrimary },
@@ -378,4 +584,22 @@ const styles = StyleSheet.create({
   settlementLabel: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold, color: COLORS.textPrimary },
   settlementPeriod: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2 },
   settlementAmount: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.success, marginBottom: SPACING.xs },
+});
+
+const sideMenu = StyleSheet.create({
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
+  panel: { position: 'absolute', top: 0, right: 0, bottom: 0, width: SCREEN_WIDTH * 0.78, backgroundColor: COLORS.deepBg, shadowColor: '#000', shadowOffset: { width: -3, height: 0 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 20 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16 },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  logoBubble: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
+  logoLetter: { fontSize: 18, fontWeight: FONT_WEIGHT.extrabold, color: COLORS.white },
+  brandName: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary, letterSpacing: 1 },
+  merchantId: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2, fontFamily: 'monospace' },
+  closeBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
+  closeBtnText: { fontSize: 14, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.bold },
+  divider: { height: 1, backgroundColor: COLORS.border, marginHorizontal: 20, marginBottom: 8 },
+  scrollArea: { flex: 1 },
+  item: { flexDirection: 'row-reverse', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, gap: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' },
+  itemIcon: { fontSize: 20, width: 28, textAlign: 'center' },
+  itemLabel: { flex: 1, fontSize: FONT_SIZE.base, color: COLORS.textPrimary, fontWeight: FONT_WEIGHT.medium, textAlign: 'right' },
 });

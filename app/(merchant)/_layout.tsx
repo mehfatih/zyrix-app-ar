@@ -118,24 +118,25 @@ export default function MerchantLayout() {
           ),
         }}
       />
-      {/* Hidden screens */}
-      <Tabs.Screen name="transaction-detail" options={{ href: null }} />
-      <Tabs.Screen name="settlements" options={{ href: null }} />
-      <Tabs.Screen name="refunds" options={{ href: null }} />
-      <Tabs.Screen name="disputes" options={{ href: null }} />
-      <Tabs.Screen name="profile" options={{ href: null }} />
-      <Tabs.Screen name="notifications" options={{ href: null }} />
-      <Tabs.Screen name="payment-links" options={{ href: null }} />
-      <Tabs.Screen name="onboarding" options={{ href: null }} />
-      <Tabs.Screen name="subscriptions" options={{ href: null }} />
-      <Tabs.Screen name="revenue-goals" options={{ href: null }} />
-      <Tabs.Screen name="expenses" options={{ href: null }} />
-      <Tabs.Screen name="invoices" options={{ href: null }} />
-      <Tabs.Screen name="transfers" options={{ href: null }} />
-      <Tabs.Screen name="api-keys" options={{ href: null }} />
-      <Tabs.Screen name="webhooks" options={{ href: null }} />
-      <Tabs.Screen name="cod" options={{ href: null }} />
-      <Tabs.Screen name="fx" options={{ href: null }} />
+
+      {/* ── Hidden screens — tabBarButton: () => null يمنع ظهور أي أيقونة ── */}
+      <Tabs.Screen name="transaction-detail" options={{ href: null, tabBarButton: () => null }} />
+      <Tabs.Screen name="settlements"        options={{ href: null, tabBarButton: () => null }} />
+      <Tabs.Screen name="refunds"            options={{ href: null, tabBarButton: () => null }} />
+      <Tabs.Screen name="disputes"           options={{ href: null, tabBarButton: () => null }} />
+      <Tabs.Screen name="profile"            options={{ href: null, tabBarButton: () => null }} />
+      <Tabs.Screen name="notifications"      options={{ href: null, tabBarButton: () => null }} />
+      <Tabs.Screen name="payment-links"      options={{ href: null, tabBarButton: () => null }} />
+      <Tabs.Screen name="onboarding"         options={{ href: null, tabBarButton: () => null }} />
+      <Tabs.Screen name="subscriptions"      options={{ href: null, tabBarButton: () => null }} />
+      <Tabs.Screen name="revenue-goals"      options={{ href: null, tabBarButton: () => null }} />
+      <Tabs.Screen name="expenses"           options={{ href: null, tabBarButton: () => null }} />
+      <Tabs.Screen name="invoices"           options={{ href: null, tabBarButton: () => null }} />
+      <Tabs.Screen name="transfers"          options={{ href: null, tabBarButton: () => null }} />
+      <Tabs.Screen name="api-keys"           options={{ href: null, tabBarButton: () => null }} />
+      <Tabs.Screen name="webhooks"           options={{ href: null, tabBarButton: () => null }} />
+      <Tabs.Screen name="cod"                options={{ href: null, tabBarButton: () => null }} />
+      <Tabs.Screen name="fx"                 options={{ href: null, tabBarButton: () => null }} />
     </Tabs>
   );
 }
