@@ -128,7 +128,7 @@ export default function MerchantLayout() {
       <Tabs.Screen name="payment-links" options={{ href: null }} />
       <Tabs.Screen name="onboarding" options={{ href: null }} />
       <Tabs.Screen name="subscriptions" options={{ href: null }} />
-      <Tabs.Screen name="revenue-goals" options={{ href: null, tabBarButton: () => null }} />
+      <Tabs.Screen name="revenue-goals" options={{ href: null }} />
       <Tabs.Screen name="expenses" options={{ href: null }} />
       <Tabs.Screen name="invoices" options={{ href: null }} />
       <Tabs.Screen name="transfers" options={{ href: null }} />

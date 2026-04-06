@@ -31,7 +31,7 @@
         "monochromeImage": "./assets/adaptive-icon.png"
       },
       "package": "co.zyrix.app.ar",
-      "versionCode": 20,
+      "versionCode": 22,
       "targetSdkVersion": 35,
       "compileSdkVersion": 35,
       "permissions": [
@@ -46,7 +46,8 @@
         "FOREGROUND_SERVICE",
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT",
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ],
       "blockedPermissions": [
         "READ_PHONE_STATE",
@@ -88,9 +89,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "ebdbafb4-e39c-4f20-8325-51d0e28827ce"
+        "projectId": "fb78fd21-e5ac-450f-bdd6-6e88538b85cd"
       }
     },
-    "owner": "aboud1977"
+    "owner": "journaliste"
   }
 }
