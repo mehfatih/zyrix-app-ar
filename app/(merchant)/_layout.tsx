@@ -1,5 +1,6 @@
 /**
  * Zyrix App — Merchant Tab Layout
+ * Pill-shaped floating tab bar (Telegram style)
  */
 
 import React, { useEffect, useState } from 'react';
@@ -13,23 +14,70 @@ import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useDeepLinking } from '../../hooks/useDeepLinking';
 import { notificationsApi } from '../../services/api';
 
-function TabIcon({ icon, label, focused, badge }: { icon: string; label: string; focused: boolean; badge?: number }) {
+// ─── Tab Icon ────────────────────────────────────
+
+function TabIcon({
+  icon, label, focused, badge,
+}: {
+  icon: string; label: string; focused: boolean; badge?: number;
+}) {
   return (
-    <View style={styles.tabItem}>
-      <View>
-        <Text style={[styles.tabIcon, focused && styles.tabIconActive]}>{icon}</Text>
+    <View style={[tabS.item, focused && tabS.itemFocused]}>
+      <View style={tabS.iconWrap}>
+        <Text style={[tabS.icon, focused && tabS.iconFocused]}>{icon}</Text>
         {badge !== undefined && badge > 0 && (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{badge > 9 ? '9+' : badge}</Text>
+          <View style={tabS.badge}>
+            <Text style={tabS.badgeText}>{badge > 9 ? '9+' : badge}</Text>
           </View>
         )}
       </View>
-      <Text style={[styles.tabLabel, focused && styles.tabLabelActive]} numberOfLines={1}>
+      <Text style={[tabS.label, focused && tabS.labelFocused]} numberOfLines={1}>
         {label}
       </Text>
     </View>
   );
 }
+
+const tabS = StyleSheet.create({
+  item: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    gap: 2,
+    minWidth: 56,
+  },
+  itemFocused: {
+    backgroundColor: `${COLORS.primary}25`,
+  },
+  iconWrap: { position: 'relative' },
+  icon: { fontSize: 22, opacity: 0.45 },
+  iconFocused: { opacity: 1 },
+  label: {
+    fontSize: 10,
+    fontWeight: FONT_WEIGHT.medium,
+    color: COLORS.tabInactive,
+    letterSpacing: 0.2,
+  },
+  labelFocused: {
+    color: COLORS.primaryLight,
+    fontWeight: FONT_WEIGHT.semibold,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4, right: -8,
+    backgroundColor: COLORS.danger,
+    borderRadius: 8,
+    minWidth: 15, height: 15,
+    justifyContent: 'center', alignItems: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1.5, borderColor: COLORS.deepBg,
+  },
+  badgeText: { color: COLORS.white, fontSize: 8, fontWeight: '700' },
+});
+
+// ─── Layout ──────────────────────────────────────
 
 export default function MerchantLayout() {
   usePushNotifications();
@@ -39,37 +87,59 @@ export default function MerchantLayout() {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    const fetchUnread = async () => {
+    const fetch = async () => {
       try {
         const res = await notificationsApi.list();
         setUnreadCount(res.unreadCount);
       } catch (_e) {}
     };
-    fetchUnread();
-    const interval = setInterval(fetchUnread, 30000);
-    return () => clearInterval(interval);
+    fetch();
+    const iv = setInterval(fetch, 30000);
+    return () => clearInterval(iv);
   }, []);
 
-  const tabBarHeight = Platform.select({
-    ios: 84,
-    android: 64 + insets.bottom,
-    default: 64,
+  // ارتفاع الـ pill + المسافة من الأسفل
+  const pillBottom = Platform.select({
+    ios:     insets.bottom + 8,
+    android: insets.bottom + 12,
+    default: 12,
   });
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: [
-          styles.tabBar,
-          {
-            height: tabBarHeight,
-            paddingBottom: Platform.OS === 'android' ? insets.bottom + SPACING.xs : 20,
-          },
-        ],
+        tabBarStyle: {
+          // الحجم والشكل
+          height: 64,
+          position: 'absolute',
+          left: 20,
+          right: 20,
+          bottom: pillBottom,
+          borderRadius: 32,
+          // ألوان
+          backgroundColor: COLORS.deepBg,
+          borderTopWidth: 0,
+          // ظل
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.35,
+          shadowRadius: 12,
+          elevation: 12,
+          // مسافات داخلية
+          paddingHorizontal: 4,
+          paddingBottom: 0,
+          paddingTop: 0,
+        },
         tabBarShowLabel: false,
         tabBarActiveTintColor: COLORS.tabActive,
         tabBarInactiveTintColor: COLORS.tabInactive,
+        // مسافة للمحتوى تحت الـ pill
+        tabBarItemStyle: {
+          borderRadius: 28,
+          marginVertical: 6,
+          marginHorizontal: 2,
+        },
       }}
     >
       {/* ── Visible Tabs ── */}
@@ -114,7 +184,7 @@ export default function MerchantLayout() {
         }}
       />
 
-      {/* ── Hidden Screens — tabBarButton فقط بدون href ── */}
+      {/* ── Hidden Screens ── */}
       <Tabs.Screen name="transaction-detail" options={{ tabBarButton: () => null }} />
       <Tabs.Screen name="settlements"        options={{ tabBarButton: () => null }} />
       <Tabs.Screen name="refunds"            options={{ tabBarButton: () => null }} />
@@ -139,51 +209,3 @@ export default function MerchantLayout() {
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: COLORS.tabBarBg,
-    borderTopColor: COLORS.border,
-    borderTopWidth: 1,
-    paddingTop: SPACING.sm,
-    elevation: 0,
-  },
-  tabItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-  },
-  tabIcon: {
-    fontSize: 22,
-    opacity: 0.5,
-  },
-  tabIconActive: {
-    opacity: 1,
-  },
-  tabLabel: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.tabInactive,
-  },
-  tabLabelActive: {
-    color: COLORS.primaryLight,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  badge: {
-    position: 'absolute',
-    top: -4,
-    right: -10,
-    backgroundColor: COLORS.danger,
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-  },
-  badgeText: {
-    color: COLORS.white,
-    fontSize: 9,
-    fontWeight: '700',
-  },
-});

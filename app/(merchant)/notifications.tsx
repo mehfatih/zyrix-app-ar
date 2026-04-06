@@ -14,6 +14,7 @@ import {
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { notificationsApi } from '../../services/api'
+import { InnerHeader } from '../../components/InnerHeader';
 
 const isRTL = I18nManager.isRTL
 
@@ -169,24 +170,7 @@ export default function NotificationsScreen() {
 
   const renderHeader = () => (
     <>
-      {/* Page header */}
-      <View style={styles.pageHeader}>
-        <View style={[styles.headerRow, isRTL && styles.headerRowRTL]}>
-          <View style={[styles.titleRow, isRTL && styles.titleRowRTL]}>
-            <Text style={styles.pageTitle}>{t('notifications.title')}</Text>
-            {unreadCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unreadCount}</Text>
-              </View>
-            )}
-          </View>
-          {unreadCount > 0 && (
-            <TouchableOpacity onPress={handleMarkAllRead}>
-              <Text style={styles.markAllText}>{t('notifications.mark_all_read')}</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+
 
       {/* Filter tabs — 2 rows of 3 */}
       <View style={styles.filterWrapper}>
@@ -257,6 +241,7 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <InnerHeader title={t('notifications.title')} accentColor="#3B82F6" />
       <ScrollView
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} colors={[COLORS.primary]} />}
         contentContainerStyle={styles.listContent}

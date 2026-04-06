@@ -18,6 +18,7 @@ import { useTranslation } from '../../hooks/useTranslation'
 import { useAuth } from '../../hooks/useAuth'
 import { merchantApi } from '../../services/api'
 import Icon, { type IconName } from '../../components/Icon'
+import { InnerHeader } from '../../components/InnerHeader';
 
 const isRTL = I18nManager.isRTL
 
@@ -150,12 +151,8 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <InnerHeader title={t('settings.title')} accentColor="#F59E0B" />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-
-        <View style={styles.pageHeader}>
-          <Text style={styles.pageTitle}>{t('settings.title')}</Text>
-          <Text style={styles.merchantId}>ZRX-10042 · Zyrix Global Gateway</Text>
-        </View>
 
         <View style={styles.body}>
 

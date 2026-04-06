@@ -7,6 +7,7 @@ import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { invoicesApi } from '../../services/api'
 import { StatusBadge } from '../../components/StatusBadge'
+import { InnerHeader } from '../../components/InnerHeader';
 
 const isRTL = I18nManager.isRTL
 
@@ -135,6 +136,7 @@ export default function InvoicesScreen() {
 
   return (
     <SafeAreaView style={st.safe}>
+      <InnerHeader title={t('invoices.title')} accentColor="#8B5CF6" />
       <ScrollView
         contentContainerStyle={st.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchData() }} tintColor={COLORS.primary} />}

@@ -6,6 +6,7 @@ import { useTranslation } from '../../hooks/useTranslation'
 import { merchantApi } from '../../services/api'
 import { useRouter } from 'expo-router'
 import { useAuth } from '../../hooks/useAuth'
+import { InnerHeader } from '../../components/InnerHeader';
 
 const isRTL = I18nManager.isRTL
 
@@ -126,6 +127,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={st.safe}>
+      <InnerHeader title={t('profile.title')} accentColor="#8B5CF6" />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={st.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 

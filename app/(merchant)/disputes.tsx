@@ -15,6 +15,7 @@ import {
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { disputesApi } from '../../services/api'
+import { InnerHeader } from '../../components/InnerHeader'
 
 const isRTL = I18nManager.isRTL
 
@@ -227,29 +228,7 @@ export default function DisputesScreen() {
 
   const renderHeader = () => (
     <>
-      {/* Page header */}
-      <View style={styles.pageHeader}>
-        <Text style={[styles.pageTitle, isRTL && styles.textRight]}>
-          {t('disputes.title')}
-        </Text>
 
-        {/* Alert bar */}
-        {pendingCount > 0 && (
-          <View style={[styles.alertBar, isRTL && styles.alertBarRTL]}>
-            <Text style={styles.alertIcon}>⚠</Text>
-            <Text style={styles.alertText}>
-              {pendingCount} {t('disputes.warning')}
-            </Text>
-            {urgentCount > 0 && (
-              <View style={styles.urgentPill}>
-                <Text style={styles.urgentPillText}>
-                  {urgentCount} {t('disputes.urgent')}
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
-      </View>
 
       {/* KPI row — each with unique color */}
       <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
@@ -334,6 +313,7 @@ export default function DisputesScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <InnerHeader title={t('disputes.title')} accentColor="#F59E0B" />
       <FlatList
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} colors={[COLORS.primary]} />}
         data={filtered}

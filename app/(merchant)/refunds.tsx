@@ -8,6 +8,7 @@ import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { transfersApi } from '../../services/api'
 import { useCurrency } from '../../hooks/useCurrency'
+import { InnerHeader } from '../../components/InnerHeader';
 
 const isRTL = I18nManager.isRTL
 
@@ -195,6 +196,7 @@ export default function TransfersScreen() {
 
   return (
     <SafeAreaView style={st.safeArea}>
+      <InnerHeader title={t('refunds.title')} accentColor="#EF4444" />
       <FlatList
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
         data={displayed}

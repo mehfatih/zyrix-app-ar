@@ -8,6 +8,7 @@ import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { merchantApi } from '../../services/api'
 import { useAuth } from '../../hooks/useAuth'
+import { InnerHeader } from '../../components/InnerHeader';
 
 const isRTL = I18nManager.isRTL
 

@@ -9,6 +9,7 @@ import { useTranslation } from '../../hooks/useTranslation'
 import { paymentLinksApi } from '../../services/api'
 import { StatusBadge } from '../../components/StatusBadge'
 import { QRCodeModal } from '../../components/QRCodeModal'
+import { InnerHeader } from '../../components/InnerHeader';
 
 const isRTL = I18nManager.isRTL
 
@@ -115,16 +116,12 @@ export default function PaymentLinksScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <InnerHeader title={t('payment_links.title')} accentColor="#3B82F6" />
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} colors={[COLORS.primary]} />}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.title, isRTL && styles.rtl]}>{t('payment_links.title')}</Text>
-            <Text style={[styles.subtitle, isRTL && styles.rtl]}>{t('payment_links.subtitle')}</Text>
-          </View>
+        <View style={styles.addRow}>
           <TouchableOpacity style={styles.createBtn} onPress={() => setShowCreate(true)}>
             <Text style={styles.createBtnText}>+ {t('payment_links.create')}</Text>
           </TouchableOpacity>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, I18nManager, SafeAreaView, ActivityIndicator, RefreshControl, Alert, Modal, Animated } from 'react-native'
+import { InnerHeader } from '../../components/InnerHeader';
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { revenueGoalsApi } from '../../services/api'
@@ -76,6 +77,7 @@ export default function RevenueGoalsScreen() {
 
   return (
     <SafeAreaView style={st.safe}>
+      <InnerHeader title={t('revenue_goals.title')} accentColor="#F59E0B" />
       <ScrollView contentContainerStyle={st.scroll} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchData() }} tintColor={COLORS.primary} />}>
 
         {/* Header */}

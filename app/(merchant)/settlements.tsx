@@ -10,6 +10,7 @@ import { useCurrency } from '../../hooks/useCurrency'
 import { settlementsApi } from '../../services/api'
 import KpiCard from '../../components/KpiCard'
 import SettlementRow from '../../components/SettlementRow'
+import { InnerHeader } from '../../components/InnerHeader';
 
 const isRTL = I18nManager.isRTL
 
@@ -64,16 +65,11 @@ export default function SettlementsScreen() {
 
   const renderHeader = () => (
     <>
-      <View style={st.pageHeader}>
-        <View style={[st.headerRow, isRTL && st.headerRowRTL]}>
-          <Text style={[st.pageSubtitle, isRTL && st.textRight, { flex: 1 }]}>
-            {t('settlements.subtitle') || 'سجل التسويات الأسبوعية'}
-          </Text>
-          <TouchableOpacity style={st.exportBtn} onPress={handleExport}>
-            <Text style={st.exportIcon}>↓</Text>
-            <Text style={st.exportLabel}>{t('settlements.export')}</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={st.exportRow}>
+        <TouchableOpacity style={st.exportBtn} onPress={handleExport}>
+          <Text style={st.exportIcon}>↓</Text>
+          <Text style={st.exportLabel}>{t('settlements.export')}</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={[st.kpiRow, isRTL && st.kpiRowRTL]}>
@@ -145,6 +141,7 @@ export default function SettlementsScreen() {
 
   return (
     <SafeAreaView style={st.safeArea}>
+      <InnerHeader title={t('settlements.title')} accentColor="#0D9488" />
       <FlatList
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
         data={filtered} keyExtractor={(item) => item.id} renderItem={renderItem}
@@ -157,6 +154,7 @@ export default function SettlementsScreen() {
 
 const st = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.darkBg },
+  exportRow: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4, alignItems: isRTL ? 'flex-start' : 'flex-end' },
   listContent: { paddingBottom: 40 },
   pageHeader: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, backgroundColor: 'rgba(13, 148, 136, 0.12)', borderBottomWidth: 1, borderBottomColor: 'rgba(13, 148, 136, 0.3)' },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },

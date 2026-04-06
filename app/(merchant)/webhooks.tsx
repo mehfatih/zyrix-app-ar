@@ -9,6 +9,7 @@ import { useRouter } from 'expo-router'
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { webhooksApi } from '../../services/api'
+import { InnerHeader } from '../../components/InnerHeader';
 
 const isRTL = I18nManager.isRTL
 
@@ -241,6 +242,7 @@ export default function WebhooksScreen() {
 
   return (
     <SafeAreaView style={st.safeArea}>
+      <InnerHeader title={'ويب هوكس'} accentColor="#06B6D4" />
       <FlatList
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
         data={webhooks}

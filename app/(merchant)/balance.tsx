@@ -11,6 +11,7 @@ import { useCurrency } from '../../hooks/useCurrency'
 import { balanceApi } from '../../services/api'
 import KpiCard from '../../components/KpiCard'
 import { QRCodeModal } from '../../components/QRCodeModal'
+import { InnerHeader } from '../../components/InnerHeader'
 
 const isRTL = I18nManager.isRTL
 
@@ -62,6 +63,7 @@ export default function BalanceScreen() {
   if (loading && !balanceData) {
     return (
       <SafeAreaView style={styles.safeArea}>
+        <InnerHeader title={t('balance.title')} accentColor="#0D9488" />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
@@ -72,20 +74,18 @@ export default function BalanceScreen() {
   const netAmount = bal.nextSettlement?.net ?? bal.nextSettlement?.dateAmount ?? 0
   const commission = bal.nextSettlement?.commission ?? 0
   const maxFlow = Math.max(bal.incoming, Math.abs(bal.outgoing), 1)
-
   const fmt = (amount: number) => format(convert(amount, 'SAR', currency), currency)
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      {/* ── InnerHeader ── */}
+      <InnerHeader title={t('balance.title')} accentColor="#0D9488" />
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.pageHeader}>
-          <Text style={[styles.pageTitle, isRTL && styles.textRight]}>{t('balance.title')}</Text>
-        </View>
-
         <View style={styles.heroCard}>
           <Text style={styles.heroLabel}>{t('balance.available')}</Text>
           <Text style={styles.heroAmount}>{fmt(bal.available)}</Text>
@@ -187,7 +187,7 @@ export default function BalanceScreen() {
           </View>
         </View>
 
-        <View style={{ height: 40 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
 
       <QRCodeModal
@@ -204,13 +204,10 @@ export default function BalanceScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.darkBg },
   scrollContent: { paddingBottom: 40 },
-  pageHeader: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16, backgroundColor: COLORS.deepBg, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  pageTitle: { fontSize: 22, fontWeight: '700', color: COLORS.textPrimary },
   textRight: { textAlign: 'right' },
   heroCard: { margin: 16, borderRadius: 16, backgroundColor: 'rgba(13, 148, 136, 0.15)', borderWidth: 1, borderColor: 'rgba(13, 148, 136, 0.35)', padding: 24 },
   heroLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 1, color: COLORS.textSecondary, marginBottom: 8, textAlign: isRTL ? 'right' : 'left' },
   heroAmount: { fontSize: 36, fontWeight: '800', color: COLORS.white, marginBottom: 24, textAlign: isRTL ? 'right' : 'left' },
-  heroCurrency: { fontSize: 18, fontWeight: '500', color: COLORS.textSecondary },
   actionRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
   actionRowRTL: { flexDirection: 'row-reverse' },
   actionBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 12, borderWidth: 1, gap: 4 },
