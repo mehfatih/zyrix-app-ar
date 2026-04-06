@@ -1,6 +1,5 @@
 /**
  * Zyrix App — Merchant Tab Layout
- * Bottom tab navigation with Android 15 edge-to-edge safe areas.
  */
 
 import React, { useEffect, useState } from 'react';
@@ -18,19 +17,14 @@ function TabIcon({ icon, label, focused, badge }: { icon: string; label: string;
   return (
     <View style={styles.tabItem}>
       <View>
-        <Text style={[styles.tabIcon, focused && styles.tabIconActive]}>
-          {icon}
-        </Text>
+        <Text style={[styles.tabIcon, focused && styles.tabIconActive]}>{icon}</Text>
         {badge !== undefined && badge > 0 && (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{badge > 9 ? '9+' : badge}</Text>
           </View>
         )}
       </View>
-      <Text
-        style={[styles.tabLabel, focused && styles.tabLabelActive]}
-        numberOfLines={1}
-      >
+      <Text style={[styles.tabLabel, focused && styles.tabLabelActive]} numberOfLines={1}>
         {label}
       </Text>
     </View>
@@ -49,7 +43,7 @@ export default function MerchantLayout() {
       try {
         const res = await notificationsApi.list();
         setUnreadCount(res.unreadCount);
-      } catch (_e) { /* Silent fail for badge */ }
+      } catch (_e) {}
     };
     fetchUnread();
     const interval = setInterval(fetchUnread, 30000);
@@ -78,6 +72,7 @@ export default function MerchantLayout() {
         tabBarInactiveTintColor: COLORS.tabInactive,
       }}
     >
+      {/* ── Visible Tabs ── */}
       <Tabs.Screen
         name="dashboard"
         options={{
@@ -119,24 +114,28 @@ export default function MerchantLayout() {
         }}
       />
 
-      {/* ── Hidden screens — tabBarButton: () => null يمنع ظهور أي أيقونة ── */}
-      <Tabs.Screen name="transaction-detail" options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="settlements"        options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="refunds"            options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="disputes"           options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="profile"            options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="notifications"      options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="payment-links"      options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="onboarding"         options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="subscriptions"      options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="revenue-goals"      options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="expenses"           options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="invoices"           options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="transfers"          options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="api-keys"           options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="webhooks"           options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="cod"                options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="fx"                 options={{ href: null, tabBarButton: () => null }} />
+      {/* ── Hidden Screens — tabBarButton فقط بدون href ── */}
+      <Tabs.Screen name="transaction-detail" options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="settlements"        options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="refunds"            options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="disputes"           options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="profile"            options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="notifications"      options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="payment-links"      options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="onboarding"         options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="subscriptions"      options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="revenue-goals"      options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="expenses"           options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="invoices"           options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="transfers"          options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="api-keys"           options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="webhooks"           options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="cod"                options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="fx"                 options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="2fa-setup"          options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="change-password"    options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="search"             options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="help"               options={{ tabBarButton: () => null }} />
     </Tabs>
   );
 }
