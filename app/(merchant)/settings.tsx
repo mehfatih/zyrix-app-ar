@@ -13,7 +13,6 @@ import {
   TextInput,
 } from 'react-native'
 import { useRouter } from 'expo-router'
-import { useTabBarHeight } from '../../hooks/useTabBarHeight';
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { useAuth } from '../../hooks/useAuth'
@@ -122,7 +121,6 @@ function SupportChat({ visible, onClose }: { visible: boolean; onClose: () => vo
 }
 
 export default function SettingsScreen() {
-  const tabBarHeight = useTabBarHeight();
   const { t } = useTranslation()
   const router = useRouter()
   const { signOut } = useAuth()
@@ -224,7 +222,7 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.darkBg },
-  scrollContent: { paddingBottom: tabBarHeight },
+  scrollContent: { paddingBottom: 120 },
   pageHeader: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, backgroundColor: COLORS.deepBg, borderBottomWidth: 1, borderBottomColor: COLORS.border, alignItems: 'center' },
   pageTitle: { fontSize: 22, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 4, textAlign: 'center' },
   merchantId: { fontSize: 12, color: COLORS.textMuted, textAlign: 'center' },

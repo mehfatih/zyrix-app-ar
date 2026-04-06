@@ -15,7 +15,6 @@ import {
   Linking,
 } from 'react-native'
 import { useRouter } from 'expo-router'
-import { useTabBarHeight } from '../../hooks/useTabBarHeight';
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { transactionsApi } from '../../services/api'
@@ -49,7 +48,6 @@ const FILTERS: FilterTab[] = [
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function TransactionsScreen() {
-  const tabBarHeight = useTabBarHeight();
   const { t } = useTranslation()
   const router = useRouter()
 
@@ -255,7 +253,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.darkBg,
   },
   listContent: {
-    paddingBottom: tabBarHeight,
+    paddingBottom: 120,
   },
 
   // Header

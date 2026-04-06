@@ -4,7 +4,6 @@ import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
   I18nManager, SafeAreaView, RefreshControl, ListRenderItemInfo, Alert,
 } from 'react-native'
-import { useTabBarHeight } from '../../hooks/useTabBarHeight';
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { useCurrency } from '../../hooks/useCurrency'
@@ -24,7 +23,6 @@ interface Settlement {
 }
 
 export default function SettlementsScreen() {
-  const tabBarHeight = useTabBarHeight();
   const { t } = useTranslation()
   const { format, convert, currency } = useCurrency('SAR')
   const [filter, setFilter] = useState<FilterKey>('all')
@@ -157,7 +155,7 @@ export default function SettlementsScreen() {
 const st = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.darkBg },
   exportRow: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4, alignItems: isRTL ? 'flex-start' : 'flex-end' },
-  listContent: { paddingBottom: tabBarHeight },
+  listContent: { paddingBottom: 120 },
   pageHeader: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, backgroundColor: 'rgba(13, 148, 136, 0.12)', borderBottomWidth: 1, borderBottomColor: 'rgba(13, 148, 136, 0.3)' },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   headerRowRTL: { flexDirection: 'row-reverse' },

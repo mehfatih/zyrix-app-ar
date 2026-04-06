@@ -5,7 +5,6 @@ import {
   I18nManager, SafeAreaView, Alert, ActivityIndicator, RefreshControl,
 } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
-import { useTabBarHeight } from '../../hooks/useTabBarHeight';
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { useCurrency } from '../../hooks/useCurrency'
@@ -21,7 +20,6 @@ function SectionTitle({ text }: { text: string }) {
 }
 
 export default function BalanceScreen() {
-  const tabBarHeight = useTabBarHeight();
   const { t } = useTranslation()
   const { format, convert, currency } = useCurrency('SAR')
   const [ibanCopied, setIbanCopied] = useState(false)
@@ -205,7 +203,7 @@ export default function BalanceScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.darkBg },
-  scrollContent: { paddingBottom: tabBarHeight },
+  scrollContent: { paddingBottom: 120 },
   textRight: { textAlign: 'right' },
   heroCard: { margin: 16, borderRadius: 16, backgroundColor: 'rgba(13, 148, 136, 0.15)', borderWidth: 1, borderColor: 'rgba(13, 148, 136, 0.35)', padding: 24 },
   heroLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 1, color: COLORS.textSecondary, marginBottom: 8, textAlign: isRTL ? 'right' : 'left' },
