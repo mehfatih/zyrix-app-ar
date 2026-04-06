@@ -8,23 +8,19 @@ import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../../constants/colors';
-import { FONT_SIZE, FONT_WEIGHT, SPACING } from '../../constants/theme';
+import { FONT_WEIGHT } from '../../constants/theme';
 import { useTranslation } from '../../hooks/useTranslation';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useDeepLinking } from '../../hooks/useDeepLinking';
 import { notificationsApi } from '../../services/api';
 
-// ─── Tab Icon ────────────────────────────────────
-
-function TabIcon({
-  icon, label, focused, badge,
-}: {
+function TabIcon({ icon, label, focused, badge }: {
   icon: string; label: string; focused: boolean; badge?: number;
 }) {
   return (
     <View style={[tabS.item, focused && tabS.itemFocused]}>
       <View style={tabS.iconWrap}>
-        <Text style={[tabS.icon, focused && tabS.iconFocused]}>{icon}</Text>
+        <Text style={tabS.icon}>{icon}</Text>
         {badge !== undefined && badge > 0 && (
           <View style={tabS.badge}>
             <Text style={tabS.badgeText}>{badge > 9 ? '9+' : badge}</Text>
@@ -42,26 +38,27 @@ const tabS = StyleSheet.create({
   item: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 20,
-    gap: 2,
-    minWidth: 56,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    borderRadius: 24,
+    gap: 4,
+    flex: 1,
+    height: 70,
   },
   itemFocused: {
-    backgroundColor: `${COLORS.primary}25`,
+    backgroundColor: 'rgba(59, 130, 246, 0.20)',
   },
   iconWrap: { position: 'relative' },
-  icon: { fontSize: 22, opacity: 0.45 },
-  iconFocused: { opacity: 1 },
+  icon: { fontSize: 24 },
   label: {
     fontSize: 10,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.tabInactive,
+    color: 'rgba(255,255,255,0.50)',
     letterSpacing: 0.2,
+    textAlign: 'center',
   },
   labelFocused: {
-    color: COLORS.primaryLight,
+    color: '#93C5FD',
     fontWeight: FONT_WEIGHT.semibold,
   },
   badge: {
@@ -72,12 +69,10 @@ const tabS = StyleSheet.create({
     minWidth: 15, height: 15,
     justifyContent: 'center', alignItems: 'center',
     paddingHorizontal: 3,
-    borderWidth: 1.5, borderColor: COLORS.deepBg,
+    borderWidth: 1.5, borderColor: 'rgba(10,18,40,0.97)',
   },
   badgeText: { color: COLORS.white, fontSize: 8, fontWeight: '700' },
 });
-
-// ─── Layout ──────────────────────────────────────
 
 export default function MerchantLayout() {
   usePushNotifications();
@@ -98,11 +93,10 @@ export default function MerchantLayout() {
     return () => clearInterval(iv);
   }, []);
 
-  // ارتفاع الـ pill + المسافة من الأسفل
   const pillBottom = Platform.select({
-    ios:     insets.bottom + 8,
-    android: insets.bottom + 12,
-    default: 12,
+    ios: insets.bottom + 8,
+    android: insets.bottom + 10,
+    default: 10,
   });
 
   return (
@@ -110,81 +104,40 @@ export default function MerchantLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          // الحجم والشكل
-          height: 64,
           position: 'absolute',
-          left: 20,
-          right: 20,
+          left: 16,
+          right: 16,
           bottom: pillBottom,
-          borderRadius: 32,
-          // ألوان
-          backgroundColor: COLORS.deepBg,
+          height: 70,
+          borderRadius: 35,
+          backgroundColor: 'rgba(10, 18, 40, 0.97)',
           borderTopWidth: 0,
-          // ظل
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.35,
-          shadowRadius: 12,
-          elevation: 12,
-          // مسافات داخلية
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.40,
+          shadowRadius: 16,
+          elevation: 16,
           paddingHorizontal: 4,
           paddingBottom: 0,
           paddingTop: 0,
         },
         tabBarShowLabel: false,
-        tabBarActiveTintColor: COLORS.tabActive,
+        tabBarActiveTintColor: COLORS.primaryLight,
         tabBarInactiveTintColor: COLORS.tabInactive,
-        // مسافة للمحتوى تحت الـ pill
         tabBarItemStyle: {
-          borderRadius: 28,
-          marginVertical: 6,
+          height: 70,
+          paddingVertical: 0,
+          paddingHorizontal: 0,
           marginHorizontal: 2,
         },
       }}
     >
-      {/* ── Visible Tabs ── */}
-      <Tabs.Screen
-        name="dashboard"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon icon="🏠" label={t('tabs.dashboard')} focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="transactions"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon icon="💳" label={t('tabs.transactions')} focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="balance"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon icon="💰" label={t('tabs.balance')} focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="analytics"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon icon="📊" label={t('tabs.analytics')} focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon icon="⚙️" label={t('tabs.settings')} focused={focused} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="dashboard"    options={{ tabBarIcon: ({ focused }) => <TabIcon icon="🏠" label={t('tabs.dashboard')}    focused={focused} /> }} />
+      <Tabs.Screen name="transactions" options={{ tabBarIcon: ({ focused }) => <TabIcon icon="💳" label={t('tabs.transactions')} focused={focused} /> }} />
+      <Tabs.Screen name="balance"      options={{ tabBarIcon: ({ focused }) => <TabIcon icon="💰" label={t('tabs.balance')}      focused={focused} /> }} />
+      <Tabs.Screen name="analytics"    options={{ tabBarIcon: ({ focused }) => <TabIcon icon="📊" label={t('tabs.analytics')}    focused={focused} /> }} />
+      <Tabs.Screen name="settings"     options={{ tabBarIcon: ({ focused }) => <TabIcon icon="⚙️" label={t('tabs.settings')}     focused={focused} /> }} />
 
-      {/* ── Hidden Screens ── */}
       <Tabs.Screen name="transaction-detail" options={{ tabBarButton: () => null }} />
       <Tabs.Screen name="settlements"        options={{ tabBarButton: () => null }} />
       <Tabs.Screen name="refunds"            options={{ tabBarButton: () => null }} />

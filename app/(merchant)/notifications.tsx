@@ -11,6 +11,7 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native'
+import { useTabBarHeight } from '../../hooks/useTabBarHeight';
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { notificationsApi } from '../../services/api'
@@ -113,6 +114,7 @@ function NotifCard({
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function NotificationsScreen() {
+  const tabBarHeight = useTabBarHeight();
   const { t } = useTranslation()
 
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -262,7 +264,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.darkBg,
   },
   listContent: {
-    paddingBottom: 40,
+    paddingBottom: tabBarHeight,
   },
 
   // Header

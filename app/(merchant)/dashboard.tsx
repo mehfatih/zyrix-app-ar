@@ -373,6 +373,7 @@ function SideMenu({ visible, onClose }: { visible: boolean; onClose: () => void 
 // ─── Main Screen ──────────────────────────────────
 
 export default function DashboardScreen() {
+  const tabBarHeight = useTabBarHeight();
   const router = useRouter();
   const { t, isRTL } = useTranslation();
   const { currency, setCurrency, format, convert } = useCurrency('SAR');
@@ -589,7 +590,7 @@ const styles = StyleSheet.create({
 const sideMenu = StyleSheet.create({
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
   panel: { position: 'absolute', top: 0, right: 0, bottom: 0, width: SCREEN_WIDTH * 0.78, backgroundColor: COLORS.deepBg, shadowColor: '#000', shadowOffset: { width: -3, height: 0 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 20 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 56, paddingBottom: tabBarHeight },
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   logoBubble: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
   logoLetter: { fontSize: 18, fontWeight: FONT_WEIGHT.extrabold, color: COLORS.white },

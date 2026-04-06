@@ -5,6 +5,7 @@ import {
   I18nManager, SafeAreaView, Alert, Modal, TextInput, ListRenderItemInfo,
 } from 'react-native'
 import { useRouter } from 'expo-router'
+import { TabHeader } from '../../components/TabHeader';
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { codApi } from '../../services/api'
@@ -242,6 +243,7 @@ export default function CODScreen() {
 
   return (
     <SafeAreaView style={st.safeArea}>
+      <TabHeader title="كاش COD" accentColor="#F59E0B" />
       <FlatList
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
         data={orders}

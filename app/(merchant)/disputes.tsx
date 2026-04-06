@@ -12,6 +12,7 @@ import {
   Alert,
   ListRenderItemInfo,
 } from 'react-native'
+import { useTabBarHeight } from '../../hooks/useTabBarHeight';
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { disputesApi } from '../../services/api'
@@ -159,6 +160,7 @@ function DisputeCard({
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function DisputesScreen() {
+  const tabBarHeight = useTabBarHeight();
   const { t }   = useTranslation()
   const [filter, setFilter] = useState<FilterKey>('all')
   const [allDisputes, setAllDisputes] = useState<Dispute[]>([])
@@ -359,7 +361,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.darkBg,
   },
   listContent: {
-    paddingBottom: 40,
+    paddingBottom: tabBarHeight,
   },
 
   // Header

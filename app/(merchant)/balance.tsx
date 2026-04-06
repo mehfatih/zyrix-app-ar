@@ -5,13 +5,14 @@ import {
   I18nManager, SafeAreaView, Alert, ActivityIndicator, RefreshControl,
 } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
+import { useTabBarHeight } from '../../hooks/useTabBarHeight';
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { useCurrency } from '../../hooks/useCurrency'
 import { balanceApi } from '../../services/api'
 import KpiCard from '../../components/KpiCard'
 import { QRCodeModal } from '../../components/QRCodeModal'
-import { InnerHeader } from '../../components/InnerHeader'
+import { TabHeader } from '../../components/TabHeader';
 
 const isRTL = I18nManager.isRTL
 
@@ -20,6 +21,7 @@ function SectionTitle({ text }: { text: string }) {
 }
 
 export default function BalanceScreen() {
+  const tabBarHeight = useTabBarHeight();
   const { t } = useTranslation()
   const { format, convert, currency } = useCurrency('SAR')
   const [ibanCopied, setIbanCopied] = useState(false)
@@ -63,7 +65,7 @@ export default function BalanceScreen() {
   if (loading && !balanceData) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <InnerHeader title={t('balance.title')} accentColor="#0D9488" />
+        <TabHeader title={t('balance.title')} accentColor="#0D9488" />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
@@ -79,7 +81,7 @@ export default function BalanceScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* ── InnerHeader ── */}
-      <InnerHeader title={t('balance.title')} accentColor="#0D9488" />
+      <TabHeader title={t('balance.title')} accentColor="#0D9488" />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -203,7 +205,7 @@ export default function BalanceScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.darkBg },
-  scrollContent: { paddingBottom: 40 },
+  scrollContent: { paddingBottom: tabBarHeight },
   textRight: { textAlign: 'right' },
   heroCard: { margin: 16, borderRadius: 16, backgroundColor: 'rgba(13, 148, 136, 0.15)', borderWidth: 1, borderColor: 'rgba(13, 148, 136, 0.35)', padding: 24 },
   heroLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 1, color: COLORS.textSecondary, marginBottom: 8, textAlign: isRTL ? 'right' : 'left' },

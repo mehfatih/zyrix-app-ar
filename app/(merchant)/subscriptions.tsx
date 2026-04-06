@@ -7,6 +7,7 @@ import {
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { LineChart, BarChart } from 'react-native-chart-kit'
+import { TabHeader } from '../../components/TabHeader';
 import { COLORS } from '../../constants/colors'
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../constants/theme'
 import { useTranslation } from '../../hooks/useTranslation'
@@ -346,6 +347,7 @@ export default function TransactionsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <TabHeader title={t('subscriptions.title')} accentColor="#10B981" />
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}

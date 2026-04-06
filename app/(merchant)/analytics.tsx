@@ -6,6 +6,8 @@ import {
   Dimensions,
 } from 'react-native'
 import { BarChart } from 'react-native-chart-kit'
+import { TabHeader } from '../../components/TabHeader';
+import { useTabBarHeight } from '../../hooks/useTabBarHeight';
 import { COLORS } from '../../constants/colors'
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../constants/theme'
 import { useTranslation } from '../../hooks/useTranslation'
@@ -462,6 +464,7 @@ const dnS = StyleSheet.create({
 // ─── Main Screen ──────────────────────────────────
 
 export default function AnalyticsScreen() {
+  const tabBarHeight = useTabBarHeight();
   const { t }                   = useTranslation()
   const { format, convert, currency } = useCurrency('SAR')
   const [range, setRange]       = useState<RangeKey>('30d')
@@ -528,6 +531,7 @@ export default function AnalyticsScreen() {
 
   return (
     <SafeAreaView style={s.safeArea}>
+      <TabHeader title={t('tabs.analytics')} accentColor="#06B6D4" />
       <ScrollView
         contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
@@ -590,7 +594,7 @@ export default function AnalyticsScreen() {
 
 const s = StyleSheet.create({
   safeArea:   { flex: 1, backgroundColor: COLORS.darkBg },
-  scroll:     { paddingBottom: 40 },
+  scroll:     { paddingBottom: tabBarHeight },
   centered:   { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   loadingText:{ marginTop: 12, fontSize: 14, color: COLORS.textSecondary },
   errorText:  { fontSize: 15, color: COLORS.danger, textAlign: 'center', marginBottom: 16 },
