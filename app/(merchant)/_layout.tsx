@@ -1,10 +1,15 @@
 /**
  * Zyrix App — Merchant Tab Layout
+ * expo-router v5 / SDK 53 compatible
  */
 
 import React, { useEffect, useState } from 'react';
 import { Tabs } from 'expo-router';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import {
+  View, Text, StyleSheet, Platform, TouchableOpacity, Dimensions,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { COLORS } from '../../constants/colors';
 import { FONT_WEIGHT } from '../../constants/theme';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -12,40 +17,102 @@ import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useDeepLinking } from '../../hooks/useDeepLinking';
 import { notificationsApi } from '../../services/api';
 
-function TabIcon({ icon, label, focused, badge }: {
-  icon: string; label: string; focused: boolean; badge?: number;
-}) {
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
+// ─── Tab Bar مخصص بالكامل ────────────────────────
+function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
+
+  const pillBottom = Platform.select({
+    ios: insets.bottom + 8,
+    android: insets.bottom + 10,
+    default: 10,
+  });
+
+  const tabConfig = [
+    { name: 'settings',     icon: '⚙️', label: t('tabs.settings') },
+    { name: 'analytics',    icon: '📊', label: t('tabs.analytics') },
+    { name: 'balance',      icon: '💰', label: t('tabs.balance') },
+    { name: 'transactions', icon: '💳', label: t('tabs.transactions') },
+    { name: 'dashboard',    icon: '🏠', label: t('tabs.dashboard') },
+  ];
+
+  // فقط الـ tabs الـ 5 الرئيسية
+  const visibleRoutes = state.routes.filter(route =>
+    tabConfig.some(tc => tc.name === route.name)
+  );
+
   return (
-    <View style={[tabS.item, focused && tabS.itemFocused]}>
-      <View style={tabS.iconWrap}>
-        <Text style={tabS.icon}>{icon}</Text>
-        {badge !== undefined && badge > 0 && (
-          <View style={tabS.badge}>
-            <Text style={tabS.badgeText}>{badge > 9 ? '9+' : badge}</Text>
-          </View>
-        )}
+    <View style={[tabBarS.wrapper, { bottom: pillBottom }]}>
+      <View style={tabBarS.pill}>
+        {tabConfig.map((tc) => {
+          const route = visibleRoutes.find(r => r.name === tc.name);
+          if (!route) return null;
+          const index = state.routes.indexOf(route);
+          const focused = state.index === index;
+
+          return (
+            <TouchableOpacity
+              key={tc.name}
+              style={[tabBarS.item, focused && tabBarS.itemFocused]}
+              onPress={() => {
+                const event = navigation.emit({
+                  type: 'tabPress',
+                  target: route.key,
+                  canPreventDefault: true,
+                });
+                if (!focused && !event.defaultPrevented) {
+                  navigation.navigate(route.name);
+                }
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={tabBarS.icon}>{tc.icon}</Text>
+              <Text style={[tabBarS.label, focused && tabBarS.labelFocused]} numberOfLines={1}>
+                {tc.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
-      <Text style={[tabS.label, focused && tabS.labelFocused]} numberOfLines={1}>
-        {label}
-      </Text>
     </View>
   );
 }
 
-const tabS = StyleSheet.create({
+const tabBarS = StyleSheet.create({
+  wrapper: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    alignItems: 'center',
+  },
+  pill: {
+    flexDirection: 'row',
+    width: '100%',
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: 'rgba(10, 18, 40, 0.97)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.40,
+    shadowRadius: 16,
+    elevation: 16,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+  },
   item: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 6,
     paddingHorizontal: 6,
     borderRadius: 24,
     gap: 3,
-    flex: 1,
   },
   itemFocused: {
     backgroundColor: 'rgba(59, 130, 246, 0.20)',
   },
-  iconWrap: { position: 'relative' },
   icon: { fontSize: 22 },
   label: {
     fontSize: 10,
@@ -58,23 +125,12 @@ const tabS = StyleSheet.create({
     color: '#93C5FD',
     fontWeight: FONT_WEIGHT.semibold,
   },
-  badge: {
-    position: 'absolute',
-    top: -4, right: -8,
-    backgroundColor: COLORS.danger,
-    borderRadius: 8,
-    minWidth: 15, height: 15,
-    justifyContent: 'center', alignItems: 'center',
-    paddingHorizontal: 3,
-    borderWidth: 1.5, borderColor: 'rgba(10,18,40,0.97)',
-  },
-  badgeText: { color: COLORS.white, fontSize: 8, fontWeight: '700' },
 });
 
+// ─── Layout ───────────────────────────────────────
 export default function MerchantLayout() {
   usePushNotifications();
   useDeepLinking();
-  const { t } = useTranslation();
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -89,50 +145,16 @@ export default function MerchantLayout() {
     return () => clearInterval(iv);
   }, []);
 
-  // قيمة آمنة ثابتة بدل useSafeAreaInsets
-  const pillBottom = Platform.select({
-    ios: 24,
-    android: 12,
-    default: 10,
-  });
-
   return (
     <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: {
-          position: 'absolute',
-          left: 16,
-          right: 16,
-          bottom: pillBottom,
-          height: 68,
-          borderRadius: 34,
-          backgroundColor: 'rgba(10, 18, 40, 0.97)',
-          borderTopWidth: 0,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: 0.40,
-          shadowRadius: 16,
-          elevation: 16,
-          paddingHorizontal: 8,
-          paddingBottom: 0,
-          paddingTop: 0,
-        },
-        tabBarShowLabel: false,
-        tabBarActiveTintColor: COLORS.primaryLight,
-        tabBarInactiveTintColor: COLORS.tabInactive,
-        tabBarItemStyle: {
-          paddingVertical: 0,
-          paddingHorizontal: 0,
-          marginHorizontal: 2,
-        },
-      }}
+      tabBar={(props) => <CustomTabBar {...props} />}
+      screenOptions={{ headerShown: false }}
     >
-      <Tabs.Screen name="settings"     options={{ tabBarIcon: ({ focused }) => <TabIcon icon="⚙️" label={t('tabs.settings')}     focused={focused} /> }} />
-      <Tabs.Screen name="analytics"    options={{ tabBarIcon: ({ focused }) => <TabIcon icon="📊" label={t('tabs.analytics')}    focused={focused} /> }} />
-      <Tabs.Screen name="balance"      options={{ tabBarIcon: ({ focused }) => <TabIcon icon="💰" label={t('tabs.balance')}      focused={focused} /> }} />
-      <Tabs.Screen name="transactions" options={{ tabBarIcon: ({ focused }) => <TabIcon icon="💳" label={t('tabs.transactions')} focused={focused} /> }} />
-      <Tabs.Screen name="dashboard"    options={{ tabBarIcon: ({ focused }) => <TabIcon icon="🏠" label={t('tabs.dashboard')}    focused={focused} /> }} />
+      <Tabs.Screen name="settings"     />
+      <Tabs.Screen name="analytics"    />
+      <Tabs.Screen name="balance"      />
+      <Tabs.Screen name="transactions" />
+      <Tabs.Screen name="dashboard"    />
 
       <Tabs.Screen name="transaction-detail" options={{ tabBarButton: () => null }} />
       <Tabs.Screen name="settlements"        options={{ tabBarButton: () => null }} />

@@ -8,11 +8,11 @@ import {
   Alert, KeyboardAvoidingView, ScrollView, Platform,
   ActivityIndicator, I18nManager, SafeAreaView,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import Svg, { Path, Line } from 'react-native-svg';
 import { COLORS } from '../../constants/colors';
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../constants/theme';
 import { useTranslation } from '../../hooks/useTranslation';
+import { InnerHeader } from '../../components/InnerHeader';
 
 const FIELD_COLORS = [
   { border: 'rgba(26, 86, 219, 0.40)',  bg: 'rgba(26, 86, 219, 0.07)',  accent: '#60A5FA' },
@@ -25,15 +25,6 @@ const REQ_COLORS = [
   { bg: 'rgba(13, 148, 136, 0.10)', text: '#2DD4BF', dot: '#2DD4BF' },
   { bg: 'rgba(245, 158, 11, 0.10)', text: '#FCD34D', dot: '#FCD34D' },
 ];
-
-function BackIcon({ size = 22, color = COLORS.white }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M19 12H5M12 19l-7-7 7-7" stroke={color} strokeWidth={2}
-        strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
 
 function EyeOffIcon({ size = 20, color = COLORS.textMuted }: { size?: number; color?: string }) {
   return (
@@ -97,7 +88,6 @@ function PasswordField({ label, value, onChangeText, placeholder, isRTL, error, 
 }
 
 export default function ChangePasswordScreen() {
-  const router = useRouter();
   const { t, isRTL } = useTranslation();
 
   const [currentPassword, setCurrentPassword] = useState('');
@@ -124,12 +114,12 @@ export default function ChangePasswordScreen() {
       await new Promise((resolve) => setTimeout(resolve, 1500));
       Alert.alert(
         t('change_password.success_title'), t('change_password.success_message'),
-        [{ text: t('common.confirm'), onPress: () => router.back() }],
+        [{ text: t('common.confirm'), onPress: () => {} }],
       );
     } catch {
       Alert.alert(t('common.error'), t('change_password.error_failed'));
     } finally { setLoading(false); }
-  }, [validate, t, router]);
+  }, [validate, t]);
 
   const requirements = [
     t('change_password.req_min_length'),
@@ -139,13 +129,7 @@ export default function ChangePasswordScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={[styles.header, isRTL && styles.headerRTL]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton} activeOpacity={0.7}>
-          <BackIcon size={22} color={COLORS.white} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('change_password.title')}</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <InnerHeader title={t('change_password.title')} />
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.scrollContent}
@@ -211,11 +195,6 @@ export default function ChangePasswordScreen() {
 const styles = StyleSheet.create({
   container:            { flex: 1, backgroundColor: COLORS.darkBg },
   flex:                 { flex: 1 },
-  header:               { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.lg, height: 52, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  headerRTL:            { flexDirection: 'row-reverse' },
-  backButton:           { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' },
-  headerTitle:          { flex: 1, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold, color: COLORS.textPrimary, textAlign: 'center' },
-  headerSpacer:         { width: 36 },
   scrollContent:        { paddingHorizontal: SPACING.xl, paddingTop: SPACING['2xl'], paddingBottom: SPACING['4xl'] },
   iconContainer:        { alignItems: 'center', marginBottom: SPACING['3xl'] },
   iconCircle:           { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(26,86,219,0.12)', alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.md },
