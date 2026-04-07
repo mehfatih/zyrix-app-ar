@@ -2,7 +2,7 @@
  * Zyrix App — Dashboard Screen
  */
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   RefreshControl, Modal, Dimensions, ActivityIndicator,
@@ -14,6 +14,7 @@ import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, LAYOUT } from '../../constants
 import { useTranslation } from '../../hooks/useTranslation';
 import { useCurrency } from '../../hooks/useCurrency';
 import { useAuth } from '../../hooks/useAuth';
+import { useTabBarHeight } from '../../hooks/useTabBarHeight';
 import { dashboardApi, analyticsApi } from '../../services/api';
 import { StatusBadge } from '../../components/StatusBadge';
 import { CurrencyPicker } from '../../components/CurrencyPicker';
@@ -22,28 +23,22 @@ import type { ChartPeriod, CurrencyCode, ApiTransaction } from '../../types';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-// ─── ألوان 4 KPI cards — كل بطاقة مختلفة تماماً ──
 const KPI_THEMES = [
-  // إجمالي الحجم — سيان
   {
     bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.40)',
     accent: '#06B6D4', iconBg: 'rgba(6, 182, 212, 0.22)',
-    // 3 درجات للمقارنة: الشهر الثالث (أقدم) → الأول (أحدث)
     shades: ['rgba(6,182,212,0.35)', 'rgba(6,182,212,0.60)', 'rgba(6,182,212,1.00)'],
   },
-  // نسبة النجاح — زمردي
   {
     bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.40)',
     accent: '#10B981', iconBg: 'rgba(16, 185, 129, 0.22)',
     shades: ['rgba(16,185,129,0.35)', 'rgba(16,185,129,0.60)', 'rgba(16,185,129,1.00)'],
   },
-  // معاملات اليوم — فوشيا
   {
     bg: 'rgba(236, 72, 153, 0.15)', border: 'rgba(236, 72, 153, 0.40)',
     accent: '#EC4899', iconBg: 'rgba(236, 72, 153, 0.22)',
     shades: ['rgba(236,72,153,0.35)', 'rgba(236,72,153,0.60)', 'rgba(236,72,153,1.00)'],
   },
-  // نزاعات — أمبر
   {
     bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.40)',
     accent: '#F59E0B', iconBg: 'rgba(245, 158, 11, 0.22)',
@@ -51,26 +46,12 @@ const KPI_THEMES = [
   },
 ];
 
-// ─── بيانات demo للمقارنة — 3 أشهر لكل KPI ─────────
-// الترتيب: [شهر-3 (الأقدم), شهر-2, شهر-1 (الأحدث)]
-// في الإنتاج تُستبدل بـ API call حقيقي
 const KPI_COMPARE_DATA = [
-  // إجمالي الحجم (ر.س)
   { months: ['يناير', 'فبراير', 'مارس'], values: [64200, 78500, 86131], unit: 'ر.س', label: 'حجم المبيعات — آخر 3 أشهر' },
-  // نسبة النجاح (%)
-  { months: ['يناير', 'فبراير', 'مارس'], values: [48.2, 53.1, 56.7], unit: '%', label: 'نسبة النجاح — آخر 3 أشهر' },
-  // عدد المعاملات
-  { months: ['يناير', 'فبراير', 'مارس'], values: [210, 268, 312], unit: '', label: 'عدد المعاملات — آخر 3 أشهر' },
-  // النزاعات المفتوحة
-  { months: ['يناير', 'فبراير', 'مارس'], values: [7, 4, 2], unit: '', label: 'النزاعات المفتوحة — آخر 3 أشهر' },
+  { months: ['يناير', 'فبراير', 'مارس'], values: [48.2, 53.1, 56.7],   unit: '%',   label: 'نسبة النجاح — آخر 3 أشهر' },
+  { months: ['يناير', 'فبراير', 'مارس'], values: [210, 268, 312],       unit: '',    label: 'عدد المعاملات — آخر 3 أشهر' },
+  { months: ['يناير', 'فبراير', 'مارس'], values: [7, 4, 2],             unit: '',    label: 'النزاعات المفتوحة — آخر 3 أشهر' },
 ];
-
-function getGreetingKey(): string {
-  const h = new Date().getHours();
-  if (h < 12) return 'dashboard.greeting';
-  if (h < 18) return 'dashboard.greetingAfternoon';
-  return 'dashboard.greetingEvening';
-}
 
 const DAY_LABEL_MAP: Record<string, string> = {
   'Sun': 'أحد', 'Mon': 'إثن', 'Tue': 'ثلا', 'Wed': 'أرب',
@@ -94,7 +75,7 @@ interface DashboardData {
   unreadNotifications: number;
 }
 
-// ─── Colored KPI Card (قابلة للضغط) ──────────────
+// ─── Colored KPI Card ─────────────────────────────
 
 function ColoredKpiCard({
   label, value, icon, themeIndex, selected, onPress,
@@ -122,9 +103,7 @@ function ColoredKpiCard({
       <Text style={[kpiS.value, { color: theme.accent }]} numberOfLines={1} adjustsFontSizeToFit>
         {value}
       </Text>
-      {/* شريط سفلي — أكثر سمكاً عند التحديد */}
       <View style={[kpiS.accentBar, { backgroundColor: theme.accent, height: selected ? 4 : 3, opacity: selected ? 1 : 0.6 }]} />
-      {/* نقطة تحديد */}
       {selected && <View style={[kpiS.selDot, { backgroundColor: theme.accent }]} />}
     </TouchableOpacity>
   );
@@ -139,23 +118,22 @@ const kpiS = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25, shadowRadius: 8, elevation: 6,
   },
-  iconRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginBottom: SPACING.sm },
-  iconBubble: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  iconText: { fontSize: 14 },
-  label: { flex: 1, fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.medium },
-  value: { fontSize: FONT_SIZE['2xl'], fontWeight: FONT_WEIGHT.bold, marginBottom: SPACING.sm },
+  iconRow:   { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginBottom: SPACING.sm },
+  iconBubble:{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  iconText:  { fontSize: 14 },
+  label:     { flex: 1, fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.medium },
+  value:     { fontSize: FONT_SIZE['2xl'], fontWeight: FONT_WEIGHT.bold, marginBottom: SPACING.sm },
   accentBar: { position: 'absolute', bottom: 0, left: 0, right: 0, borderRadius: 2 },
-  selDot: { position: 'absolute', top: 8, left: 8, width: 7, height: 7, borderRadius: 4 },
+  selDot:    { position: 'absolute', top: 8, left: 8, width: 7, height: 7, borderRadius: 4 },
 });
 
-// ─── Pivot Chart — مقارنة 3 أشهر ─────────────────
+// ─── Pivot Chart ──────────────────────────────────
 
 function PivotCompareChart({ themeIndex }: { themeIndex: number }) {
   const theme  = KPI_THEMES[themeIndex];
   const data   = KPI_COMPARE_DATA[themeIndex];
-  const shades = theme.shades; // [قديم، متوسط، حديث]
+  const shades = theme.shades;
 
-  // نسوّي Y-axis labels بشكل مقروء
   const formatY = (v: string) => {
     const n = parseFloat(v);
     if (isNaN(n)) return v;
@@ -164,8 +142,6 @@ function PivotCompareChart({ themeIndex }: { themeIndex: number }) {
     return String(n);
   };
 
-  // BarChart يدعم dataset واحد فقط في react-native-chart-kit
-  // نستخدم لون مختلف لكل bar عبر خاصية colors[]
   const chartData = {
     labels: data.months,
     datasets: [{
@@ -182,22 +158,16 @@ function PivotCompareChart({ themeIndex }: { themeIndex: number }) {
     labelColor: () => COLORS.textSecondary,
     strokeWidth: 0,
     decimalPlaces: data.unit === '%' ? 1 : 0,
-    propsForBackgroundLines: {
-      strokeDasharray: '4,4', stroke: COLORS.border, strokeWidth: 1,
-    },
+    propsForBackgroundLines: { strokeDasharray: '4,4', stroke: COLORS.border, strokeWidth: 1 },
     formatYLabel: formatY,
   };
 
-  // حساب التغيير من الشهر الثاني للثالث
-  const change = data.values[2] - data.values[1];
-  const changePct = data.values[1] !== 0
-    ? ((change / data.values[1]) * 100).toFixed(1)
-    : '0';
-  const isPositive = themeIndex === 3 ? change <= 0 : change >= 0; // للنزاعات، الانخفاض إيجابي
+  const change     = data.values[2] - data.values[1];
+  const changePct  = data.values[1] !== 0 ? ((change / data.values[1]) * 100).toFixed(1) : '0';
+  const isPositive = themeIndex === 3 ? change <= 0 : change >= 0;
 
   return (
     <View style={[pivS.container, { borderColor: theme.border }]}>
-      {/* Header */}
       <View style={pivS.headerRow}>
         <View style={[pivS.dot, { backgroundColor: theme.accent }]} />
         <Text style={[pivS.title, { color: theme.accent }]}>{data.label}</Text>
@@ -207,8 +177,6 @@ function PivotCompareChart({ themeIndex }: { themeIndex: number }) {
           </Text>
         </View>
       </View>
-
-      {/* تسمية توضيحية للألوان */}
       <View style={pivS.legendRow}>
         {data.months.map((month, i) => (
           <View key={i} style={pivS.legendItem}>
@@ -217,8 +185,6 @@ function PivotCompareChart({ themeIndex }: { themeIndex: number }) {
           </View>
         ))}
       </View>
-
-      {/* Bar Chart */}
       <BarChart
         data={chartData}
         width={SCREEN_WIDTH - LAYOUT.screenPaddingH * 2 - SPACING.lg * 2}
@@ -233,8 +199,6 @@ function PivotCompareChart({ themeIndex }: { themeIndex: number }) {
         yAxisSuffix={data.unit === '%' ? '%' : ''}
         fromZero
       />
-
-      {/* Summary row */}
       <View style={pivS.summaryRow}>
         {data.values.map((val, i) => (
           <View
@@ -249,16 +213,12 @@ function PivotCompareChart({ themeIndex }: { themeIndex: number }) {
             <Text style={[pivS.sumValue, { color: i === 2 ? theme.accent : COLORS.textSecondary }]}>
               {data.unit === '%'
                 ? `${val}%`
-                : val >= 1000
-                  ? `${(val / 1000).toFixed(1)}k`
-                  : String(val)}
+                : val >= 1000 ? `${(val / 1000).toFixed(1)}k` : String(val)}
               {data.unit !== '' && data.unit !== '%' ? ` ${data.unit}` : ''}
             </Text>
           </View>
         ))}
       </View>
-
-      {/* نص تحليلي */}
       <View style={[pivS.insightRow, { borderTopColor: theme.border }]}>
         <Text style={[pivS.insightText, { color: COLORS.textMuted }]}>
           💡 {isPositive
@@ -271,100 +231,95 @@ function PivotCompareChart({ themeIndex }: { themeIndex: number }) {
 }
 
 const pivS = StyleSheet.create({
-  container: {
-    borderRadius: RADIUS.lg, borderWidth: 1.5,
-    backgroundColor: COLORS.cardBg, overflow: 'hidden',
-    marginTop: SPACING.md,
-  },
-  headerRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: SPACING.lg, paddingTop: SPACING.md, paddingBottom: SPACING.xs,
-    gap: SPACING.sm,
-  },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  title: { flex: 1, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
-  changeBadge: {
-    paddingHorizontal: SPACING.sm, paddingVertical: 3,
-    borderRadius: RADIUS.full,
-  },
-  changeText: { fontSize: 11, fontWeight: FONT_WEIGHT.bold },
-  legendRow: {
-    flexDirection: 'row', paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.sm, gap: SPACING.lg,
-  },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  legendDot: { width: 10, height: 10, borderRadius: 5 },
-  legendText: { fontSize: 10, color: COLORS.textMuted },
-  chart: { marginLeft: -SPACING.sm, borderRadius: RADIUS.md },
-  summaryRow: {
-    flexDirection: 'row', borderTopWidth: 1, borderTopColor: COLORS.border,
-  },
-  summaryCell: {
-    flex: 1, alignItems: 'center', paddingVertical: SPACING.sm,
-  },
-  sumLabel: { fontSize: 10, color: COLORS.textMuted, fontWeight: '600', marginBottom: 3 },
-  sumValue: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold },
-  insightRow: {
-    paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm,
-    borderTopWidth: 1,
-  },
+  container:   { borderRadius: RADIUS.lg, borderWidth: 1.5, backgroundColor: COLORS.cardBg, overflow: 'hidden', marginTop: SPACING.md },
+  headerRow:   { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.lg, paddingTop: SPACING.md, paddingBottom: SPACING.xs, gap: SPACING.sm },
+  dot:         { width: 8, height: 8, borderRadius: 4 },
+  title:       { flex: 1, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
+  changeBadge: { paddingHorizontal: SPACING.sm, paddingVertical: 3, borderRadius: RADIUS.full },
+  changeText:  { fontSize: 11, fontWeight: FONT_WEIGHT.bold },
+  legendRow:   { flexDirection: 'row', paddingHorizontal: SPACING.lg, paddingBottom: SPACING.sm, gap: SPACING.lg },
+  legendItem:  { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  legendDot:   { width: 10, height: 10, borderRadius: 5 },
+  legendText:  { fontSize: 10, color: COLORS.textMuted },
+  chart:       { marginLeft: -SPACING.sm, borderRadius: RADIUS.md },
+  summaryRow:  { flexDirection: 'row', borderTopWidth: 1, borderTopColor: COLORS.border },
+  summaryCell: { flex: 1, alignItems: 'center', paddingVertical: SPACING.sm },
+  sumLabel:    { fontSize: 10, color: COLORS.textMuted, fontWeight: '600', marginBottom: 3 },
+  sumValue:    { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold },
+  insightRow:  { paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm, borderTopWidth: 1 },
   insightText: { fontSize: FONT_SIZE.xs, lineHeight: 18 },
 });
 
-// ─── القائمة الجانبية ─────────────────────────────
+// ─── Side Menu (dashboard) ────────────────────────
 
 function SideMenu({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const router = useRouter();
-  const { t } = useTranslation();
+  const router   = useRouter();
+  const { t }    = useTranslation();
   const { user } = useAuth();
+  const insets   = useSafeAreaInsets();
 
   const menuItems = [
-    { icon: '🏠', label: t('tabs.dashboard'),            route: '/(merchant)/dashboard' },
-    { icon: '💳', label: t('tabs.transactions'),          route: '/(merchant)/transactions' },
-    { icon: '💰', label: t('tabs.balance'),               route: '/(merchant)/balance' },
-    { icon: '📊', label: t('tabs.analytics'),             route: '/(merchant)/analytics' },
-    { icon: '🔗', label: t('dashboard.payment_links'),    route: '/(merchant)/payment-links' },
-    { icon: '🔔', label: t('notifications.title'),        route: '/(merchant)/notifications' },
-    { icon: '⚠️', label: t('disputes.title'),             route: '/(merchant)/disputes' },
-    { icon: '↩',  label: t('refunds.title'),              route: '/(merchant)/refunds' },
-    { icon: '🏦', label: t('settlements.title'),          route: '/(merchant)/settlements' },
-    { icon: '💵', label: 'كاش COD',                       route: '/(merchant)/cod' },
-    { icon: '💱', label: 'أسعار الصرف',                   route: '/(merchant)/fx' },
-    { icon: '🎯', label: 'أهداف الإيرادات',               route: '/(merchant)/revenue-goals' },
-    { icon: '📄', label: 'الفواتير',                      route: '/(merchant)/invoices' },
-    { icon: '🔄', label: 'الاشتراكات',                    route: '/(merchant)/subscriptions' },
-    { icon: '⚙️', label: t('tabs.settings'),              route: '/(merchant)/settings' },
-    { icon: '👤', label: t('profile.title'),              route: '/(merchant)/profile' },
+    { icon: '🏠', label: t('tabs.dashboard'),         route: '/(merchant)/dashboard' },
+    { icon: '💳', label: t('tabs.transactions'),       route: '/(merchant)/transactions' },
+    { icon: '💰', label: t('tabs.balance'),            route: '/(merchant)/balance' },
+    { icon: '📊', label: t('tabs.analytics'),          route: '/(merchant)/analytics' },
+    { icon: '🔗', label: t('dashboard.payment_links'), route: '/(merchant)/payment-links' },
+    { icon: '🔔', label: t('notifications.title'),     route: '/(merchant)/notifications' },
+    { icon: '⚠️', label: t('disputes.title'),          route: '/(merchant)/disputes' },
+    { icon: '↩',  label: t('refunds.title'),           route: '/(merchant)/refunds' },
+    { icon: '🏦', label: t('settlements.title'),       route: '/(merchant)/settlements' },
+    { icon: '💵', label: 'كاش COD',                    route: '/(merchant)/cod' },
+    { icon: '💱', label: 'أسعار الصرف',                route: '/(merchant)/fx' },
+    { icon: '🎯', label: 'أهداف الإيرادات',            route: '/(merchant)/revenue-goals' },
+    { icon: '📄', label: 'الفواتير',                   route: '/(merchant)/invoices' },
+    { icon: '🔄', label: 'الاشتراكات',                 route: '/(merchant)/subscriptions' },
+    { icon: '⚙️', label: t('tabs.settings'),           route: '/(merchant)/settings' },
+    { icon: '👤', label: t('profile.title'),           route: '/(merchant)/profile' },
   ];
 
-  const handleNavigate = (route: string) => { onClose(); setTimeout(() => router.push(route as any), 200); };
+  const handleNavigate = (route: string) => {
+    onClose();
+    setTimeout(() => router.push(route as any), 200);
+  };
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableOpacity style={sideMenu.overlay} activeOpacity={1} onPress={onClose} />
-      <View style={sideMenu.panel}>
-        <View style={sideMenu.header}>
-          <View style={sideMenu.logoRow}>
-            <View style={sideMenu.logoBubble}><Text style={sideMenu.logoLetter}>Z</Text></View>
+      <TouchableOpacity style={sm.overlay} activeOpacity={1} onPress={onClose} />
+      <View style={sm.panel}>
+
+        {/* ── Header ── */}
+        <View style={[sm.header, { paddingTop: insets.top + 16 }]}>
+          <View style={sm.logoRow}>
+            <View style={sm.logoBubble}>
+              <Text style={sm.logoLetter}>Z</Text>
+            </View>
             <View>
-              <Text style={sideMenu.brandName}>Zyrix</Text>
-              <Text style={sideMenu.merchantId}>{user?.merchantId ?? 'ZRX-10042'}</Text>
+              <Text style={sm.brandName}>Zyrix</Text>
+              <Text style={sm.merchantId}>{user?.merchantId ?? 'ZRX-10042'}</Text>
             </View>
           </View>
-          <TouchableOpacity onPress={onClose} style={sideMenu.closeBtn}>
-            <Text style={sideMenu.closeBtnText}>✕</Text>
+          <TouchableOpacity onPress={onClose} style={sm.closeBtn}>
+            <Text style={sm.closeBtnText}>✕</Text>
           </TouchableOpacity>
         </View>
-        <View style={sideMenu.divider} />
-        <ScrollView style={sideMenu.scrollArea} showsVerticalScrollIndicator={false}>
+
+        <View style={sm.divider} />
+
+        <ScrollView style={sm.scrollArea} showsVerticalScrollIndicator={false}>
           {menuItems.map((item, idx) => (
-            <TouchableOpacity key={idx} style={sideMenu.item} onPress={() => handleNavigate(item.route)} activeOpacity={0.7}>
-              <Text style={sideMenu.itemIcon}>{item.icon}</Text>
-              <Text style={sideMenu.itemLabel}>{item.label}</Text>
+            <TouchableOpacity
+              key={idx}
+              style={sm.item}
+              onPress={() => handleNavigate(item.route)}
+              activeOpacity={0.7}
+            >
+              <Text style={sm.itemIcon}>{item.icon}</Text>
+              <Text style={sm.itemLabel}>{item.label}</Text>
             </TouchableOpacity>
           ))}
-          <View style={{ height: 40 }} />
+          <View style={{ height: insets.bottom + 24 }} />
         </ScrollView>
+
       </View>
     </Modal>
   );
@@ -377,16 +332,16 @@ export default function DashboardScreen() {
   const { t, isRTL } = useTranslation();
   const { currency, setCurrency, format, convert } = useCurrency('SAR');
   const { user } = useAuth();
-  const [menuVisible, setMenuVisible] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('7d');
-  const [dashData, setDashData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [_error, setError] = useState<string | null>(null);
-  const [chartData, setChartData] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
-  const [chartLabels, setChartLabels] = useState<string[]>(['', '', '', '', '', '', '']);
-  // الخانة المختارة افتراضياً: إجمالي الحجم (0)
-  const [selectedKpi, setSelectedKpi] = useState<number>(0);
+  const tabBarHeight = useTabBarHeight();
+  const [menuVisible, setMenuVisible]   = useState(false);
+  const [refreshing, setRefreshing]     = useState(false);
+  const [chartPeriod, setChartPeriod]   = useState<ChartPeriod>('7d');
+  const [dashData, setDashData]         = useState<DashboardData | null>(null);
+  const [loading, setLoading]           = useState(true);
+  const [_error, setError]              = useState<string | null>(null);
+  const [chartData, setChartData]       = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
+  const [chartLabels, setChartLabels]   = useState<string[]>(['', '', '', '', '', '', '']);
+  const [selectedKpi, setSelectedKpi]   = useState<number>(0);
   const BASE_CURRENCY: CurrencyCode = 'SAR';
 
   const fetchData = useCallback(async () => {
@@ -401,25 +356,28 @@ export default function DashboardScreen() {
       setDashData(data);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t('common.error'));
-    } finally { setLoading(false); setRefreshing(false); }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, [chartPeriod, t]);
 
   useEffect(() => { fetchData(); }, [chartPeriod]);
+
   const onRefresh = () => { setRefreshing(true); fetchData(); };
+
   const formatAmount = useCallback(
     (amount: number) => format(convert(amount, BASE_CURRENCY, currency), currency),
     [convert, format, currency],
   );
 
-  const periods: ChartPeriod[] = ['7d', '30d', '90d'];
   const quickActions = [
-    { icon: '🔗', label: t('dashboard.payment_links'), route: '/(merchant)/payment-links' },
+    { icon: '🔗', label: t('dashboard.payment_links'),        route: '/(merchant)/payment-links' },
     { icon: '🔔', label: t('dashboard.notifications_action'), route: '/(merchant)/notifications' },
-    { icon: '💵', label: 'كاش COD', route: '/(merchant)/cod' },
-    { icon: '💱', label: 'أسعار الصرف', route: '/(merchant)/fx' },
+    { icon: '💵', label: 'كاش COD',                           route: '/(merchant)/cod' },
+    { icon: '💱', label: 'أسعار الصرف',                       route: '/(merchant)/fx' },
   ];
 
-  // بيانات الـ KPI cards
   const kpiCards = [
     { label: t('dashboard.totalVolume'),  value: formatAmount(dashData?.kpis?.totalVolume ?? 0), icon: '💳', themeIndex: 0 },
     { label: t('dashboard.successRate'),  value: `${dashData?.kpis?.successRate ?? '0'}%`,        icon: '✅', themeIndex: 1 },
@@ -451,41 +409,29 @@ export default function DashboardScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
+        }
       >
         <CurrencyPicker selected={currency} onSelect={setCurrency} codes={['SAR', 'AED', 'KWD', 'QAR', 'USD']} />
 
-        {/* ── KPI Cards — 4 ألوان، قابلة للضغط ── */}
+        {/* ── KPI Cards ── */}
         <View style={styles.kpiGrid}>
           <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
             {kpiCards.slice(0, 2).map((card, i) => (
-              <ColoredKpiCard
-                key={i}
-                label={card.label}
-                value={card.value}
-                icon={card.icon}
-                themeIndex={card.themeIndex}
-                selected={selectedKpi === i}
-                onPress={() => setSelectedKpi(i)}
-              />
+              <ColoredKpiCard key={i} label={card.label} value={card.value} icon={card.icon}
+                themeIndex={card.themeIndex} selected={selectedKpi === i} onPress={() => setSelectedKpi(i)} />
             ))}
           </View>
           <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
             {kpiCards.slice(2, 4).map((card, i) => (
-              <ColoredKpiCard
-                key={i + 2}
-                label={card.label}
-                value={card.value}
-                icon={card.icon}
-                themeIndex={card.themeIndex}
-                selected={selectedKpi === i + 2}
-                onPress={() => setSelectedKpi(i + 2)}
-              />
+              <ColoredKpiCard key={i + 2} label={card.label} value={card.value} icon={card.icon}
+                themeIndex={card.themeIndex} selected={selectedKpi === i + 2} onPress={() => setSelectedKpi(i + 2)} />
             ))}
           </View>
         </View>
 
-        {/* ── Pivot Chart — مقارنة 3 أشهر للخانة المختارة ── */}
+        {/* ── Pivot Chart ── */}
         <PivotCompareChart themeIndex={selectedKpi} />
 
         {/* ── Quick Actions ── */}
@@ -542,7 +488,7 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: tabBarHeight }} />
       </ScrollView>
     </View>
   );
@@ -551,55 +497,57 @@ export default function DashboardScreen() {
 // ─── Styles ───────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.darkBg },
-  scrollView: { flex: 1 },
-  scrollContent: { paddingHorizontal: LAYOUT.screenPaddingH, paddingTop: SPACING.lg },
-  textRTL: { textAlign: 'right', writingDirection: 'rtl' },
-  kpiGrid: { gap: SPACING.sm, marginTop: SPACING.lg },
-  kpiRow: { flexDirection: 'row', gap: SPACING.sm },
-  kpiRowRTL: { flexDirection: 'row-reverse' },
+  container:             { flex: 1, backgroundColor: COLORS.darkBg },
+  scrollView:            { flex: 1 },
+  scrollContent:         { paddingHorizontal: LAYOUT.screenPaddingH, paddingTop: SPACING.lg },
+  textRTL:               { textAlign: 'right', writingDirection: 'rtl' },
+  kpiGrid:               { gap: SPACING.sm, marginTop: SPACING.lg },
+  kpiRow:                { flexDirection: 'row', gap: SPACING.sm },
+  kpiRowRTL:             { flexDirection: 'row-reverse' },
   quickActionsContainer: { marginTop: SPACING.xl },
-  quickGrid: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.md },
-  quickGridRTL: { flexDirection: 'row-reverse' },
-  quickBtn: { flex: 1, backgroundColor: COLORS.cardBg, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, paddingVertical: SPACING.md, alignItems: 'center', gap: 4 },
-  quickIcon: { fontSize: 22 },
-  quickLabel: { fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.medium },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: SPACING.xl, marginBottom: SPACING.md },
-  sectionHeaderRTL: { flexDirection: 'row-reverse' },
-  sectionTitle: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold, color: COLORS.textPrimary },
-  viewAllText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium, color: COLORS.primaryLight },
-  txRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm, borderWidth: 1, borderColor: COLORS.border },
-  txRowRTL: { flexDirection: 'row-reverse' },
-  txLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: SPACING.sm },
-  txLeftRTL: { flexDirection: 'row-reverse' },
-  txFlag: { fontSize: 24 },
-  txName: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium, color: COLORS.textPrimary },
-  txDate: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2 },
-  txRight: { alignItems: 'flex-end', gap: SPACING.xs },
-  txRightRTL: { alignItems: 'flex-start' },
-  txAmount: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold },
-  settlementCard: { backgroundColor: 'rgba(13, 148, 136, 0.12)', borderRadius: RADIUS.lg, padding: SPACING.lg, borderWidth: 1, borderColor: 'rgba(13, 148, 136, 0.35)', marginTop: SPACING.xl },
-  settlementRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: SPACING.md },
-  settlementRowRTL: { flexDirection: 'row-reverse' },
-  settlementLabel: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold, color: COLORS.textPrimary },
-  settlementPeriod: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2 },
-  settlementAmount: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.success, marginBottom: SPACING.xs },
+  quickGrid:             { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.md },
+  quickGridRTL:          { flexDirection: 'row-reverse' },
+  quickBtn:              { flex: 1, backgroundColor: COLORS.cardBg, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, paddingVertical: SPACING.md, alignItems: 'center', gap: 4 },
+  quickIcon:             { fontSize: 22 },
+  quickLabel:            { fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.medium },
+  sectionHeader:         { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: SPACING.xl, marginBottom: SPACING.md },
+  sectionHeaderRTL:      { flexDirection: 'row-reverse' },
+  sectionTitle:          { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold, color: COLORS.textPrimary },
+  viewAllText:           { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium, color: COLORS.primaryLight },
+  txRow:                 { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm, borderWidth: 1, borderColor: COLORS.border },
+  txRowRTL:              { flexDirection: 'row-reverse' },
+  txLeft:                { flexDirection: 'row', alignItems: 'center', flex: 1, gap: SPACING.sm },
+  txLeftRTL:             { flexDirection: 'row-reverse' },
+  txFlag:                { fontSize: 24 },
+  txName:                { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium, color: COLORS.textPrimary },
+  txDate:                { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2 },
+  txRight:               { alignItems: 'flex-end', gap: SPACING.xs },
+  txRightRTL:            { alignItems: 'flex-start' },
+  txAmount:              { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold },
+  settlementCard:        { backgroundColor: 'rgba(13, 148, 136, 0.12)', borderRadius: RADIUS.lg, padding: SPACING.lg, borderWidth: 1, borderColor: 'rgba(13, 148, 136, 0.35)', marginTop: SPACING.xl },
+  settlementRow:         { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: SPACING.md },
+  settlementRowRTL:      { flexDirection: 'row-reverse' },
+  settlementLabel:       { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold, color: COLORS.textPrimary },
+  settlementPeriod:      { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2 },
+  settlementAmount:      { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.success, marginBottom: SPACING.xs },
 });
 
-const sideMenu = StyleSheet.create({
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
-  panel: { position: 'absolute', top: 0, right: 0, bottom: 0, width: SCREEN_WIDTH * 0.78, backgroundColor: COLORS.deepBg, shadowColor: '#000', shadowOffset: { width: -3, height: 0 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 20 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 56, paddingBottom: 120 },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  logoBubble: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
-  logoLetter: { fontSize: 18, fontWeight: FONT_WEIGHT.extrabold, color: COLORS.white },
-  brandName: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary, letterSpacing: 1 },
-  merchantId: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2, fontFamily: 'monospace' },
-  closeBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
+// ─── Side Menu Styles ─────────────────────────────
+
+const sm = StyleSheet.create({
+  overlay:      { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
+  panel:        { position: 'absolute', top: 0, right: 0, bottom: 0, width: SCREEN_WIDTH * 0.78, backgroundColor: COLORS.deepBg, shadowColor: '#000', shadowOffset: { width: -3, height: 0 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 20 },
+  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 16 },
+  logoRow:      { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  logoBubble:   { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
+  logoLetter:   { fontSize: 20, fontWeight: FONT_WEIGHT.extrabold, color: COLORS.white },
+  brandName:    { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary, letterSpacing: 1 },
+  merchantId:   { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2, fontFamily: 'monospace' },
+  closeBtn:     { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
   closeBtnText: { fontSize: 14, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.bold },
-  divider: { height: 1, backgroundColor: COLORS.border, marginHorizontal: 20, marginBottom: 8 },
-  scrollArea: { flex: 1 },
-  item: { flexDirection: 'row-reverse', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, gap: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' },
-  itemIcon: { fontSize: 20, width: 28, textAlign: 'center' },
-  itemLabel: { flex: 1, fontSize: FONT_SIZE.base, color: COLORS.textPrimary, fontWeight: FONT_WEIGHT.medium, textAlign: 'right' },
+  divider:      { height: 1, backgroundColor: COLORS.border, marginHorizontal: 20, marginBottom: 4 },
+  scrollArea:   { flex: 1 },
+  item:         { flexDirection: 'row-reverse', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, gap: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' },
+  itemIcon:     { fontSize: 20, width: 28, textAlign: 'center' },
+  itemLabel:    { flex: 1, fontSize: FONT_SIZE.base, color: COLORS.textPrimary, fontWeight: FONT_WEIGHT.medium, textAlign: 'right' },
 });

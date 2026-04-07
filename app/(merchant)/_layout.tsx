@@ -38,18 +38,17 @@ const tabS = StyleSheet.create({
   item: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 6,
     borderRadius: 24,
-    gap: 4,
+    gap: 3,
     flex: 1,
-    height: 70,
   },
   itemFocused: {
     backgroundColor: 'rgba(59, 130, 246, 0.20)',
   },
   iconWrap: { position: 'relative' },
-  icon: { fontSize: 24 },
+  icon: { fontSize: 22 },
   label: {
     fontSize: 10,
     fontWeight: FONT_WEIGHT.medium,
@@ -108,8 +107,8 @@ export default function MerchantLayout() {
           left: 16,
           right: 16,
           bottom: pillBottom,
-          height: 70,
-          borderRadius: 35,
+          height: 68,
+          borderRadius: 34,
           backgroundColor: 'rgba(10, 18, 40, 0.97)',
           borderTopWidth: 0,
           shadowColor: '#000',
@@ -117,7 +116,7 @@ export default function MerchantLayout() {
           shadowOpacity: 0.40,
           shadowRadius: 16,
           elevation: 16,
-          paddingHorizontal: 4,
+          paddingHorizontal: 8,
           paddingBottom: 0,
           paddingTop: 0,
         },
@@ -125,18 +124,22 @@ export default function MerchantLayout() {
         tabBarActiveTintColor: COLORS.primaryLight,
         tabBarInactiveTintColor: COLORS.tabInactive,
         tabBarItemStyle: {
-          height: 70,
           paddingVertical: 0,
           paddingHorizontal: 0,
           marginHorizontal: 2,
         },
       }}
     >
-      <Tabs.Screen name="dashboard"    options={{ tabBarIcon: ({ focused }) => <TabIcon icon="🏠" label={t('tabs.dashboard')}    focused={focused} /> }} />
-      <Tabs.Screen name="transactions" options={{ tabBarIcon: ({ focused }) => <TabIcon icon="💳" label={t('tabs.transactions')} focused={focused} /> }} />
-      <Tabs.Screen name="balance"      options={{ tabBarIcon: ({ focused }) => <TabIcon icon="💰" label={t('tabs.balance')}      focused={focused} /> }} />
-      <Tabs.Screen name="analytics"    options={{ tabBarIcon: ({ focused }) => <TabIcon icon="📊" label={t('tabs.analytics')}    focused={focused} /> }} />
+      {/*
+        الترتيب في الكود = من اليسار لليمين على الشاشة
+        settings  → أقصى اليسار
+        dashboard → أقصى اليمين
+      */}
       <Tabs.Screen name="settings"     options={{ tabBarIcon: ({ focused }) => <TabIcon icon="⚙️" label={t('tabs.settings')}     focused={focused} /> }} />
+      <Tabs.Screen name="analytics"    options={{ tabBarIcon: ({ focused }) => <TabIcon icon="📊" label={t('tabs.analytics')}    focused={focused} /> }} />
+      <Tabs.Screen name="balance"      options={{ tabBarIcon: ({ focused }) => <TabIcon icon="💰" label={t('tabs.balance')}      focused={focused} /> }} />
+      <Tabs.Screen name="transactions" options={{ tabBarIcon: ({ focused }) => <TabIcon icon="💳" label={t('tabs.transactions')} focused={focused} /> }} />
+      <Tabs.Screen name="dashboard"    options={{ tabBarIcon: ({ focused }) => <TabIcon icon="🏠" label={t('tabs.dashboard')}    focused={focused} /> }} />
 
       <Tabs.Screen name="transaction-detail" options={{ tabBarButton: () => null }} />
       <Tabs.Screen name="settlements"        options={{ tabBarButton: () => null }} />

@@ -8,10 +8,11 @@ import * as Clipboard from 'expo-clipboard'
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { useCurrency } from '../../hooks/useCurrency'
+import { useTabBarHeight } from '../../hooks/useTabBarHeight'
 import { balanceApi } from '../../services/api'
 import KpiCard from '../../components/KpiCard'
 import { QRCodeModal } from '../../components/QRCodeModal'
-import { TabHeader } from '../../components/TabHeader';
+import { InnerHeader } from '../../components/InnerHeader'
 
 const isRTL = I18nManager.isRTL
 
@@ -22,6 +23,7 @@ function SectionTitle({ text }: { text: string }) {
 export default function BalanceScreen() {
   const { t } = useTranslation()
   const { format, convert, currency } = useCurrency('SAR')
+  const tabBarHeight = useTabBarHeight()
   const [ibanCopied, setIbanCopied] = useState(false)
   const [balanceData, setBalanceData] = useState<{
     available: number; incoming: number; outgoing: number;
@@ -63,7 +65,7 @@ export default function BalanceScreen() {
   if (loading && !balanceData) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <TabHeader title={t('balance.title')} accentColor="#0D9488" />
+        <InnerHeader title={t('balance.title')} accentColor="#0D9488" />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
@@ -78,11 +80,10 @@ export default function BalanceScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* ── InnerHeader ── */}
-      <TabHeader title={t('balance.title')} accentColor="#0D9488" />
+      <InnerHeader title={t('balance.title')} accentColor="#0D9488" />
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarHeight }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
         showsVerticalScrollIndicator={false}
       >
@@ -187,7 +188,6 @@ export default function BalanceScreen() {
           </View>
         </View>
 
-        <View style={{ height: 100 }} />
       </ScrollView>
 
       <QRCodeModal
@@ -202,44 +202,44 @@ export default function BalanceScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: COLORS.darkBg },
-  scrollContent: { paddingBottom: 120 },
-  textRight: { textAlign: 'right' },
-  heroCard: { margin: 16, borderRadius: 16, backgroundColor: 'rgba(13, 148, 136, 0.15)', borderWidth: 1, borderColor: 'rgba(13, 148, 136, 0.35)', padding: 24 },
-  heroLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 1, color: COLORS.textSecondary, marginBottom: 8, textAlign: isRTL ? 'right' : 'left' },
-  heroAmount: { fontSize: 36, fontWeight: '800', color: COLORS.white, marginBottom: 24, textAlign: isRTL ? 'right' : 'left' },
-  actionRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-  actionRowRTL: { flexDirection: 'row-reverse' },
-  actionBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 12, borderWidth: 1, gap: 4 },
-  actionIcon: { fontSize: 18, color: COLORS.white },
-  actionLabel: { fontSize: 11, fontWeight: '600' },
-  ibanRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, gap: 6, borderWidth: 1, borderColor: COLORS.border },
-  ibanRowRTL: { flexDirection: 'row-reverse' },
-  ibanLabel: { fontSize: 10, color: COLORS.textMuted, fontWeight: '700', letterSpacing: 0.5 },
-  ibanValue: { flex: 1, fontSize: 10, color: COLORS.textPrimary, fontFamily: 'monospace', letterSpacing: 0.5 },
-  ibanCopied: { fontSize: 14, color: COLORS.success, fontWeight: '700' },
-  flowRow: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 6, gap: 10 },
-  flowRowRTL: { flexDirection: 'row-reverse' },
-  flowCard: { flex: 1, borderRadius: 14, borderWidth: 1, padding: 16, alignItems: isRTL ? 'flex-end' : 'flex-start' },
-  flowDot: { width: 8, height: 8, borderRadius: 4, marginBottom: 6 },
-  flowLabel: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600', marginBottom: 4 },
-  flowAmount: { fontSize: 18, fontWeight: '800' },
-  chartContainer: { flexDirection: isRTL ? 'row-reverse' : 'row', justifyContent: 'space-around', alignItems: 'flex-end', backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 10, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, padding: 16, height: 120 },
-  chartBarGroup: { alignItems: 'center', flex: 1, gap: 4 },
-  chartBarTrack: { width: 36, height: 65, backgroundColor: COLORS.surfaceBg, borderRadius: 6, justifyContent: 'flex-end', overflow: 'hidden' },
-  chartBarFill: { width: '100%', borderRadius: 6 },
-  chartBarLabel: { fontSize: 11, fontWeight: '700' },
-  section: { marginTop: 20, paddingHorizontal: 16 },
-  sectionTitle: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.5, marginBottom: 10 },
-  settlementCard: { borderRadius: 14, borderWidth: 1, borderColor: 'rgba(26, 86, 219, 0.3)', overflow: 'hidden' },
-  settlementCardHeader: { backgroundColor: 'rgba(26, 86, 219, 0.15)', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(26, 86, 219, 0.2)' },
-  settlementCardTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, textAlign: isRTL ? 'right' : 'left' },
-  settRow: { flexDirection: isRTL ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  settLabel: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '500' },
-  settValue: { fontSize: 13, color: COLORS.textPrimary, fontWeight: '600' },
-  infoCard: { borderRadius: 14, borderWidth: 1, borderColor: 'rgba(139, 92, 246, 0.3)', overflow: 'hidden' },
-  infoRow: { flexDirection: isRTL ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  infoLabel: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '500' },
-  infoValue: { fontSize: 13, color: COLORS.textPrimary, fontWeight: '600', maxWidth: '60%', textAlign: isRTL ? 'left' : 'right' },
-  infoValueMono: { fontFamily: 'monospace', fontSize: 10 },
+  safeArea:              { flex: 1, backgroundColor: COLORS.darkBg },
+  scrollContent:         { },
+  textRight:             { textAlign: 'right' },
+  heroCard:              { margin: 16, borderRadius: 16, backgroundColor: 'rgba(13, 148, 136, 0.15)', borderWidth: 1, borderColor: 'rgba(13, 148, 136, 0.35)', padding: 24 },
+  heroLabel:             { fontSize: 12, fontWeight: '600', letterSpacing: 1, color: COLORS.textSecondary, marginBottom: 8, textAlign: isRTL ? 'right' : 'left' },
+  heroAmount:            { fontSize: 36, fontWeight: '800', color: COLORS.white, marginBottom: 24, textAlign: isRTL ? 'right' : 'left' },
+  actionRow:             { flexDirection: 'row', gap: 10, marginBottom: 20 },
+  actionRowRTL:          { flexDirection: 'row-reverse' },
+  actionBtn:             { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 12, borderWidth: 1, gap: 4 },
+  actionIcon:            { fontSize: 18, color: COLORS.white },
+  actionLabel:           { fontSize: 11, fontWeight: '600' },
+  ibanRow:               { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardBg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, gap: 6, borderWidth: 1, borderColor: COLORS.border },
+  ibanRowRTL:            { flexDirection: 'row-reverse' },
+  ibanLabel:             { fontSize: 10, color: COLORS.textMuted, fontWeight: '700', letterSpacing: 0.5 },
+  ibanValue:             { flex: 1, fontSize: 10, color: COLORS.textPrimary, fontFamily: 'monospace', letterSpacing: 0.5 },
+  ibanCopied:            { fontSize: 14, color: COLORS.success, fontWeight: '700' },
+  flowRow:               { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 6, gap: 10 },
+  flowRowRTL:            { flexDirection: 'row-reverse' },
+  flowCard:              { flex: 1, borderRadius: 14, borderWidth: 1, padding: 16, alignItems: isRTL ? 'flex-end' : 'flex-start' },
+  flowDot:               { width: 8, height: 8, borderRadius: 4, marginBottom: 6 },
+  flowLabel:             { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600', marginBottom: 4 },
+  flowAmount:            { fontSize: 18, fontWeight: '800' },
+  chartContainer:        { flexDirection: isRTL ? 'row-reverse' : 'row', justifyContent: 'space-around', alignItems: 'flex-end', backgroundColor: COLORS.cardBg, marginHorizontal: 16, marginTop: 10, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, padding: 16, height: 120 },
+  chartBarGroup:         { alignItems: 'center', flex: 1, gap: 4 },
+  chartBarTrack:         { width: 36, height: 65, backgroundColor: COLORS.surfaceBg, borderRadius: 6, justifyContent: 'flex-end', overflow: 'hidden' },
+  chartBarFill:          { width: '100%', borderRadius: 6 },
+  chartBarLabel:         { fontSize: 11, fontWeight: '700' },
+  section:               { marginTop: 20, paddingHorizontal: 16 },
+  sectionTitle:          { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.5, marginBottom: 10 },
+  settlementCard:        { borderRadius: 14, borderWidth: 1, borderColor: 'rgba(26, 86, 219, 0.3)', overflow: 'hidden' },
+  settlementCardHeader:  { backgroundColor: 'rgba(26, 86, 219, 0.15)', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(26, 86, 219, 0.2)' },
+  settlementCardTitle:   { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, textAlign: isRTL ? 'right' : 'left' },
+  settRow:               { flexDirection: isRTL ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  settLabel:             { fontSize: 13, color: COLORS.textSecondary, fontWeight: '500' },
+  settValue:             { fontSize: 13, color: COLORS.textPrimary, fontWeight: '600' },
+  infoCard:              { borderRadius: 14, borderWidth: 1, borderColor: 'rgba(139, 92, 246, 0.3)', overflow: 'hidden' },
+  infoRow:               { flexDirection: isRTL ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  infoLabel:             { fontSize: 13, color: COLORS.textSecondary, fontWeight: '500' },
+  infoValue:             { fontSize: 13, color: COLORS.textPrimary, fontWeight: '600', maxWidth: '60%', textAlign: isRTL ? 'left' : 'right' },
+  infoValueMono:         { fontFamily: 'monospace', fontSize: 10 },
 })

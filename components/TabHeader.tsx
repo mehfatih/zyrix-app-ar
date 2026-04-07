@@ -1,7 +1,5 @@
 /**
  * Zyrix App — TabHeader Component
- * هيدر للصفحات الرئيسية في الـ tab bar
- * بدون زر رجوع — فقط عنوان + زر القائمة الجانبية
  */
 
 import React, { useState } from 'react';
@@ -30,9 +28,10 @@ function MenuIcon({ color = COLORS.white }: { color?: string }) {
 }
 
 function SideMenu({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const router = useRouter();
-  const { t }  = useTranslation();
+  const router   = useRouter();
+  const { t }    = useTranslation();
   const { user } = useAuth();
+  const insets   = useSafeAreaInsets();
 
   const menuItems = [
     { icon: '🏠', label: t('tabs.dashboard'),         route: '/(merchant)/dashboard' },
@@ -65,7 +64,9 @@ function SideMenu({ visible, onClose }: { visible: boolean; onClose: () => void 
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <TouchableOpacity style={sm.overlay} activeOpacity={1} onPress={onClose} />
       <View style={sm.panel}>
-        <View style={sm.header}>
+
+        {/* ── Header: لوجو + اسم + زر إغلاق ── */}
+        <View style={[sm.header, { paddingTop: insets.top + 16 }]}>
           <View style={sm.logoRow}>
             <View style={sm.logoBubble}>
               <Text style={sm.logoLetter}>Z</Text>
@@ -79,11 +80,14 @@ function SideMenu({ visible, onClose }: { visible: boolean; onClose: () => void 
             <Text style={sm.closeTxt}>✕</Text>
           </TouchableOpacity>
         </View>
+
         <View style={sm.divider} />
+
         <ScrollView style={sm.scroll} showsVerticalScrollIndicator={false}>
           {menuItems.map((item, idx) => (
             <TouchableOpacity
-              key={idx} style={sm.item}
+              key={idx}
+              style={sm.item}
               onPress={() => handleNavigate(item.route)}
               activeOpacity={0.7}
             >
@@ -91,8 +95,9 @@ function SideMenu({ visible, onClose }: { visible: boolean; onClose: () => void 
               <Text style={sm.itemLabel}>{item.label}</Text>
             </TouchableOpacity>
           ))}
-          <View style={{ height: 40 }} />
+          <View style={{ height: insets.bottom + 24 }} />
         </ScrollView>
+
       </View>
     </Modal>
   );
@@ -116,12 +121,9 @@ export function TabHeader({ title, accentColor }: TabHeaderProps) {
         { paddingTop: insets.top + 4, borderBottomColor: borderColor },
       ]}>
         <View style={h.row}>
-          {/* عنوان الصفحة */}
           <Text style={[h.title, accentColor && { color: accentColor }]} numberOfLines={1}>
             {title}
           </Text>
-
-          {/* زر القائمة فقط — بدون زر رجوع */}
           <TouchableOpacity
             onPress={() => setMenuVisible(true)}
             style={h.iconBtn}
@@ -131,11 +133,12 @@ export function TabHeader({ title, accentColor }: TabHeaderProps) {
           </TouchableOpacity>
         </View>
       </View>
-
       <SideMenu visible={menuVisible} onClose={() => setMenuVisible(false)} />
     </>
   );
 }
+
+// ─── Styles ───────────────────────────────────────
 
 const h = StyleSheet.create({
   container: {
@@ -163,37 +166,89 @@ const h = StyleSheet.create({
 });
 
 const sm = StyleSheet.create({
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
   panel: {
     position: 'absolute', top: 0, right: 0, bottom: 0,
     width: '78%',
     backgroundColor: COLORS.deepBg,
-    shadowColor: '#000', shadowOffset: { width: -3, height: 0 },
-    shadowOpacity: 0.35, shadowRadius: 12, elevation: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: -3, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 20,
   },
+  // paddingTop بيتحسب ديناميكياً من insets في الـ JSX
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingBottom: 16,
   },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   logoBubble: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center',
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center', justifyContent: 'center',
   },
-  logoLetter: { fontSize: 18, fontWeight: FONT_WEIGHT.extrabold, color: COLORS.white },
-  brandName:  { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary, letterSpacing: 1 },
-  merchantId: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2, fontFamily: 'monospace' },
-  closeBtn:   { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
-  closeTxt:   { fontSize: 14, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.bold },
-  divider:    { height: 1, backgroundColor: COLORS.border, marginHorizontal: 20, marginBottom: 8 },
-  scroll:     { flex: 1 },
+  logoLetter: {
+    fontSize: 20,
+    fontWeight: FONT_WEIGHT.extrabold,
+    color: COLORS.white,
+  },
+  brandName: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.textPrimary,
+    letterSpacing: 1,
+  },
+  merchantId: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.textMuted,
+    marginTop: 2,
+    fontFamily: 'monospace',
+  },
+  closeBtn: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  closeTxt: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    fontWeight: FONT_WEIGHT.bold,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginHorizontal: 20,
+    marginBottom: 4,
+  },
+  scroll: { flex: 1 },
   item: {
-    flexDirection: 'row-reverse', alignItems: 'center',
-    paddingHorizontal: 20, paddingVertical: 14, gap: 14,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)',
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    gap: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.04)',
   },
   itemIcon:  { fontSize: 20, width: 28, textAlign: 'center' },
-  itemLabel: { flex: 1, fontSize: FONT_SIZE.base, color: COLORS.textPrimary, fontWeight: FONT_WEIGHT.medium, textAlign: 'right' },
+  itemLabel: {
+    flex: 1,
+    fontSize: FONT_SIZE.base,
+    color: COLORS.textPrimary,
+    fontWeight: FONT_WEIGHT.medium,
+    textAlign: 'right',
+  },
 });
 
-export default TabHeader;
+expo
