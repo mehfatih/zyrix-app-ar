@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { BarChart } from 'react-native-chart-kit';
-import { COLORS, chartColorFn } from '../../constants/colors';
+import { COLORS } from '../../constants/colors';
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, LAYOUT } from '../../constants/theme';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useCurrency } from '../../hooks/useCurrency';
@@ -75,8 +75,6 @@ interface DashboardData {
   unreadNotifications: number;
 }
 
-// ─── Colored KPI Card ─────────────────────────────
-
 function ColoredKpiCard({
   label, value, icon, themeIndex, selected, onPress,
 }: {
@@ -110,24 +108,16 @@ function ColoredKpiCard({
 }
 
 const kpiS = StyleSheet.create({
-  card: {
-    flex: 1, borderRadius: RADIUS.lg, padding: SPACING.md,
-    borderWidth: 1.5, overflow: 'hidden', minHeight: 105,
-  },
-  cardSelected: {
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25, shadowRadius: 8, elevation: 6,
-  },
-  iconRow:   { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginBottom: SPACING.sm },
-  iconBubble:{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  iconText:  { fontSize: 14 },
-  label:     { flex: 1, fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.medium },
-  value:     { fontSize: FONT_SIZE['2xl'], fontWeight: FONT_WEIGHT.bold, marginBottom: SPACING.sm },
-  accentBar: { position: 'absolute', bottom: 0, left: 0, right: 0, borderRadius: 2 },
-  selDot:    { position: 'absolute', top: 8, left: 8, width: 7, height: 7, borderRadius: 4 },
+  card:        { flex: 1, borderRadius: RADIUS.lg, padding: SPACING.md, borderWidth: 1.5, overflow: 'hidden', minHeight: 105 },
+  cardSelected:{ shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 6 },
+  iconRow:     { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginBottom: SPACING.sm },
+  iconBubble:  { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  iconText:    { fontSize: 14 },
+  label:       { flex: 1, fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.medium },
+  value:       { fontSize: FONT_SIZE['2xl'], fontWeight: FONT_WEIGHT.bold, marginBottom: SPACING.sm },
+  accentBar:   { position: 'absolute', bottom: 0, left: 0, right: 0, borderRadius: 2 },
+  selDot:      { position: 'absolute', top: 8, left: 8, width: 7, height: 7, borderRadius: 4 },
 });
-
-// ─── Pivot Chart ──────────────────────────────────
 
 function PivotCompareChart({ themeIndex }: { themeIndex: number }) {
   const theme  = KPI_THEMES[themeIndex];
@@ -144,16 +134,13 @@ function PivotCompareChart({ themeIndex }: { themeIndex: number }) {
 
   const chartData = {
     labels: data.months,
-    datasets: [{
-      data: data.values,
-      colors: shades.map((shade) => (_opacity: number) => shade),
-    }],
+    datasets: [{ data: data.values, colors: shades.map((shade) => (_opacity: number) => shade) }],
   };
 
   const config = {
     backgroundColor: 'transparent',
     backgroundGradientFrom: COLORS.cardBg,
-    backgroundGradientTo: COLORS.cardBg,
+    backgroundGradientTo:   COLORS.cardBg,
     color: (_opacity = 1) => theme.accent,
     labelColor: () => COLORS.textSecondary,
     strokeWidth: 0,
@@ -190,30 +177,20 @@ function PivotCompareChart({ themeIndex }: { themeIndex: number }) {
         width={SCREEN_WIDTH - LAYOUT.screenPaddingH * 2 - SPACING.lg * 2}
         height={160}
         chartConfig={config}
-        withCustomBarColorFromData
-        flatColor
-        showValuesOnTopOfBars
-        withInnerLines
+        withCustomBarColorFromData flatColor showValuesOnTopOfBars withInnerLines
         style={pivS.chart}
-        yAxisLabel=""
-        yAxisSuffix={data.unit === '%' ? '%' : ''}
-        fromZero
+        yAxisLabel="" yAxisSuffix={data.unit === '%' ? '%' : ''} fromZero
       />
       <View style={pivS.summaryRow}>
         {data.values.map((val, i) => (
-          <View
-            key={i}
-            style={[
-              pivS.summaryCell,
-              i < 2 && { borderRightWidth: 1, borderRightColor: COLORS.border },
-              i === 2 && { backgroundColor: `${theme.accent}10` },
-            ]}
-          >
+          <View key={i} style={[
+            pivS.summaryCell,
+            i < 2 && { borderRightWidth: 1, borderRightColor: COLORS.border },
+            i === 2 && { backgroundColor: `${theme.accent}10` },
+          ]}>
             <Text style={pivS.sumLabel}>{data.months[i]}</Text>
             <Text style={[pivS.sumValue, { color: i === 2 ? theme.accent : COLORS.textSecondary }]}>
-              {data.unit === '%'
-                ? `${val}%`
-                : val >= 1000 ? `${(val / 1000).toFixed(1)}k` : String(val)}
+              {data.unit === '%' ? `${val}%` : val >= 1000 ? `${(val / 1000).toFixed(1)}k` : String(val)}
               {data.unit !== '' && data.unit !== '%' ? ` ${data.unit}` : ''}
             </Text>
           </View>
@@ -250,13 +227,10 @@ const pivS = StyleSheet.create({
   insightText: { fontSize: FONT_SIZE.xs, lineHeight: 18 },
 });
 
-// ─── Side Menu (dashboard) ────────────────────────
-
 function SideMenu({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const router   = useRouter();
   const { t }    = useTranslation();
   const { user } = useAuth();
-  const insets   = useSafeAreaInsets();
 
   const menuItems = [
     { icon: '🏠', label: t('tabs.dashboard'),         route: '/(merchant)/dashboard' },
@@ -286,9 +260,7 @@ function SideMenu({ visible, onClose }: { visible: boolean; onClose: () => void 
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <TouchableOpacity style={sm.overlay} activeOpacity={1} onPress={onClose} />
       <View style={sm.panel}>
-
-        {/* ── Header ── */}
-        <View style={[sm.header, { paddingTop: insets.top + 16 }]}>
+        <View style={sm.header}>
           <View style={sm.logoRow}>
             <View style={sm.logoBubble}>
               <Text style={sm.logoLetter}>Z</Text>
@@ -302,30 +274,20 @@ function SideMenu({ visible, onClose }: { visible: boolean; onClose: () => void 
             <Text style={sm.closeBtnText}>✕</Text>
           </TouchableOpacity>
         </View>
-
         <View style={sm.divider} />
-
         <ScrollView style={sm.scrollArea} showsVerticalScrollIndicator={false}>
           {menuItems.map((item, idx) => (
-            <TouchableOpacity
-              key={idx}
-              style={sm.item}
-              onPress={() => handleNavigate(item.route)}
-              activeOpacity={0.7}
-            >
+            <TouchableOpacity key={idx} style={sm.item} onPress={() => handleNavigate(item.route)} activeOpacity={0.7}>
               <Text style={sm.itemIcon}>{item.icon}</Text>
               <Text style={sm.itemLabel}>{item.label}</Text>
             </TouchableOpacity>
           ))}
-          <View style={{ height: insets.bottom + 24 }} />
+          <View style={{ height: 40 }} />
         </ScrollView>
-
       </View>
     </Modal>
   );
 }
-
-// ─── Main Screen ──────────────────────────────────
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -333,16 +295,14 @@ export default function DashboardScreen() {
   const { currency, setCurrency, format, convert } = useCurrency('SAR');
   const { user } = useAuth();
   const tabBarHeight = useTabBarHeight();
-  const [menuVisible, setMenuVisible]   = useState(false);
-  const [refreshing, setRefreshing]     = useState(false);
-  const [chartPeriod, setChartPeriod]   = useState<ChartPeriod>('7d');
-  const [dashData, setDashData]         = useState<DashboardData | null>(null);
-  const [loading, setLoading]           = useState(true);
-  const [_error, setError]              = useState<string | null>(null);
-  const [chartData, setChartData]       = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
-  const [chartLabels, setChartLabels]   = useState<string[]>(['', '', '', '', '', '', '']);
-  const [selectedKpi, setSelectedKpi]   = useState<number>(0);
-  const BASE_CURRENCY: CurrencyCode = 'SAR';
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [refreshing, setRefreshing]   = useState(false);
+  const [chartPeriod]                 = useState<ChartPeriod>('7d');
+  const [dashData, setDashData]       = useState<DashboardData | null>(null);
+  const [loading, setLoading]         = useState(true);
+  const [_error, setError]            = useState<string | null>(null);
+  const [selectedKpi, setSelectedKpi] = useState<number>(0);
+  const BASE_CURRENCY: CurrencyCode   = 'SAR';
 
   const fetchData = useCallback(async () => {
     try {
@@ -350,22 +310,17 @@ export default function DashboardScreen() {
       const data = await dashboardApi.getData();
       try {
         const analytics = await analyticsApi.getData(chartPeriod);
-        setChartData(analytics.volume.map((v: { value: number }) => v.value));
-        setChartLabels(analytics.volume.map((v: { label: string }) => toEnglishDayLabel(v.label)));
+        // data used internally only — no need to store in state
+        void analytics;
       } catch (_e) {}
       setDashData(data);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t('common.error'));
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+    } finally { setLoading(false); setRefreshing(false); }
   }, [chartPeriod, t]);
 
   useEffect(() => { fetchData(); }, [chartPeriod]);
-
   const onRefresh = () => { setRefreshing(true); fetchData(); };
-
   const formatAmount = useCallback(
     (amount: number) => format(convert(amount, BASE_CURRENCY, currency), currency),
     [convert, format, currency],
@@ -409,13 +364,10 @@ export default function DashboardScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
       >
         <CurrencyPicker selected={currency} onSelect={setCurrency} codes={['SAR', 'AED', 'KWD', 'QAR', 'USD']} />
 
-        {/* ── KPI Cards ── */}
         <View style={styles.kpiGrid}>
           <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
             {kpiCards.slice(0, 2).map((card, i) => (
@@ -431,10 +383,8 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* ── Pivot Chart ── */}
         <PivotCompareChart themeIndex={selectedKpi} />
 
-        {/* ── Quick Actions ── */}
         <View style={styles.quickActionsContainer}>
           <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>{t('dashboard.quick_actions')}</Text>
           <View style={[styles.quickGrid, isRTL && styles.quickGridRTL]}>
@@ -447,7 +397,6 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* ── Recent Transactions ── */}
         <View style={[styles.sectionHeader, isRTL && styles.sectionHeaderRTL]}>
           <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>{t('dashboard.recentTransactions')}</Text>
           <TouchableOpacity onPress={() => router.push('/(merchant)/transactions')}>
@@ -473,7 +422,6 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         ))}
 
-        {/* ── Next Settlement ── */}
         <View style={styles.settlementCard}>
           <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>{t('dashboard.nextSettlement')}</Text>
           <View style={[styles.settlementRow, isRTL && styles.settlementRowRTL]}>
@@ -493,8 +441,6 @@ export default function DashboardScreen() {
     </View>
   );
 }
-
-// ─── Styles ───────────────────────────────────────
 
 const styles = StyleSheet.create({
   container:             { flex: 1, backgroundColor: COLORS.darkBg },
@@ -532,12 +478,10 @@ const styles = StyleSheet.create({
   settlementAmount:      { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.success, marginBottom: SPACING.xs },
 });
 
-// ─── Side Menu Styles ─────────────────────────────
-
 const sm = StyleSheet.create({
   overlay:      { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
   panel:        { position: 'absolute', top: 0, right: 0, bottom: 0, width: SCREEN_WIDTH * 0.78, backgroundColor: COLORS.deepBg, shadowColor: '#000', shadowOffset: { width: -3, height: 0 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 20 },
-  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 16 },
+  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16 },
   logoRow:      { flexDirection: 'row', alignItems: 'center', gap: 12 },
   logoBubble:   { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
   logoLetter:   { fontSize: 20, fontWeight: FONT_WEIGHT.extrabold, color: COLORS.white },

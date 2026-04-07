@@ -1,36 +1,24 @@
 /**
  * Zyrix App — Enhanced 2FA Setup Screen
- * Multiple 2FA methods: SMS, Email, Authenticator App, Backup Codes.
  */
 
 import React, { useState, useCallback } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  Switch,
-  I18nManager,
-  ActivityIndicator,
+  View, Text, TouchableOpacity, ScrollView, StyleSheet,
+  Alert, Switch, I18nManager, ActivityIndicator, SafeAreaView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path, Line } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { COLORS } from '../../constants/colors';
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../constants/theme';
 import { useTranslation } from '../../hooks/useTranslation';
 
-// ─── ألوان مميزة لكل بطاقة ───────────────────────
 const METHOD_COLORS = [
-  { bg: 'rgba(26, 86, 219, 0.12)',  border: 'rgba(26, 86, 219, 0.30)',  icon: '#60A5FA' },   // SMS — أزرق
-  { bg: 'rgba(13, 148, 136, 0.12)', border: 'rgba(13, 148, 136, 0.30)', icon: '#2DD4BF' },  // Email — تيل
-  { bg: 'rgba(139, 92, 246, 0.12)', border: 'rgba(139, 92, 246, 0.30)', icon: '#A78BFA' },  // Authenticator — بنفسجي
-  { bg: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245, 158, 11, 0.30)', icon: '#FCD34D' },  // Backup — ذهبي
+  { bg: 'rgba(26, 86, 219, 0.12)',  border: 'rgba(26, 86, 219, 0.30)',  icon: '#60A5FA' },
+  { bg: 'rgba(13, 148, 136, 0.12)', border: 'rgba(13, 148, 136, 0.30)', icon: '#2DD4BF' },
+  { bg: 'rgba(139, 92, 246, 0.12)', border: 'rgba(139, 92, 246, 0.30)', icon: '#A78BFA' },
+  { bg: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245, 158, 11, 0.30)', icon: '#FCD34D' },
 ];
-
-// ─── SVG Icons ───────────────────────────────────
 
 function BackIcon({ size = 22, color = COLORS.white }: { size?: number; color?: string }) {
   return (
@@ -61,22 +49,12 @@ function ChevronIcon({ size = 18, color = COLORS.textMuted }: { size?: number; c
   );
 }
 
-// ─── Types ───────────────────────────────────────
-
 interface TwoFAMethod {
-  id: string;
-  icon: string;
-  titleKey: string;
-  descKey: string;
-  enabled: boolean;
-  recommended?: boolean;
+  id: string; icon: string; titleKey: string; descKey: string;
+  enabled: boolean; recommended?: boolean;
 }
 
-// ─── Backup Codes Modal ──────────────────────────
-
-function BackupCodesModal({
-  codes, visible, onClose, t, isRTL,
-}: {
+function BackupCodesModal({ codes, visible, onClose, t, isRTL }: {
   codes: string[]; visible: boolean; onClose: () => void;
   t: (key: string) => string; isRTL: boolean;
 }) {
@@ -110,18 +88,15 @@ function BackupCodesModal({
   );
 }
 
-// ─── Main Screen ─────────────────────────────────
-
 export default function TwoFASetupScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { t, isRTL } = useTranslation();
 
   const [methods, setMethods] = useState<TwoFAMethod[]>([
     { id: 'sms',           icon: '📱', titleKey: 'twofa.method_sms',           descKey: 'twofa.method_sms_desc',           enabled: true },
     { id: 'email',         icon: '📧', titleKey: 'twofa.method_email',         descKey: 'twofa.method_email_desc',         enabled: false },
     { id: 'authenticator', icon: '🔐', titleKey: 'twofa.method_authenticator', descKey: 'twofa.method_authenticator_desc', enabled: false, recommended: true },
-    { id: 'backup',        icon: '🗝️', titleKey: 'twofa.method_backup',        descKey: 'twofa.method_backup_desc',        enabled: false },
+    { id: 'backup',        icon: '🔑', titleKey: 'twofa.method_backup',        descKey: 'twofa.method_backup_desc',        enabled: false },
   ]);
 
   const [showBackupCodes, setShowBackupCodes] = useState(false);
@@ -134,7 +109,6 @@ export default function TwoFASetupScreen() {
   const toggleMethod = useCallback(async (id: string) => {
     setLoading(id);
     await new Promise((resolve) => setTimeout(resolve, 800));
-
     if (id === 'authenticator') {
       const method = methods.find((m) => m.id === id);
       if (!method?.enabled) {
@@ -155,20 +129,17 @@ export default function TwoFASetupScreen() {
         return;
       }
     }
-
     if (id === 'backup') {
       const method = methods.find((m) => m.id === id);
       if (!method?.enabled) setShowBackupCodes(true);
     }
-
     setMethods((prev) => prev.map((m) => m.id === id ? { ...m, enabled: !m.enabled } : m));
     setLoading(null);
   }, [methods, t]);
 
   const handleGenerateNewCodes = useCallback(() => {
     Alert.alert(
-      t('twofa.regenerate_title'),
-      t('twofa.regenerate_desc'),
+      t('twofa.regenerate_title'), t('twofa.regenerate_desc'),
       [
         { text: t('common.cancel'), style: 'cancel' },
         { text: t('common.confirm'), style: 'destructive', onPress: () => setShowBackupCodes(true) },
@@ -179,8 +150,7 @@ export default function TwoFASetupScreen() {
   const enabledCount = methods.filter((m) => m.enabled).length;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
+    <SafeAreaView style={styles.container}>
       <View style={[styles.header, isRTL && styles.headerRTL]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton} activeOpacity={0.7}>
           <BackIcon size={22} color={COLORS.white} />
@@ -190,8 +160,6 @@ export default function TwoFASetupScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-
-        {/* Status */}
         <View style={styles.statusSection}>
           <View style={styles.iconCircle}>
             <ShieldIcon size={36} color={COLORS.primaryLight} />
@@ -209,12 +177,10 @@ export default function TwoFASetupScreen() {
           </Text>
         </View>
 
-        {/* Methods Title */}
         <Text style={[styles.sectionTitle, isRTL && { textAlign: 'right' }]}>
           {t('twofa.methods_title')}
         </Text>
 
-        {/* Method Cards — كل بطاقة بلون مميز */}
         {methods.map((method, index) => {
           const mc = METHOD_COLORS[index % METHOD_COLORS.length];
           return (
@@ -227,8 +193,14 @@ export default function TwoFASetupScreen() {
                       {t(method.titleKey)}
                     </Text>
                     {method.recommended && (
-                      <View style={[styles.recommendedBadge, { backgroundColor: `${mc.icon}20`, borderColor: `${mc.icon}40`, borderWidth: 1 }]}>
-                        <Text style={[styles.recommendedText, { color: mc.icon }]}>{t('twofa.recommended')}</Text>
+                      <View style={[styles.recommendedBadge, {
+                        backgroundColor: `${mc.icon}20`,
+                        borderColor: `${mc.icon}40`,
+                        borderWidth: 1,
+                      }]}>
+                        <Text style={[styles.recommendedText, { color: mc.icon }]}>
+                          {t('twofa.recommended')}
+                        </Text>
                       </View>
                     )}
                   </View>
@@ -236,24 +208,16 @@ export default function TwoFASetupScreen() {
                     {t(method.descKey)}
                   </Text>
                 </View>
-                {loading === method.id ? (
-                  <ActivityIndicator size="small" color={mc.icon} />
-                ) : (
-                  <Switch
-                    value={method.enabled}
-                    onValueChange={() => toggleMethod(method.id)}
-                    trackColor={{ false: COLORS.border, true: mc.icon }}
-                    thumbColor={COLORS.white}
-                  />
-                )}
+                {loading === method.id
+                  ? <ActivityIndicator size="small" color={mc.icon} />
+                  : <Switch value={method.enabled} onValueChange={() => toggleMethod(method.id)}
+                      trackColor={{ false: COLORS.border, true: mc.icon }} thumbColor={COLORS.white} />
+                }
               </View>
-
-              {/* Backup codes button */}
               {method.id === 'backup' && method.enabled && (
                 <TouchableOpacity
                   style={[styles.generateButton, isRTL && styles.generateButtonRTL]}
-                  onPress={handleGenerateNewCodes}
-                  activeOpacity={0.7}
+                  onPress={handleGenerateNewCodes} activeOpacity={0.7}
                 >
                   <Text style={[styles.generateText, { color: mc.icon }]}>{t('twofa.view_backup_codes')}</Text>
                   <ChevronIcon size={16} color={mc.icon} />
@@ -263,7 +227,6 @@ export default function TwoFASetupScreen() {
           );
         })}
 
-        {/* Info Card */}
         <View style={styles.infoCard}>
           <Text style={styles.infoIcon}>💡</Text>
           <Text style={[styles.infoText, isRTL && { textAlign: 'right' }]}>
@@ -272,144 +235,60 @@ export default function TwoFASetupScreen() {
         </View>
       </ScrollView>
 
-      <BackupCodesModal
-        codes={backupCodes}
-        visible={showBackupCodes}
-        onClose={() => setShowBackupCodes(false)}
-        t={t}
-        isRTL={isRTL}
-      />
-    </View>
+      <BackupCodesModal codes={backupCodes} visible={showBackupCodes}
+        onClose={() => setShowBackupCodes(false)} t={t} isRTL={isRTL} />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.darkBg },
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: SPACING.lg, height: 52,
-    borderBottomWidth: 1, borderBottomColor: COLORS.border,
-  },
-  headerRTL: { flexDirection: 'row-reverse' },
-  backButton: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  headerTitle: {
-    flex: 1, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary, textAlign: 'center',
-  },
-  headerSpacer: { width: 36 },
-  scrollContent: {
-    paddingHorizontal: SPACING.xl, paddingTop: SPACING['2xl'], paddingBottom: SPACING['4xl'],
-  },
-  statusSection: { alignItems: 'center', marginBottom: SPACING['3xl'] },
-  iconCircle: {
-    width: 80, height: 80, borderRadius: 40,
-    backgroundColor: 'rgba(26,86,219,0.12)',
-    alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.md,
-  },
-  statusTitle: {
-    fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary, marginBottom: SPACING.sm,
-  },
-  statusBadge: {
-    paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs,
-    borderRadius: RADIUS.full, marginBottom: SPACING.md,
-  },
-  statusActive: { backgroundColor: COLORS.successBg },
-  statusInactive: { backgroundColor: COLORS.dangerBg },
-  statusBadgeText: { fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semibold },
-  statusActiveText: { color: COLORS.successLight },
+  container:          { flex: 1, backgroundColor: COLORS.darkBg },
+  header:             { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.lg, height: 52, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  headerRTL:          { flexDirection: 'row-reverse' },
+  backButton:         { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' },
+  headerTitle:        { flex: 1, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold, color: COLORS.textPrimary, textAlign: 'center' },
+  headerSpacer:       { width: 36 },
+  scrollContent:      { paddingHorizontal: SPACING.xl, paddingTop: SPACING['2xl'], paddingBottom: SPACING['4xl'] },
+  statusSection:      { alignItems: 'center', marginBottom: SPACING['3xl'] },
+  iconCircle:         { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(26,86,219,0.12)', alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.md },
+  statusTitle:        { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold, color: COLORS.textPrimary, marginBottom: SPACING.sm },
+  statusBadge:        { paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs, borderRadius: RADIUS.full, marginBottom: SPACING.md },
+  statusActive:       { backgroundColor: COLORS.successBg },
+  statusInactive:     { backgroundColor: COLORS.dangerBg },
+  statusBadgeText:    { fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semibold },
+  statusActiveText:   { color: COLORS.successLight },
   statusInactiveText: { color: COLORS.dangerLight },
-  statusDesc: {
-    fontSize: FONT_SIZE.sm, color: COLORS.textMuted,
-    textAlign: 'center', lineHeight: 20,
-  },
-  sectionTitle: {
-    fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary, marginBottom: SPACING.md,
-  },
-  methodCard: {
-    borderRadius: RADIUS.md, padding: SPACING.lg,
-    marginBottom: SPACING.md, borderWidth: 1,
-  },
-  methodRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
-  methodRowRTL: { flexDirection: 'row-reverse' },
-  methodIcon: { fontSize: 24, width: 32, textAlign: 'center' },
-  methodContent: { flex: 1 },
-  methodTitleRow: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginBottom: 2,
-  },
-  methodTitleRowRTL: { flexDirection: 'row-reverse' },
-  methodTitle: {
-    fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.medium, color: COLORS.textPrimary,
-  },
-  methodDesc: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, lineHeight: 18 },
-  recommendedBadge: {
-    paddingHorizontal: SPACING.sm, paddingVertical: 2, borderRadius: RADIUS.sm,
-  },
-  recommendedText: { fontSize: 9, fontWeight: FONT_WEIGHT.semibold },
-  generateButton: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    marginTop: SPACING.md, paddingTop: SPACING.md,
-    borderTopWidth: 1, borderTopColor: COLORS.divider, gap: SPACING.xs,
-  },
-  generateButtonRTL: { flexDirection: 'row-reverse' },
-  generateText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium },
-  infoCard: {
-    flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
-    backgroundColor: 'rgba(8,145,178,0.1)',
-    borderRadius: RADIUS.md, padding: SPACING.lg,
-    marginTop: SPACING.md, gap: SPACING.md,
-    borderWidth: 1, borderColor: 'rgba(8,145,178,0.2)',
-  },
-  infoIcon: { fontSize: 20 },
-  infoText: { flex: 1, fontSize: FONT_SIZE.xs, color: COLORS.info, lineHeight: 18 },
+  statusDesc:         { fontSize: FONT_SIZE.sm, color: COLORS.textMuted, textAlign: 'center', lineHeight: 20 },
+  sectionTitle:       { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold, color: COLORS.textSecondary, marginBottom: SPACING.md },
+  methodCard:         { borderRadius: RADIUS.md, padding: SPACING.lg, marginBottom: SPACING.md, borderWidth: 1 },
+  methodRow:          { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
+  methodRowRTL:       { flexDirection: 'row-reverse' },
+  methodIcon:         { fontSize: 24, width: 32, textAlign: 'center' },
+  methodContent:      { flex: 1 },
+  methodTitleRow:     { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginBottom: 2 },
+  methodTitleRowRTL:  { flexDirection: 'row-reverse' },
+  methodTitle:        { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.medium, color: COLORS.textPrimary },
+  methodDesc:         { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, lineHeight: 18 },
+  recommendedBadge:   { paddingHorizontal: SPACING.sm, paddingVertical: 2, borderRadius: RADIUS.sm },
+  recommendedText:    { fontSize: 9, fontWeight: FONT_WEIGHT.semibold },
+  generateButton:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: SPACING.md, paddingTop: SPACING.md, borderTopWidth: 1, borderTopColor: COLORS.divider, gap: SPACING.xs },
+  generateButtonRTL:  { flexDirection: 'row-reverse' },
+  generateText:       { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium },
+  infoCard:           { flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row', backgroundColor: 'rgba(8,145,178,0.1)', borderRadius: RADIUS.md, padding: SPACING.lg, marginTop: SPACING.md, gap: SPACING.md, borderWidth: 1, borderColor: 'rgba(8,145,178,0.2)' },
+  infoIcon:           { fontSize: 20 },
+  infoText:           { flex: 1, fontSize: FONT_SIZE.xs, color: COLORS.info, lineHeight: 18 },
 });
 
 const modalS = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: COLORS.overlay,
-    justifyContent: 'center', alignItems: 'center', zIndex: 1000,
-  },
-  container: {
-    width: '88%', backgroundColor: COLORS.deepBg,
-    borderRadius: RADIUS.xl, padding: SPACING['2xl'],
-    borderWidth: 1, borderColor: COLORS.border,
-  },
-  title: {
-    fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary, textAlign: 'center', marginBottom: SPACING.sm,
-  },
-  description: {
-    fontSize: FONT_SIZE.sm, color: COLORS.textMuted,
-    textAlign: 'center', marginBottom: SPACING.xl, lineHeight: 20,
-  },
-  codesGrid: {
-    borderRadius: RADIUS.md, marginBottom: SPACING.lg,
-    overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border,
-  },
-  codeItem: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, gap: SPACING.sm,
-  },
-  codeNumber: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, width: 20 },
-  codeText: {
-    fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textPrimary, fontFamily: 'monospace', letterSpacing: 1,
-  },
-  warning: {
-    fontSize: FONT_SIZE.xs, color: COLORS.warningLight,
-    textAlign: 'center', marginBottom: SPACING.xl, lineHeight: 18,
-  },
-  button: {
-    backgroundColor: COLORS.primary, borderRadius: RADIUS.md,
-    height: 46, alignItems: 'center', justifyContent: 'center',
-  },
-  buttonText: {
-    fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold, color: COLORS.white,
-  },
+  overlay:     { ...StyleSheet.absoluteFillObject, backgroundColor: COLORS.overlay, justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
+  container:   { width: '88%', backgroundColor: COLORS.deepBg, borderRadius: RADIUS.xl, padding: SPACING['2xl'], borderWidth: 1, borderColor: COLORS.border },
+  title:       { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary, textAlign: 'center', marginBottom: SPACING.sm },
+  description: { fontSize: FONT_SIZE.sm, color: COLORS.textMuted, textAlign: 'center', marginBottom: SPACING.xl, lineHeight: 20 },
+  codesGrid:   { borderRadius: RADIUS.md, marginBottom: SPACING.lg, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border },
+  codeItem:    { flexDirection: 'row', alignItems: 'center', paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, gap: SPACING.sm },
+  codeNumber:  { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, width: 20 },
+  codeText:    { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold, color: COLORS.textPrimary, fontFamily: 'monospace', letterSpacing: 1 },
+  warning:     { fontSize: FONT_SIZE.xs, color: COLORS.warningLight, textAlign: 'center', marginBottom: SPACING.xl, lineHeight: 18 },
+  button:      { backgroundColor: COLORS.primary, borderRadius: RADIUS.md, height: 46, alignItems: 'center', justifyContent: 'center' },
+  buttonText:  { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold, color: COLORS.white },
 });
