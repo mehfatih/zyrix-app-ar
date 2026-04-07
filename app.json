@@ -11,8 +11,8 @@
     "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#112044"
+      "resizeMode": "cover",
+      "backgroundColor": "#0D1B46"
     },
     "ios": {
       "supportsTablet": true,
@@ -27,11 +27,11 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#112044",
+        "backgroundColor": "#0D1B46",
         "monochromeImage": "./assets/adaptive-icon.png"
       },
       "package": "co.zyrix.app.ar",
-      "versionCode": 34,
+      "versionCode": 36,
       "targetSdkVersion": 35,
       "compileSdkVersion": 35,
       "permissions": [
@@ -80,8 +80,7 @@
           "cameraPermission": "يحتاج زايركس للكاميرا لمسح رموز QR"
         }
       ],
-      "expo-secure-store",
-      "react-native-edge-to-edge"
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

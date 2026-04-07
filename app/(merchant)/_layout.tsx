@@ -1,12 +1,10 @@
 /**
  * Zyrix App — Merchant Tab Layout
- * Pill-shaped floating tab bar (Telegram style)
  */
 
 import React, { useEffect, useState } from 'react';
 import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet, Platform } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../../constants/colors';
 import { FONT_WEIGHT } from '../../constants/theme';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -77,7 +75,6 @@ export default function MerchantLayout() {
   usePushNotifications();
   useDeepLinking();
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -92,9 +89,10 @@ export default function MerchantLayout() {
     return () => clearInterval(iv);
   }, []);
 
+  // قيمة آمنة ثابتة بدل useSafeAreaInsets
   const pillBottom = Platform.select({
-    ios: insets.bottom + 8,
-    android: insets.bottom + 10,
+    ios: 24,
+    android: 12,
     default: 10,
   });
 
@@ -130,11 +128,6 @@ export default function MerchantLayout() {
         },
       }}
     >
-      {/*
-        الترتيب في الكود = من اليسار لليمين على الشاشة
-        settings  → أقصى اليسار
-        dashboard → أقصى اليمين
-      */}
       <Tabs.Screen name="settings"     options={{ tabBarIcon: ({ focused }) => <TabIcon icon="⚙️" label={t('tabs.settings')}     focused={focused} /> }} />
       <Tabs.Screen name="analytics"    options={{ tabBarIcon: ({ focused }) => <TabIcon icon="📊" label={t('tabs.analytics')}    focused={focused} /> }} />
       <Tabs.Screen name="balance"      options={{ tabBarIcon: ({ focused }) => <TabIcon icon="💰" label={t('tabs.balance')}      focused={focused} /> }} />
