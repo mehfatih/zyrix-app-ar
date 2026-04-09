@@ -240,15 +240,28 @@ export const codApi = {
     request<{ success: boolean; data: { totalOrders: number; collectedOrders: number; pendingOrders: number; totalCollected: number; totalPending: number } }>('/api/cod/summary'),
 };
 
-// ─── FX API ──────────────────────────────────────
 export const fxApi = {
   getRates: () =>
     request<{ success: boolean; data: { base: string; rates: Record<string, number>; updatedAt: string } }>('/api/fx/rates'),
-
   convert: (from: string, to: string, amount: number) =>
     request<{ success: boolean; data: { from: string; to: string; amount: number; converted: number; rate: number } }>(
       `/api/fx/convert?from=${from}&to=${to}&amount=${amount}`
     ),
+};
+
+// ─── Team API ─────────────────────────────────────────────────
+export const teamApi = {
+  list: () =>
+    request<{ success: boolean; data: { members: Array<{ id: string; name: string; email: string; role: string; status: string; joinedAt: string | null; createdAt: string }> } }>('/api/team'),
+
+  invite: (data: { name: string; email: string; role: 'ADMIN' | 'MANAGER' | 'ACCOUNTANT' | 'VIEWER' }) =>
+    request<{ success: boolean; data: { member: { id: string; name: string; email: string; role: string; status: string }; inviteLink: string; message: string } }>('/api/team/invite', { method: 'POST', body: JSON.stringify(data) }),
+
+  update: (memberId: string, data: { role?: string; status?: string }) =>
+    request<{ success: boolean; data: { member: { id: string; name: string; email: string; role: string; status: string } } }>(`/api/team/${memberId}`, { method: 'PATCH', body: JSON.stringify(data) }),
+
+  remove: (memberId: string) =>
+    request<{ success: boolean; data: { message: string } }>(`/api/team/${memberId}`, { method: 'DELETE' }),
 };
 
 // ─── Default Export ─────────────────────────────
@@ -274,4 +287,5 @@ export default {
   webhooks: webhooksApi,
   cod: codApi,
   fx: fxApi,
+  team: teamApi,
 };
