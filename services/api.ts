@@ -249,22 +249,54 @@ export const fxApi = {
     ),
 };
 
-// ─── Team API ─────────────────────────────────────────────────
 export const teamApi = {
   list: () =>
     request<{ success: boolean; data: { members: Array<{ id: string; name: string; email: string; role: string; status: string; joinedAt: string | null; createdAt: string }> } }>('/api/team'),
-
   invite: (data: { name: string; email: string; role: 'ADMIN' | 'MANAGER' | 'ACCOUNTANT' | 'VIEWER' }) =>
     request<{ success: boolean; data: { member: { id: string; name: string; email: string; role: string; status: string }; inviteLink: string; message: string } }>('/api/team/invite', { method: 'POST', body: JSON.stringify(data) }),
-
   update: (memberId: string, data: { role?: string; status?: string }) =>
     request<{ success: boolean; data: { member: { id: string; name: string; email: string; role: string; status: string } } }>(`/api/team/${memberId}`, { method: 'PATCH', body: JSON.stringify(data) }),
-
   remove: (memberId: string) =>
     request<{ success: boolean; data: { message: string } }>(`/api/team/${memberId}`, { method: 'DELETE' }),
 };
 
-// ─── Default Export ─────────────────────────────
+// ─── Hosted Checkout API ──────────────────────────────────────
+export const hostedCheckoutApi = {
+  list: () =>
+    request<{ success: boolean; data: { checkouts: Array<{ id: string; checkoutId: string; name: string; description: string | null; currency: string; brandColor: string; theme: string; isActive: boolean; status: string; usageCount: number; totalRevenue: string; createdAt: string }> } }>('/api/hosted-checkout'),
+
+  create: (data: {
+    name: string;
+    description?: string;
+    logoUrl?: string;
+    brandColor?: string;
+    theme?: string;
+    currency?: string;
+    allowedCurrencies?: string[];
+    allowedMethods?: string[];
+    requirePhone?: boolean;
+    requireAddress?: boolean;
+    allowNote?: boolean;
+    successUrl?: string;
+    cancelUrl?: string;
+    webhookUrl?: string;
+  }) =>
+    request<{ success: boolean; data: { checkout: { id: string; checkoutId: string; name: string; status: string }; checkoutUrl: string } }>('/api/hosted-checkout', { method: 'POST', body: JSON.stringify(data) }),
+
+  get: (id: string) =>
+    request<{ success: boolean; data: { checkout: { id: string; checkoutId: string; name: string; description: string | null; currency: string; brandColor: string; theme: string; isActive: boolean; status: string; usageCount: number; totalRevenue: string; sessions: Array<{ sessionId: string; amount: string; currency: string; status: string; createdAt: string }> } } }>(`/api/hosted-checkout/${id}`),
+
+  update: (id: string, data: { name?: string; description?: string; brandColor?: string; theme?: string; isActive?: boolean; requirePhone?: boolean; requireAddress?: boolean; allowNote?: boolean; successUrl?: string; cancelUrl?: string }) =>
+    request<{ success: boolean; data: { checkout: { id: string; status: string } } }>(`/api/hosted-checkout/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  delete: (id: string) =>
+    request<{ success: boolean; data: { message: string } }>(`/api/hosted-checkout/${id}`, { method: 'DELETE' }),
+
+  createSession: (checkoutId: string, data: { amount: number; currency?: string; customerName?: string; customerEmail?: string; customerPhone?: string }) =>
+    request<{ success: boolean; data: { sessionId: string; checkoutUrl: string; expiresAt: string } }>(`/api/hosted-checkout/${checkoutId}/sessions`, { method: 'POST', body: JSON.stringify(data) }),
+};
+
+// ─── Default Export ───────────────────────────────────────────
 export default {
   auth: authApi,
   transactions: transactionsApi,
@@ -288,4 +320,5 @@ export default {
   cod: codApi,
   fx: fxApi,
   team: teamApi,
+  hostedCheckout: hostedCheckoutApi,
 };
