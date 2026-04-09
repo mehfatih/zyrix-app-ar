@@ -260,40 +260,92 @@ export const teamApi = {
     request<{ success: boolean; data: { message: string } }>(`/api/team/${memberId}`, { method: 'DELETE' }),
 };
 
-// ─── Hosted Checkout API ──────────────────────────────────────
 export const hostedCheckoutApi = {
   list: () =>
     request<{ success: boolean; data: { checkouts: Array<{ id: string; checkoutId: string; name: string; description: string | null; currency: string; brandColor: string; theme: string; isActive: boolean; status: string; usageCount: number; totalRevenue: string; createdAt: string }> } }>('/api/hosted-checkout'),
-
-  create: (data: {
-    name: string;
-    description?: string;
-    logoUrl?: string;
-    brandColor?: string;
-    theme?: string;
-    currency?: string;
-    allowedCurrencies?: string[];
-    allowedMethods?: string[];
-    requirePhone?: boolean;
-    requireAddress?: boolean;
-    allowNote?: boolean;
-    successUrl?: string;
-    cancelUrl?: string;
-    webhookUrl?: string;
-  }) =>
+  create: (data: { name: string; description?: string; logoUrl?: string; brandColor?: string; theme?: string; currency?: string; allowedCurrencies?: string[]; allowedMethods?: string[]; requirePhone?: boolean; requireAddress?: boolean; allowNote?: boolean; successUrl?: string; cancelUrl?: string; webhookUrl?: string }) =>
     request<{ success: boolean; data: { checkout: { id: string; checkoutId: string; name: string; status: string }; checkoutUrl: string } }>('/api/hosted-checkout', { method: 'POST', body: JSON.stringify(data) }),
-
   get: (id: string) =>
     request<{ success: boolean; data: { checkout: { id: string; checkoutId: string; name: string; description: string | null; currency: string; brandColor: string; theme: string; isActive: boolean; status: string; usageCount: number; totalRevenue: string; sessions: Array<{ sessionId: string; amount: string; currency: string; status: string; createdAt: string }> } } }>(`/api/hosted-checkout/${id}`),
-
   update: (id: string, data: { name?: string; description?: string; brandColor?: string; theme?: string; isActive?: boolean; requirePhone?: boolean; requireAddress?: boolean; allowNote?: boolean; successUrl?: string; cancelUrl?: string }) =>
     request<{ success: boolean; data: { checkout: { id: string; status: string } } }>(`/api/hosted-checkout/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-
   delete: (id: string) =>
     request<{ success: boolean; data: { message: string } }>(`/api/hosted-checkout/${id}`, { method: 'DELETE' }),
-
   createSession: (checkoutId: string, data: { amount: number; currency?: string; customerName?: string; customerEmail?: string; customerPhone?: string }) =>
     request<{ success: boolean; data: { sessionId: string; checkoutUrl: string; expiresAt: string } }>(`/api/hosted-checkout/${checkoutId}/sessions`, { method: 'POST', body: JSON.stringify(data) }),
+};
+
+// ─── Payment Methods API ──────────────────────────────────────
+export const paymentMethodsApi = {
+  list: () =>
+    request<{
+      success: boolean;
+      data: {
+        methods: Array<{
+          method: string;
+          nameAr: string;
+          nameEn: string;
+          icon: string;
+          popular: boolean;
+          isActive: boolean;
+          status: string;
+          displayName: string | null;
+          displayOrder: number;
+          isDefault: boolean;
+          countries: string[];
+          currencies: string[];
+          minAmount: string | null;
+          maxAmount: string | null;
+          feePercent: string | null;
+          feeFixed: string | null;
+          configId: string | null;
+        }>;
+        activeMethods: Array<{ method: string; nameAr: string; nameEn: string; icon: string }>;
+        activeCount: number;
+        totalCount: number;
+      };
+    }>('/api/payment-methods'),
+
+  toggle: (method: string) =>
+    request<{ success: boolean; data: { method: string; status: string; isActive: boolean } }>(
+      `/api/payment-methods/${method}/toggle`,
+      { method: 'PATCH' }
+    ),
+
+  update: (method: string, data: {
+    status?: string;
+    displayName?: string;
+    displayOrder?: number;
+    isDefault?: boolean;
+    countries?: string[];
+    currencies?: string[];
+    minAmount?: number;
+    maxAmount?: number;
+    feePercent?: number;
+    feeFixed?: number;
+  }) =>
+    request<{ success: boolean; data: { config: { method: string; status: string } } }>(
+      `/api/payment-methods/${method}`,
+      { method: 'PUT', body: JSON.stringify(data) }
+    ),
+
+  getPublic: (merchantId: string) =>
+    request<{
+      success: boolean;
+      data: {
+        methods: Array<{
+          method: string;
+          nameAr: string;
+          nameEn: string;
+          icon: string;
+          displayName: string | null;
+          isDefault: boolean;
+          currencies: string[];
+          minAmount: string | null;
+          maxAmount: string | null;
+        }>;
+      };
+    }>(`/api/payment-methods/public/${merchantId}`),
 };
 
 // ─── Default Export ───────────────────────────────────────────
@@ -321,4 +373,5 @@ export default {
   fx: fxApi,
   team: teamApi,
   hostedCheckout: hostedCheckoutApi,
+  paymentMethods: paymentMethodsApi,
 };
