@@ -1,7 +1,5 @@
 /**
- * Zyrix App — Payment Link Detail Screen  (SCREEN 3 of 4)
- * تفاصيل رابط الدفع + إحصائيات الأداء
- *
+ * Zyrix App — Payment Link Detail Screen
  * 📁 app/(merchant)/payment-link-detail.tsx
  */
 
@@ -20,7 +18,7 @@ import { QRCodeModal } from '../../components/QRCodeModal'
 import { InnerHeader } from '../../components/InnerHeader'
 import { useTabBarHeight } from '../../hooks/useTabBarHeight'
 import { KpiCard } from '../../components/KpiCard'
-import Svg, { Path, Circle } from 'react-native-svg'
+import Svg, { Path } from 'react-native-svg'
 
 const isRTL = I18nManager.isRTL
 
@@ -73,7 +71,7 @@ interface PaymentLink {
   views?: number; conversions?: number
 }
 
-// ─── Demo Stats ──────────────────────────────────
+// ─── Demo Data ───────────────────────────────────
 
 const DEMO_LINK: PaymentLink = {
   id: '1', linkId: 'ZRX-PL-001', amount: '5000', currency: 'SAR',
@@ -101,8 +99,6 @@ export default function PaymentLinkDetailScreen() {
   const [showQr, setShowQr] = useState(false)
 
   useEffect(() => {
-    // In production: fetch from API by linkId
-    // For now use demo data
     setTimeout(() => {
       setLink({ ...DEMO_LINK, linkId: params.linkId ?? DEMO_LINK.linkId })
       setLoading(false)
@@ -153,8 +149,10 @@ export default function PaymentLinkDetailScreen() {
     <SafeAreaView style={s.safe}>
       <InnerHeader title="تفاصيل الرابط" accentColor={COLORS.primaryLight} />
 
-      <ScrollView contentContainerStyle={[s.scroll, { paddingBottom: tabBarHeight }]} showsVerticalScrollIndicator={false}>
-
+      <ScrollView
+        contentContainerStyle={[s.scroll, { paddingBottom: tabBarHeight + 24 }]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* ─── Hero Card ─── */}
         <View style={s.heroCard}>
           <View style={[s.heroTop, isRTL && s.rev]}>
@@ -332,18 +330,15 @@ export default function PaymentLinkDetailScreen() {
 
 const s = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: COLORS.deepBg },
-  scroll: { paddingTop: SPACING.md, paddingHorizontal: SPACING.lg,  },
+  scroll: { paddingTop: SPACING.md, paddingHorizontal: SPACING.lg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   rev:    { flexDirection: 'row-reverse' },
 
-  // Hero
   heroCard: {
     backgroundColor: COLORS.cardBg,
     borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: SPACING.xl,
-    marginBottom: SPACING.sm,
+    borderWidth: 1, borderColor: COLORS.border,
+    padding: SPACING.xl, marginBottom: SPACING.sm,
   },
   heroTop:   { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.md, marginBottom: SPACING.sm },
   heroTitle: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary, marginBottom: 4 },
@@ -355,66 +350,46 @@ const s = StyleSheet.create({
   heroAmount: { fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.extrabold, color: COLORS.success },
   heroDate:  { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.medium },
 
-  // Expiry
   expiryBanner: {
-    marginTop: SPACING.md,
-    backgroundColor: COLORS.warningBg,
-    borderRadius: RADIUS.md,
-    padding: SPACING.sm,
+    marginTop: SPACING.md, backgroundColor: COLORS.warningBg,
+    borderRadius: RADIUS.md, padding: SPACING.sm,
   },
   expiryBannerText: { fontSize: FONT_SIZE.xs, color: COLORS.warning, fontWeight: FONT_WEIGHT.medium, textAlign: 'center' },
 
-  // URL
   urlCard: {
-    backgroundColor: COLORS.surfaceBg,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(26, 86, 219, 0.3)',
+    backgroundColor: COLORS.surfaceBg, borderRadius: RADIUS.md,
+    padding: SPACING.md, marginBottom: SPACING.sm,
+    borderWidth: 1, borderColor: 'rgba(26, 86, 219, 0.3)',
   },
   urlRow:  { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   urlText: { flex: 1, fontSize: FONT_SIZE.sm, color: COLORS.primaryLight, fontFamily: 'monospace' },
 
-  // Actions
   actionGrid: {
     flexDirection: isRTL ? 'row-reverse' : 'row',
-    gap: SPACING.sm,
-    marginBottom: SPACING.lg,
+    gap: SPACING.sm, marginBottom: SPACING.lg,
   },
   actionBtn: {
     flex: 1, flexDirection: 'column', alignItems: 'center', gap: 6,
-    paddingVertical: SPACING.md,
-    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.md, borderRadius: RADIUS.md,
   },
   actionBtnBlue: { backgroundColor: COLORS.primary },
   actionBtnText: { fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.bold, color: COLORS.white },
 
-  // KPIs
   kpiGrid: {
     flexDirection: isRTL ? 'row-reverse' : 'row',
-    gap: SPACING.sm,
-    marginBottom: SPACING.sm,
+    gap: SPACING.sm, marginBottom: SPACING.sm,
   },
 
-  // Section title
   sectionTitle: {
-    fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.md,
-    marginTop: SPACING.lg,
+    fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.textPrimary, marginBottom: SPACING.md, marginTop: SPACING.lg,
     textAlign: isRTL ? 'right' : 'left',
   },
 
-  // Conversion
   convCard: {
-    backgroundColor: COLORS.cardBg,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: SPACING.lg,
-    marginTop: SPACING.sm,
+    backgroundColor: COLORS.cardBg, borderRadius: RADIUS.lg,
+    borderWidth: 1, borderColor: COLORS.border,
+    padding: SPACING.lg, marginTop: SPACING.sm,
   },
   convHeader:  { flexDirection: 'row', justifyContent: 'space-between', marginBottom: SPACING.sm },
   convTitle:   { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold, color: COLORS.textPrimary },
@@ -426,13 +401,9 @@ const s = StyleSheet.create({
   convFill: { height: '100%', borderRadius: RADIUS.full },
   convHint: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, textAlign: isRTL ? 'right' : 'left' },
 
-  // Activity
   activityCard: {
-    backgroundColor: COLORS.cardBg,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    overflow: 'hidden',
+    backgroundColor: COLORS.cardBg, borderRadius: RADIUS.lg,
+    borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden',
   },
   activityRow: {
     flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
@@ -445,16 +416,11 @@ const s = StyleSheet.create({
   activityEvent: { fontSize: FONT_SIZE.sm, color: COLORS.textPrimary, fontWeight: FONT_WEIGHT.medium },
   activityTime:  { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2 },
 
-  // Cancel
   cancelCard: {
-    marginTop: SPACING.xl,
-    backgroundColor: COLORS.dangerBg,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
+    marginTop: SPACING.xl, backgroundColor: COLORS.dangerBg,
+    borderRadius: RADIUS.lg, borderWidth: 1,
     borderColor: 'rgba(220, 38, 38, 0.3)',
-    padding: SPACING.lg,
-    alignItems: 'center',
-    gap: 6,
+    padding: SPACING.lg, alignItems: 'center', gap: 6,
   },
   cancelText: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.bold, color: COLORS.danger },
   cancelHint: { fontSize: FONT_SIZE.xs, color: COLORS.dangerLight, textAlign: 'center' },

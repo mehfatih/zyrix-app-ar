@@ -15,7 +15,6 @@ import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../constants/theme'
 import { paymentLinksApi } from '../../services/api'
 import { InnerHeader } from '../../components/InnerHeader'
 import { useTabBarHeight } from '../../hooks/useTabBarHeight'
-import Svg, { Path, Circle } from 'react-native-svg'
 
 const isRTL = I18nManager.isRTL
 const { width: SW } = Dimensions.get('window')
@@ -58,12 +57,9 @@ function StepBar({ step }: { step: 0 | 1 }) {
 
   return (
     <View style={sb.wrap}>
-      {/* Track */}
       <View style={sb.track}>
         <Animated.View style={[sb.fill, { width: lineWidth }]} />
       </View>
-
-      {/* Dot 1 */}
       <View style={[sb.dotWrap, { left: 0 }]}>
         <Animated.View style={[sb.dot, {
           backgroundColor: STEP_COLORS[0],
@@ -75,8 +71,6 @@ function StepBar({ step }: { step: 0 | 1 }) {
         </Animated.View>
         <Text style={[sb.dotLabel, { color: STEP_COLORS[0] }]}>التفاصيل</Text>
       </View>
-
-      {/* Dot 2 */}
       <View style={[sb.dotWrap, { right: 0 }]}>
         <Animated.View style={[sb.dot, {
           backgroundColor: step === 1 ? STEP_COLORS[1] : COLORS.surfaceBg,
@@ -127,7 +121,6 @@ function CurrencySelector({ value, onChange }: { value: string; onChange: (v: st
   return (
     <View>
       <View style={cs.wrap}>
-        {/* Sliding pill */}
         <Animated.View style={[cs.pill, {
           width: itemW,
           backgroundColor: col.bg,
@@ -152,7 +145,6 @@ function CurrencySelector({ value, onChange }: { value: string; onChange: (v: st
           )
         })}
       </View>
-      {/* Active currency label */}
       <View style={[cs.activeBadge, { borderColor: col.border, backgroundColor: col.bg }]}>
         <Text style={[cs.activeTxt, { color: col.text }]}>
           {col.flag} {col.name} — {value}
@@ -198,8 +190,6 @@ function ExpiryPicker({ value, onChange }: { value: string; onChange: (v: string
   const itemW  = (SW - SPACING.lg * 2 - SPACING.sm * (items.length - 1)) / items.length
   const animX  = useRef(new Animated.Value(0)).current
   const col    = items[idx] ?? items[0]
-
-  // Bounce scale for selected
   const scaleAnims = useRef(items.map(() => new Animated.Value(1))).current
 
   useEffect(() => {
@@ -207,7 +197,6 @@ function ExpiryPicker({ value, onChange }: { value: string; onChange: (v: string
       toValue: idx * (itemW + SPACING.sm),
       useNativeDriver: true, tension: 70, friction: 9,
     }).start()
-    // Bounce the selected item
     Animated.sequence([
       Animated.timing(scaleAnims[idx], { toValue: 1.12, duration: 120, useNativeDriver: true }),
       Animated.spring(scaleAnims[idx], { toValue: 1, useNativeDriver: true, tension: 120, friction: 6 }),
@@ -217,7 +206,6 @@ function ExpiryPicker({ value, onChange }: { value: string; onChange: (v: string
   return (
     <View>
       <View style={ep.wrap}>
-        {/* Sliding pill */}
         <Animated.View style={[ep.pill, {
           width: itemW,
           backgroundColor: col.bg,
@@ -244,7 +232,6 @@ function ExpiryPicker({ value, onChange }: { value: string; onChange: (v: string
           )
         })}
       </View>
-      {/* Description */}
       <View style={[ep.desc, { borderColor: col.border + '50', backgroundColor: col.bg }]}>
         <Text style={[ep.descTxt, { color: col.text }]}>
           {col.value === '0'
@@ -341,8 +328,11 @@ export default function CreatePaymentLinkScreen() {
       <InnerHeader title="إنشاء رابط دفع" accentColor={COLORS.primaryLight} />
       <StepBar step={step} />
 
-      <ScrollView contentContainerStyle={[s.scroll, { paddingBottom: tabBarHeight }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-
+      <ScrollView
+        contentContainerStyle={[s.scroll, { paddingBottom: tabBarHeight + 24 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {step === 0 ? (
           <View style={{ gap: SPACING.lg }}>
             {/* Title */}
@@ -506,7 +496,7 @@ function ToggleRow({ label, hint, value, onChange }: { label:string; hint:string
 
 const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: COLORS.deepBg },
-  scroll:  { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm,  },
+  scroll:  { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm },
   rev:     { flexDirection: 'row-reverse' },
 
   fieldLabel: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold, color: COLORS.textSecondary, textAlign: isRTL ? 'right' : 'left' },

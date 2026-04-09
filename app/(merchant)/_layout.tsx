@@ -177,6 +177,7 @@ export default function MerchantLayout() {
       <Tabs.Screen name="change-password"    options={{ tabBarButton: () => null }} />
       <Tabs.Screen name="search"             options={{ tabBarButton: () => null }} />
       <Tabs.Screen name="help"               options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="multi-user"         options={{ tabBarButton: () => null }} />
     </Tabs>
   );
 }
