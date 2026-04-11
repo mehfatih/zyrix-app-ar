@@ -29,6 +29,7 @@
     },
     "production": {
       "autoIncrement": true,
+      "releaseChannel": "main",
       "ios": {
         "buildConfiguration": "Release",
         "image": "macos-ventura-14.5-xcode-16.2"
