@@ -3,7 +3,7 @@ import React, { useState, useCallback } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
   TextInput, I18nManager, ActivityIndicator, RefreshControl,
-  Modal,
+  Modal, Alert,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import * as Clipboard from 'expo-clipboard'
@@ -15,7 +15,7 @@ import { useTabBarHeight } from '../../hooks/useTabBarHeight'
 import { balanceApi, walletsApi } from '../../services/api'
 import { QRCodeModal } from '../../components/QRCodeModal'
 import { InnerHeader } from '../../components/InnerHeader'
-import { useToast } from '../../hooks/useToast'
+
 
 const isRTL = I18nManager.isRTL
 
@@ -391,7 +391,6 @@ export default function BalanceScreen() {
   const { format, convert, currency } = useCurrency('SAR')
   const tabBarHeight = useTabBarHeight()
   const router = useRouter()
-  const { showToast } = useToast()
 
   const [ibanCopied, setIbanCopied] = useState(false)
   const [balanceData, setBalanceData] = useState<any>(null)
@@ -449,10 +448,10 @@ export default function BalanceScreen() {
     try {
       await walletsApi.createSubWallet('SAR', data)
       setShowCreateSub(false)
-      showToast('تم إنشاء المحفظة الفرعية', 'success')
+      Alert.alert('', 'تم إنشاء المحفظة الفرعية')
       fetchData()
     } catch {
-      showToast('حدث خطأ', 'error')
+      Alert.alert('', 'حدث خطأ')
     }
     setCreateSubLoading(false)
   }
@@ -462,10 +461,10 @@ export default function BalanceScreen() {
     try {
       await walletsApi.allocateToSubWallet('SAR', subId, amount)
       setAllocateSubId(null)
-      showToast('تم التخصيص بنجاح', 'success')
+      Alert.alert('', 'تم التخصيص بنجاح')
       fetchData()
     } catch {
-      showToast('حدث خطأ في التخصيص', 'error')
+      Alert.alert('', 'حدث خطأ في التخصيص')
     }
     setAllocateLoading(false)
   }
@@ -473,10 +472,10 @@ export default function BalanceScreen() {
   const handleDeleteSubWallet = async (subId: string) => {
     try {
       await walletsApi.deleteSubWallet('SAR', subId)
-      showToast('تم حذف المحفظة الفرعية', 'success')
+      Alert.alert('', 'تم حذف المحفظة الفرعية')
       fetchData()
     } catch {
-      showToast('حدث خطأ', 'error')
+      Alert.alert('', 'حدث خطأ')
     }
   }
 
@@ -485,10 +484,10 @@ export default function BalanceScreen() {
     try {
       await walletsApi.setCashflowAlert(alertCurrency, threshold)
       setShowSetAlert(false)
-      showToast(`تم تفعيل تنبيه ${alertCurrency} عند ${threshold}`, 'success')
+      Alert.alert('', `تم تفعيل تنبيه ${alertCurrency} عند ${threshold}`)
       fetchData()
     } catch {
-      showToast('حدث خطأ', 'error')
+      Alert.alert('', 'حدث خطأ')
     }
     setAlertLoading(false)
   }
@@ -524,7 +523,7 @@ export default function BalanceScreen() {
           <View style={[styles.actionRow, isRTL && styles.actionRowRTL]}>
             <TouchableOpacity
               style={[styles.actionBtn, { backgroundColor: COLORS.primary, borderColor: COLORS.primary }]}
-              onPress={() => showToast(t('balance.transfer'), 'info')}
+              onPress={() => Alert.alert('', t('balance.transfer'))}
             >
               <Text style={styles.actionIcon}>↑</Text>
               <Text style={[styles.actionLabel, { color: COLORS.white }]}>{t('balance.transfer')}</Text>
