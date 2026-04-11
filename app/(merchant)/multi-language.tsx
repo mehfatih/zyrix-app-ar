@@ -5,18 +5,15 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useTranslation } from "react-i18next";
-import i18n from "../../i18n";
+import { useTranslation } from "../../hooks/useTranslation";
 import { uxApi } from "../../services/api";
 
 // ── الـ hook الرئيسي للاستخدام في أي شاشة ──
 export function useAppLanguage() {
-  const { t, i18n: i18nInstance } = useTranslation();
-  const isAr = i18nInstance.language === "ar";
-  const isRTL = isAr;
+  const { t, isRTL } = useTranslation();
+  const isAr = isRTL;
 
   const switchLanguage = useCallback(async (lang: "ar" | "en") => {
-    await i18nInstance.changeLanguage(lang);
     try {
       await uxApi.updateLang({
         language: lang,
@@ -25,7 +22,7 @@ export function useAppLanguage() {
         currency_format: lang === "ar" ? "ar-SA" : "en-US",
       });
     } catch (_) {}
-  }, [i18nInstance]);
+  }, []);
 
   const formatAmount = useCallback((amount: number, currency: string = "SAR") => {
     const locale = isAr ? "ar-SA" : "en-US";
@@ -50,7 +47,7 @@ export function useAppLanguage() {
     return new Intl.NumberFormat(locale).format(num);
   }, [isAr]);
 
-  return { t, isAr, isRTL, switchLanguage, formatAmount, formatDate, formatNumber, lang: i18nInstance.language };
+  return { t, isAr, isRTL, switchLanguage, formatAmount, formatDate, formatNumber, lang: isAr ? "ar" : "en" };
 }
 
 // ── شاشة إعدادات اللغة ──

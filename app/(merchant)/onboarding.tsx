@@ -5,7 +5,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "../../hooks/useTranslation";
 import { getOnboardingStatus, updateOnboardingStep, completeOnboarding, autoFillKYC } from "../../services/api";
 
 const { width } = Dimensions.get("window");
@@ -112,10 +112,10 @@ export default function OnboardingScreen() {
 
           {/* Title */}
           <Text style={styles.stepTitle}>
-            {t(`onboarding.step_${step.id}_title`, { defaultValue: getDefaultTitle(step.id) })}
+            {getDefaultTitle(step.id)}
           </Text>
           <Text style={styles.stepSubtitle}>
-            {t(`onboarding.step_${step.id}_sub`, { defaultValue: getDefaultSub(step.id) })}
+            {getDefaultSub(step.id)}
           </Text>
 
           {/* Auto-fill badge */}
