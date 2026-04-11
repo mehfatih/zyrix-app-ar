@@ -43,17 +43,12 @@
         "POST_NOTIFICATIONS",
         "CAMERA",
         "ACCESS_NETWORK_STATE",
-        "FOREGROUND_SERVICE",
-        "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT",
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "FOREGROUND_SERVICE"
       ],
       "blockedPermissions": [
         "READ_PHONE_STATE",
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "RECORD_AUDIO"
+        "WRITE_EXTERNAL_STORAGE"
       ]
     },
     "plugins": [

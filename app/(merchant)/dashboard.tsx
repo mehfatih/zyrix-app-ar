@@ -236,59 +236,77 @@ function SideMenu({ visible, onClose, unreadCount }: {
   const { user } = useAuth();
 
   // ─── القائمة مرتبة حسب أولوية التاجر ────────────
+  // ─── القائمة مرتبة حسب تكرار الاستخدام ─────────────
   const sections: MenuSection[] = [
     {
-      title: 'المدفوعات',
-      accent: '#06B6D4',
+      title: '⚡ يومياً',
+      accent: '#6366F1',
       items: [
-        { icon: '💳', label: 'المعاملات',              route: '/(merchant)/transactions' },
         { icon: '🔗', label: 'روابط الدفع',            route: '/(merchant)/payment-links' },
-        { icon: '🏦', label: 'الاستقطاعات',            route: '/(merchant)/settlements' },
+        { icon: '💳', label: 'المعاملات',              route: '/(merchant)/transactions' },
+        { icon: '🔔', label: 'الإشعارات',              route: '/(merchant)/notifications', badge: unreadCount > 0 ? String(unreadCount) : undefined },
+      ],
+    },
+    {
+      title: '💰 المالية',
+      accent: '#10B981',
+      items: [
+        { icon: '💵', label: 'الرصيد والمحافظ',        route: '/(merchant)/balance' },
+        { icon: '🏦', label: 'التسويات',               route: '/(merchant)/settlements' },
+        { icon: '📄', label: 'الفواتير',               route: '/(merchant)/invoices' },
+        { icon: '📊', label: 'المصروفات',              route: '/(merchant)/expenses' },
+        { icon: '🎯', label: 'أهداف الإيراد',          route: '/(merchant)/revenue-goals' },
         { icon: '↩️',  label: 'المستردات',              route: '/(merchant)/refunds' },
         { icon: '⚠️', label: 'النزاعات',               route: '/(merchant)/disputes' },
       ],
     },
     {
-      title: 'الإيرادات والمالية',
-      accent: '#10B981',
+      title: '🌱 النمو',
+      accent: '#34D399',
       items: [
-        { icon: '💰', label: 'الرصيد والتحويلات',      route: '/(merchant)/balance' },
-        { icon: '📄', label: 'الفواتير',               route: '/(merchant)/invoices' },
         { icon: '🔄', label: 'الاشتراكات',             route: '/(merchant)/subscriptions' },
-        { icon: '🎯', label: 'أهداف الإيرادات',        route: '/(merchant)/revenue-goals' },
-        { icon: '📊', label: 'المصروفات',              route: '/(merchant)/expenses' },
-        { icon: '📋', label: 'تقارير المطابقة',        route: '/(merchant)/reconciliation' },
+        { icon: '👥', label: 'العملاء',                route: '/(merchant)/customers' },
+        { icon: '🤝', label: 'CRM',                    route: '/(merchant)/crm-integration' },
+        { icon: '📢', label: 'التسويق',                route: '/(merchant)/marketing-automation' },
+        { icon: '🌐', label: 'نظام الإحالة',           route: '/(merchant)/affiliate-system' },
+        { icon: '🏪', label: 'Marketplace',            route: '/(merchant)/marketplace-split' },
+        { icon: '🤝', label: 'الشركاء',               route: '/(merchant)/partner-dashboard' },
       ],
     },
     {
-      title: 'الأدوات',
-      accent: '#8B5CF6',
+      title: '📊 التقارير',
+      accent: '#60A5FA',
       items: [
         { icon: '📈', label: 'التحليلات',              route: '/(merchant)/analytics' },
-        { icon: '🛒', label: 'الدفع عند الاستلام COD', route: '/(merchant)/cod' },
+        { icon: '📋', label: 'التقارير المالية',        route: '/(merchant)/financial-reports' },
+        { icon: '🎯', label: 'قمع التحويل',            route: '/(merchant)/conversion-funnel' },
+        { icon: '💡', label: 'الرؤى الذكية',           route: '/(merchant)/smart-insights' },
+        { icon: '🔮', label: 'التحليل التنبؤي',        route: '/(merchant)/predictive-analytics' },
+      ],
+    },
+    {
+      title: '🔄 التحويلات',
+      accent: '#F97316',
+      items: [
         { icon: '💱', label: 'أسعار الصرف',            route: '/(merchant)/fx' },
+        { icon: '🛒', label: 'الدفع عند الاستلام COD', route: '/(merchant)/cod' },
         { icon: '🏪', label: 'صفحة الدفع المستضافة',  route: '/(merchant)/hosted-checkout' },
         { icon: '💳', label: 'طرق الدفع',              route: '/(merchant)/payment-methods' },
+        { icon: '📋', label: 'المطابقة',               route: '/(merchant)/reconciliation' },
       ],
     },
     {
-      title: 'الحساب والفريق',
-      accent: '#F59E0B',
-      items: [
-        { icon: '🔔', label: 'الإشعارات',              route: '/(merchant)/notifications', badge: unreadCount > 0 ? String(unreadCount) : undefined },
-        { icon: '👤', label: 'الملف الشخصي',           route: '/(merchant)/profile' },
-        { icon: '👥', label: 'إدارة الفريق',           route: '/(merchant)/multi-user' },
-      ],
-    },
-    {
-      title: 'المطورون',
+      title: '⚙️ الإعدادات',
       accent: '#64748B',
       items: [
+        { icon: '👤', label: 'الملف الشخصي',           route: '/(merchant)/profile' },
+        { icon: '👥', label: 'إدارة الفريق',           route: '/(merchant)/multi-user' },
         { icon: '🔑', label: 'مفاتيح API',             route: '/(merchant)/api-keys' },
         { icon: '🔗', label: 'Webhooks',               route: '/(merchant)/webhooks' },
+        { icon: '🔒', label: 'الأمان',                 route: '/(merchant)/2fa-setup' },
       ],
     },
-  ];
+  ]
 
   const handleNavigate = (route: string) => {
     onClose();
@@ -349,15 +367,7 @@ function SideMenu({ visible, onClose, unreadCount }: {
             </View>
           ))}
 
-          {/* Settings */}
-          <TouchableOpacity
-            style={[sm.settingsBtn]}
-            onPress={() => handleNavigate('/(merchant)/settings')}
-            activeOpacity={0.7}
-          >
-            <Text style={sm.settingsIcon}>⚙️</Text>
-            <Text style={sm.settingsLabel}>الإعدادات</Text>
-          </TouchableOpacity>
+
 
           <View style={{ height: 40 }} />
         </ScrollView>
@@ -403,10 +413,10 @@ export default function DashboardScreen() {
   );
 
   const quickActions = [
-    { icon: '🔗', label: 'رابط دفع جديد',   route: '/(merchant)/payment-links' },
-    { icon: '📄', label: 'فاتورة جديدة',    route: '/(merchant)/invoices' },
-    { icon: '💵', label: 'طلب COD',         route: '/(merchant)/cod' },
-    { icon: '📊', label: 'التحليلات',       route: '/(merchant)/analytics' },
+    { icon: '🔗', label: 'رابط دفع جديد',  route: '/(merchant)/payment-links' },
+    { icon: '💳', label: 'المعاملات',       route: '/(merchant)/transactions'  },
+    { icon: '📊', label: 'التقارير',        route: '/(merchant)/reports'       },
+    { icon: '💱', label: 'أسعار الصرف',    route: '/(merchant)/fx'            },
   ];
 
   const kpiCards = [

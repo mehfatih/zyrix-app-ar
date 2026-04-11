@@ -267,10 +267,10 @@
   },
   "tabs": {
     "dashboard": "الرئيسية",
-    "transactions": "المعاملات",
-    "balance": "الرصيد",
-    "analytics": "التحليلات",
-    "settings": "الإعدادات"
+    "growth": "النمو",
+    "pay": "دفع",
+    "reports": "التقارير",
+    "transfers": "التحويلات"
   },
   "currency": {
     "SAR": "ريال سعودي",
@@ -389,7 +389,39 @@
     "no_transfers": "لا توجد تحويلات"
   },
   "drawer": {
-    "merchant_panel": "لوحة التاجر"
+    "merchant_panel": "لوحة التاجر",
+    "group_daily": "يومياً",
+    "group_finance": "المالية",
+    "group_growth": "النمو",
+    "group_advanced": "متقدم",
+    "group_settings": "الإعدادات",
+    "payment_links": "روابط الدفع",
+    "transactions": "المعاملات",
+    "balance": "الرصيد والمحافظ",
+    "settlements": "التسويات",
+    "invoices": "الفواتير",
+    "expenses": "المصروفات",
+    "revenue_goals": "أهداف الإيراد",
+    "subscriptions": "الاشتراكات",
+    "customers": "العملاء",
+    "crm": "CRM",
+    "affiliate": "نظام الإحالة",
+    "marketing": "التسويق",
+    "growth_exp": "تجارب النمو",
+    "analytics": "التحليلات",
+    "reports": "التقارير المالية",
+    "cod": "الدفع عند الاستلام",
+    "fx": "أسعار الصرف",
+    "transfers": "التحويلات",
+    "fraud": "كشف الاحتيال",
+    "gateway": "توجيه البوابات",
+    "tokenization": "حفظ البطاقات",
+    "tax": "الضرائب",
+    "team": "إدارة الفريق",
+    "api_keys": "مفاتيح API",
+    "webhooks": "Webhooks",
+    "settings": "الإعدادات",
+    "help": "المساعدة"
   },
   "twofa": {
     "title": "التحقق بخطوتين",

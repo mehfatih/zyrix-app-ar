@@ -39,7 +39,7 @@
         "gradleCommand": ":app:bundleRelease"
       },
       "env": {
-        "API_URL": "https://api.zyrix.co",
+        "API_URL": "https://zyrix-backend-production.up.railway.app",
         "APP_VARIANT": "production"
       }
     }

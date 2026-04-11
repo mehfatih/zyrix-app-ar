@@ -766,63 +766,162 @@ export const uxApi = {
     request<any>('/api/ux-layer/a11y', { method: 'PATCH', body: JSON.stringify(data) }),
 };
 
+// ─── Layer 6B ─────────────────────────────────────────────────
+
+export const teamAccountsApi = {
+  getAccount: () => request<any>('/api/team-accounts'),
+  getMembers: () => request<any>('/api/team-accounts/members'),
+  inviteMember: (data: { name: string; email: string; phone?: string; role?: string }) =>
+    request<any>('/api/team-accounts/members', { method: 'POST', body: JSON.stringify(data) }),
+  updateMember: (id: string, data: { name?: string; role?: string; status?: string }) =>
+    request<any>(`/api/team-accounts/members/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  removeMember: (id: string) =>
+    request<any>(`/api/team-accounts/members/${id}`, { method: 'DELETE' }),
+  getActivityLogs: (limit?: number) =>
+    request<any>(`/api/team-accounts/activity${limit ? `?limit=${limit}` : ''}`),
+};
+
+export const permissionsEngineApi = {
+  getRoles: () => request<any>('/api/permissions/roles'),
+  createRole: (data: { name: string; description?: string; permissions: string[] }) =>
+    request<any>('/api/permissions/roles', { method: 'POST', body: JSON.stringify(data) }),
+  updateRole: (id: string, data: any) =>
+    request<any>(`/api/permissions/roles/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteRole: (id: string) =>
+    request<any>(`/api/permissions/roles/${id}`, { method: 'DELETE' }),
+  getGrants: (memberId: string) =>
+    request<any>(`/api/permissions/grants/${memberId}`),
+  upsertGrant: (data: { member_id: string; resource: string; action: string; granted: boolean; role_id?: string; granted_by?: string }) =>
+    request<any>('/api/permissions/grants', { method: 'POST', body: JSON.stringify(data) }),
+  checkPermission: (data: { member_id: string; resource: string; action: string }) =>
+    request<any>('/api/permissions/check', { method: 'POST', body: JSON.stringify(data) }),
+  assignRole: (memberId: string, role_id: string) =>
+    request<any>(`/api/permissions/members/${memberId}/assign-role`, { method: 'POST', body: JSON.stringify({ role_id }) }),
+};
+
+export const marketplaceSplitApi = {
+  getVendors: () => request<any>('/api/marketplace/vendors'),
+  createVendor: (data: { name: string; email: string; phone?: string; iban?: string; commission_rate?: number }) =>
+    request<any>('/api/marketplace/vendors', { method: 'POST', body: JSON.stringify(data) }),
+  updateVendor: (id: string, data: any) =>
+    request<any>(`/api/marketplace/vendors/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteVendor: (id: string) =>
+    request<any>(`/api/marketplace/vendors/${id}`, { method: 'DELETE' }),
+  getSplitRules: () => request<any>('/api/marketplace/split-rules'),
+  createSplitRule: (data: { name: string; type?: string; splits: any[] }) =>
+    request<any>('/api/marketplace/split-rules', { method: 'POST', body: JSON.stringify(data) }),
+  deleteSplitRule: (id: string) =>
+    request<any>(`/api/marketplace/split-rules/${id}`, { method: 'DELETE' }),
+  processSplit: (data: { rule_id: string; gross_amount: number; transaction_id?: string; vendor_id?: string }) =>
+    request<any>('/api/marketplace/process', { method: 'POST', body: JSON.stringify(data) }),
+  getLogs: (limit?: number) =>
+    request<any>(`/api/marketplace/logs${limit ? `?limit=${limit}` : ''}`),
+};
+
+export const partnerDashboardApi = {
+  getPartners: () => request<any>('/api/partners'),
+  createPartner: (data: { name: string; email: string; type?: string; commission_rate?: number }) =>
+    request<any>('/api/partners', { method: 'POST', body: JSON.stringify(data) }),
+  updatePartner: (id: string, data: any) =>
+    request<any>(`/api/partners/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deletePartner: (id: string) =>
+    request<any>(`/api/partners/${id}`, { method: 'DELETE' }),
+  getMetrics: (id: string) =>
+    request<any>(`/api/partners/${id}/metrics`),
+  recordMetric: (id: string, data: { period: string; gmv?: number; transactions?: number; new_merchants?: number; commission_earned?: number }) =>
+    request<any>(`/api/partners/${id}/metrics`, { method: 'POST', body: JSON.stringify(data) }),
+  addSubMerchant: (id: string, data: { sub_merchant_name: string; sub_merchant_email: string }) =>
+    request<any>(`/api/partners/${id}/sub-merchants`, { method: 'POST', body: JSON.stringify(data) }),
+};
+
+export const growthExperimentsApi = {
+  getExperiments: (status?: string) => {
+    const qs = status ? `?status=${status}` : '';
+    return request<any>(`/api/growth-experiments${qs}`);
+  },
+  createExperiment: (data: { name: string; hypothesis?: string; type?: string; traffic_split?: number; target_metric?: string; start_date?: string; end_date?: string; variants?: any[] }) =>
+    request<any>('/api/growth-experiments', { method: 'POST', body: JSON.stringify(data) }),
+  getExperiment: (id: string) =>
+    request<any>(`/api/growth-experiments/${id}`),
+  updateStatus: (id: string, status: string, winner_variant?: string) =>
+    request<any>(`/api/growth-experiments/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status, winner_variant }) }),
+  deleteExperiment: (id: string) =>
+    request<any>(`/api/growth-experiments/${id}`, { method: 'DELETE' }),
+  trackEvent: (data: { experiment_id: string; variant_id: string; event_type: string; session_id?: string; value?: number; metadata?: any }) =>
+    request<any>('/api/growth-experiments/events', { method: 'POST', body: JSON.stringify(data) }),
+  getResults: (id: string) =>
+    request<any>(`/api/growth-experiments/${id}/results`),
+};
+
 // ─── Default Export ───────────────────────────────────────────
 export default {
-  auth:                 authApi,
-  transactions:         transactionsApi,
-  balance:              balanceApi,
-  settlements:          settlementsApi,
-  disputes:             disputesApi,
-  refunds:              refundsApi,
-  notifications:        notificationsApi,
-  merchant:             merchantApi,
-  dashboard:            dashboardApi,
-  analytics:            analyticsApi,
-  analyticsIntelligence: analyticsIntelligenceApi,
-  paymentLinks:         paymentLinksApi,
-  subscriptions:        subscriptionsApi,
-  export:               exportApi,
-  revenueGoals:         revenueGoalsApi,
-  expenses:             expensesApi,
-  invoices:             invoicesApi,
-  transfers:            transfersApi,
-  apiKeys:              apiKeysApi,
-  webhooks:             webhooksApi,
-  cod:                  codApi,
-  fx:                   fxApi,
-  team:                 teamApi,
-  hostedCheckout:       hostedCheckoutApi,
-  paymentMethods:       paymentMethodsApi,
-  retry:                retryApi,
-  reconciliation:       reconciliationApi,
-  customers:            customersApi,
-  featureFlags:         featureFlagsApi,
-  wallets:              walletsApi,
-  gatewayRouting:       gatewayRoutingApi,
-  crossRetry:           crossRetryApi,
-  bin:                  binApi,
-  dynamicCheckout:      dynamicCheckoutApi,
-  fraud:                fraudApi,
-  growth:               growthApi,
-  tokenization:         tokenizationApi,
-  chargeback:           chargebackApi,
-  approvalOptimization: approvalOptimizationApi,
-  payoutScheduling:     payoutSchedulingApi,
-  commission:           commissionApi,
-  tax:                  taxApi,
-  recovery:             recoveryApi,
-  financialReports:     financialReportsApi,
-  realtimeDashboard:    realtimeDashboardApi,
-  conversionFunnel:     conversionFunnelApi,
-  successRate:          successRateApi,
-  revenueBreakdown:     revenueBreakdownApi,
-  customerCLV:          customerCLVApi,
-  cohortAnalysis:       cohortAnalysisApi,
-  smartInsights:        smartInsightsApi,
-  predictiveAnalytics:  predictiveAnalyticsApi,
-  alertsEngine:         alertsEngineApi,
-  abTesting:            abTestingApi,
-  onboarding:           onboardingApi,
-  setup:                setupApi,
-  ux:                   uxApi,
+  auth:                    authApi,
+  transactions:            transactionsApi,
+  balance:                 balanceApi,
+  settlements:             settlementsApi,
+  disputes:                disputesApi,
+  refunds:                 refundsApi,
+  notifications:           notificationsApi,
+  merchant:                merchantApi,
+  dashboard:               dashboardApi,
+  analytics:               analyticsApi,
+  analyticsIntelligence:   analyticsIntelligenceApi,
+  paymentLinks:            paymentLinksApi,
+  subscriptions:           subscriptionsApi,
+  export:                  exportApi,
+  revenueGoals:            revenueGoalsApi,
+  expenses:                expensesApi,
+  invoices:                invoicesApi,
+  transfers:               transfersApi,
+  apiKeys:                 apiKeysApi,
+  webhooks:                webhooksApi,
+  cod:                     codApi,
+  fx:                      fxApi,
+  team:                    teamApi,
+  hostedCheckout:          hostedCheckoutApi,
+  paymentMethods:          paymentMethodsApi,
+  retry:                   retryApi,
+  reconciliation:          reconciliationApi,
+  customers:               customersApi,
+  featureFlags:            featureFlagsApi,
+  wallets:                 walletsApi,
+  gatewayRouting:          gatewayRoutingApi,
+  crossRetry:              crossRetryApi,
+  bin:                     binApi,
+  dynamicCheckout:         dynamicCheckoutApi,
+  fraud:                   fraudApi,
+  growth:                  growthApi,
+  tokenization:            tokenizationApi,
+  chargeback:              chargebackApi,
+  approvalOptimization:    approvalOptimizationApi,
+  payoutScheduling:        payoutSchedulingApi,
+  commission:              commissionApi,
+  tax:                     taxApi,
+  recovery:                recoveryApi,
+  financialReports:        financialReportsApi,
+  realtimeDashboard:       realtimeDashboardApi,
+  conversionFunnel:        conversionFunnelApi,
+  successRate:             successRateApi,
+  revenueBreakdown:        revenueBreakdownApi,
+  customerCLV:             customerCLVApi,
+  cohortAnalysis:          cohortAnalysisApi,
+  smartInsights:           smartInsightsApi,
+  predictiveAnalytics:     predictiveAnalyticsApi,
+  alertsEngine:            alertsEngineApi,
+  abTesting:               abTestingApi,
+  onboarding:              onboardingApi,
+  setup:                   setupApi,
+  ux:                      uxApi,
+  // ── Layer 6A ──
+  advancedNotifications:   advancedNotificationsApi,
+  paymentReminders:        paymentRemindersApi,
+  crmIntegration:          crmIntegrationApi,
+  marketingAutomation:     marketingAutomationApi,
+  affiliateSystem:         affiliateSystemApi,
+  // ── Layer 6B ──
+  teamAccounts:            teamAccountsApi,
+  permissionsEngine:       permissionsEngineApi,
+  marketplaceSplit:        marketplaceSplitApi,
+  partnerDashboard:        partnerDashboardApi,
+  growthExperiments:       growthExperimentsApi,
 };
