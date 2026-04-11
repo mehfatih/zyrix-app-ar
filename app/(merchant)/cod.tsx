@@ -6,6 +6,7 @@ import {
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { InnerHeader } from '../../components/InnerHeader'
+import { SmartEmptyState, EmbeddedHelp } from '../../components/SmartEmptyState'
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { useTabBarHeight } from '../../hooks/useTabBarHeight'
@@ -206,12 +207,7 @@ export default function CODScreen() {
   )
 
   const renderEmpty = () => (
-    <View style={st.emptyContainer}>
-      <Text style={st.emptyIcon}>💵</Text>
-      <Text style={st.emptyText}>لا توجد طلبات COD بعد</Text>
-      <TouchableOpacity style={st.emptyBtn} onPress={() => setShowCreate(true)}>
-        <Text style={st.emptyBtnText}>+ إنشاء طلب جديد</Text>
-      </TouchableOpacity>
+    <SmartEmptyState type="cod" />
     </View>
   )
 

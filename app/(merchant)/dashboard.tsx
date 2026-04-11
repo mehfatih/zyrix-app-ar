@@ -53,21 +53,6 @@ const KPI_COMPARE_DATA = [
   { months: ['يناير', 'فبراير', 'مارس'], values: [7, 4, 2],             unit: '',    label: 'النزاعات المفتوحة — آخر 3 أشهر' },
 ];
 
-const DAY_LABEL_MAP: Record<string, string> = {
-  'Sun': 'أحد', 'Mon': 'إثن', 'Tue': 'ثلا', 'Wed': 'أرب',
-  'Thu': 'خمي', 'Fri': 'جمع', 'Sat': 'سبت',
-  'Sunday': 'أحد', 'Monday': 'إثن', 'Tuesday': 'ثلا', 'Wednesday': 'أرب',
-  'Thursday': 'خمي', 'Friday': 'جمع', 'Saturday': 'سبت',
-};
-
-function toEnglishDayLabel(label: string): string {
-  if (/^[A-Za-z]{2,3}$/.test(label)) return label;
-  const entry = Object.entries(DAY_LABEL_MAP).find(([_, v]) => v === label);
-  if (entry) return entry[0].substring(0, 3);
-  if (/^[A-Za-z]+$/.test(label)) return label.substring(0, 3);
-  return label;
-}
-
 interface DashboardData {
   kpis: { totalVolume: number; successRate: string; todayTx: number; openDisputes: number };
   recentTransactions: ApiTransaction[];
@@ -227,28 +212,82 @@ const pivS = StyleSheet.create({
   insightText: { fontSize: FONT_SIZE.xs, lineHeight: 18 },
 });
 
-function SideMenu({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+// ─── Side Menu — منظم باحترافية ──────────────────
+
+interface MenuItem {
+  icon: string;
+  label: string;
+  route: string;
+  badge?: string;
+}
+
+interface MenuSection {
+  title: string;
+  accent: string;
+  items: MenuItem[];
+}
+
+function SideMenu({ visible, onClose, unreadCount }: {
+  visible: boolean;
+  onClose: () => void;
+  unreadCount: number;
+}) {
   const router   = useRouter();
-  const { t }    = useTranslation();
   const { user } = useAuth();
 
-  const menuItems = [
-    { icon: '🏠', label: t('tabs.dashboard'),         route: '/(merchant)/dashboard' },
-    { icon: '💳', label: t('tabs.transactions'),       route: '/(merchant)/transactions' },
-    { icon: '💰', label: t('tabs.balance'),            route: '/(merchant)/balance' },
-    { icon: '📊', label: t('tabs.analytics'),          route: '/(merchant)/analytics' },
-    { icon: '🔗', label: t('dashboard.payment_links'), route: '/(merchant)/payment-links' },
-    { icon: '🔔', label: t('notifications.title'),     route: '/(merchant)/notifications' },
-    { icon: '⚠️', label: t('disputes.title'),          route: '/(merchant)/disputes' },
-    { icon: '↩',  label: t('refunds.title'),           route: '/(merchant)/refunds' },
-    { icon: '🏦', label: t('settlements.title'),       route: '/(merchant)/settlements' },
-    { icon: '💵', label: 'كاش COD',                    route: '/(merchant)/cod' },
-    { icon: '💱', label: 'أسعار الصرف',                route: '/(merchant)/fx' },
-    { icon: '🎯', label: 'أهداف الإيرادات',            route: '/(merchant)/revenue-goals' },
-    { icon: '📄', label: 'الفواتير',                   route: '/(merchant)/invoices' },
-    { icon: '🔄', label: 'الاشتراكات',                 route: '/(merchant)/subscriptions' },
-    { icon: '⚙️', label: t('tabs.settings'),           route: '/(merchant)/settings' },
-    { icon: '👤', label: t('profile.title'),           route: '/(merchant)/profile' },
+  // ─── القائمة مرتبة حسب أولوية التاجر ────────────
+  const sections: MenuSection[] = [
+    {
+      title: 'المدفوعات',
+      accent: '#06B6D4',
+      items: [
+        { icon: '💳', label: 'المعاملات',              route: '/(merchant)/transactions' },
+        { icon: '🔗', label: 'روابط الدفع',            route: '/(merchant)/payment-links' },
+        { icon: '🏦', label: 'الاستقطاعات',            route: '/(merchant)/settlements' },
+        { icon: '↩️',  label: 'المستردات',              route: '/(merchant)/refunds' },
+        { icon: '⚠️', label: 'النزاعات',               route: '/(merchant)/disputes' },
+      ],
+    },
+    {
+      title: 'الإيرادات والمالية',
+      accent: '#10B981',
+      items: [
+        { icon: '💰', label: 'الرصيد والتحويلات',      route: '/(merchant)/balance' },
+        { icon: '📄', label: 'الفواتير',               route: '/(merchant)/invoices' },
+        { icon: '🔄', label: 'الاشتراكات',             route: '/(merchant)/subscriptions' },
+        { icon: '🎯', label: 'أهداف الإيرادات',        route: '/(merchant)/revenue-goals' },
+        { icon: '📊', label: 'المصروفات',              route: '/(merchant)/expenses' },
+        { icon: '📋', label: 'تقارير المطابقة',        route: '/(merchant)/reconciliation' },
+      ],
+    },
+    {
+      title: 'الأدوات',
+      accent: '#8B5CF6',
+      items: [
+        { icon: '📈', label: 'التحليلات',              route: '/(merchant)/analytics' },
+        { icon: '🛒', label: 'الدفع عند الاستلام COD', route: '/(merchant)/cod' },
+        { icon: '💱', label: 'أسعار الصرف',            route: '/(merchant)/fx' },
+        { icon: '🏪', label: 'صفحة الدفع المستضافة',  route: '/(merchant)/hosted-checkout' },
+        { icon: '💳', label: 'طرق الدفع',              route: '/(merchant)/payment-methods' },
+      ],
+    },
+    {
+      title: 'الحساب والفريق',
+      accent: '#F59E0B',
+      items: [
+        { icon: '🔔', label: 'الإشعارات',              route: '/(merchant)/notifications', badge: unreadCount > 0 ? String(unreadCount) : undefined },
+        { icon: '👤', label: 'الملف الشخصي',           route: '/(merchant)/profile' },
+        { icon: '👥', label: 'إدارة الفريق',           route: '/(merchant)/multi-user' },
+      ],
+    },
+    {
+      title: 'المطورون',
+      accent: '#64748B',
+      items: [
+        { icon: '🔑', label: 'مفاتيح API',             route: '/(merchant)/api-keys' },
+        { icon: '🔗', label: 'Webhooks',               route: '/(merchant)/webhooks' },
+      ],
+    },
   ];
 
   const handleNavigate = (route: string) => {
@@ -260,6 +299,8 @@ function SideMenu({ visible, onClose }: { visible: boolean; onClose: () => void 
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <TouchableOpacity style={sm.overlay} activeOpacity={1} onPress={onClose} />
       <View style={sm.panel}>
+
+        {/* Header */}
         <View style={sm.header}>
           <View style={sm.logoRow}>
             <View style={sm.logoBubble}>
@@ -274,14 +315,50 @@ function SideMenu({ visible, onClose }: { visible: boolean; onClose: () => void 
             <Text style={sm.closeBtnText}>✕</Text>
           </TouchableOpacity>
         </View>
+
         <View style={sm.divider} />
+
         <ScrollView style={sm.scrollArea} showsVerticalScrollIndicator={false}>
-          {menuItems.map((item, idx) => (
-            <TouchableOpacity key={idx} style={sm.item} onPress={() => handleNavigate(item.route)} activeOpacity={0.7}>
-              <Text style={sm.itemIcon}>{item.icon}</Text>
-              <Text style={sm.itemLabel}>{item.label}</Text>
-            </TouchableOpacity>
+          {sections.map((section, sIdx) => (
+            <View key={sIdx}>
+              {/* Section Header */}
+              <View style={[sm.sectionHeader, { borderLeftColor: section.accent }]}>
+                <Text style={[sm.sectionTitle, { color: section.accent }]}>{section.title}</Text>
+              </View>
+
+              {/* Section Items */}
+              {section.items.map((item, iIdx) => (
+                <TouchableOpacity
+                  key={iIdx}
+                  style={sm.item}
+                  onPress={() => handleNavigate(item.route)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={sm.itemIcon}>{item.icon}</Text>
+                  <Text style={sm.itemLabel}>{item.label}</Text>
+                  {item.badge && (
+                    <View style={sm.badge}>
+                      <Text style={sm.badgeText}>{item.badge}</Text>
+                    </View>
+                  )}
+                  <Text style={sm.arrow}>›</Text>
+                </TouchableOpacity>
+              ))}
+
+              {sIdx < sections.length - 1 && <View style={sm.sectionDivider} />}
+            </View>
           ))}
+
+          {/* Settings */}
+          <TouchableOpacity
+            style={[sm.settingsBtn]}
+            onPress={() => handleNavigate('/(merchant)/settings')}
+            activeOpacity={0.7}
+          >
+            <Text style={sm.settingsIcon}>⚙️</Text>
+            <Text style={sm.settingsLabel}>الإعدادات</Text>
+          </TouchableOpacity>
+
           <View style={{ height: 40 }} />
         </ScrollView>
       </View>
@@ -310,7 +387,6 @@ export default function DashboardScreen() {
       const data = await dashboardApi.getData();
       try {
         const analytics = await analyticsApi.getData(chartPeriod);
-        // data used internally only — no need to store in state
         void analytics;
       } catch (_e) {}
       setDashData(data);
@@ -327,10 +403,10 @@ export default function DashboardScreen() {
   );
 
   const quickActions = [
-    { icon: '🔗', label: t('dashboard.payment_links'),        route: '/(merchant)/payment-links' },
-    { icon: '🔔', label: t('dashboard.notifications_action'), route: '/(merchant)/notifications' },
-    { icon: '💵', label: 'كاش COD',                           route: '/(merchant)/cod' },
-    { icon: '💱', label: 'أسعار الصرف',                       route: '/(merchant)/fx' },
+    { icon: '🔗', label: 'رابط دفع جديد',   route: '/(merchant)/payment-links' },
+    { icon: '📄', label: 'فاتورة جديدة',    route: '/(merchant)/invoices' },
+    { icon: '💵', label: 'طلب COD',         route: '/(merchant)/cod' },
+    { icon: '📊', label: 'التحليلات',       route: '/(merchant)/analytics' },
   ];
 
   const kpiCards = [
@@ -358,7 +434,11 @@ export default function DashboardScreen() {
         onMessagesPress={() => router.push('/(merchant)/notifications')}
         unreadMessages={dashData?.unreadNotifications ?? 0}
       />
-      <SideMenu visible={menuVisible} onClose={() => setMenuVisible(false)} />
+      <SideMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        unreadCount={dashData?.unreadNotifications ?? 0}
+      />
 
       <ScrollView
         style={styles.scrollView}
@@ -479,19 +559,38 @@ const styles = StyleSheet.create({
 });
 
 const sm = StyleSheet.create({
-  overlay:      { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
-  panel:        { position: 'absolute', top: 0, right: 0, bottom: 0, width: SCREEN_WIDTH * 0.78, backgroundColor: COLORS.deepBg, shadowColor: '#000', shadowOffset: { width: -3, height: 0 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 20 },
-  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16 },
-  logoRow:      { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  logoBubble:   { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
-  logoLetter:   { fontSize: 20, fontWeight: FONT_WEIGHT.extrabold, color: COLORS.white },
-  brandName:    { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary, letterSpacing: 1 },
-  merchantId:   { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2, fontFamily: 'monospace' },
-  closeBtn:     { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
-  closeBtnText: { fontSize: 14, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.bold },
-  divider:      { height: 1, backgroundColor: COLORS.border, marginHorizontal: 20, marginBottom: 4 },
-  scrollArea:   { flex: 1 },
-  item:         { flexDirection: 'row-reverse', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, gap: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' },
-  itemIcon:     { fontSize: 20, width: 28, textAlign: 'center' },
-  itemLabel:    { flex: 1, fontSize: FONT_SIZE.base, color: COLORS.textPrimary, fontWeight: FONT_WEIGHT.medium, textAlign: 'right' },
+  overlay:        { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
+  panel:          { position: 'absolute', top: 0, right: 0, bottom: 0, width: SCREEN_WIDTH * 0.82, backgroundColor: COLORS.deepBg, shadowColor: '#000', shadowOffset: { width: -3, height: 0 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 20 },
+  header:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16 },
+  logoRow:        { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  logoBubble:     { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
+  logoLetter:     { fontSize: 20, fontWeight: FONT_WEIGHT.extrabold, color: COLORS.white },
+  brandName:      { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary, letterSpacing: 1 },
+  merchantId:     { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2, fontFamily: 'monospace' },
+  closeBtn:       { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
+  closeBtnText:   { fontSize: 14, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.bold },
+  divider:        { height: 1, backgroundColor: COLORS.border, marginHorizontal: 20, marginBottom: 8 },
+  scrollArea:     { flex: 1 },
+
+  // Section Headers
+  sectionHeader:  { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 6, borderLeftWidth: 3, marginLeft: 10 },
+  sectionTitle:   { fontSize: 11, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase' },
+
+  // Items
+  item:           { flexDirection: 'row-reverse', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 13, gap: 12 },
+  itemIcon:       { fontSize: 18, width: 26, textAlign: 'center' },
+  itemLabel:      { flex: 1, fontSize: 14, color: COLORS.textPrimary, fontWeight: '500', textAlign: 'right' },
+  arrow:          { fontSize: 16, color: 'rgba(255,255,255,0.2)', fontWeight: '300' },
+
+  // Badge
+  badge:          { backgroundColor: COLORS.primary, borderRadius: 10, minWidth: 20, height: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 },
+  badgeText:      { color: '#fff', fontSize: 10, fontWeight: '800' },
+
+  // Section Divider
+  sectionDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginHorizontal: 20, marginTop: 8 },
+
+  // Settings Button
+  settingsBtn:    { flexDirection: 'row-reverse', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, marginTop: 8, gap: 12, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)' },
+  settingsIcon:   { fontSize: 18, width: 26, textAlign: 'center' },
+  settingsLabel:  { fontSize: 14, color: COLORS.textSecondary, fontWeight: '600', textAlign: 'right' },
 });

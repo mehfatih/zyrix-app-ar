@@ -14,6 +14,7 @@ import KpiCard from '../../components/KpiCard'
 import TransactionRow from '../../components/TransactionRow'
 import type { Transaction } from '../../types'
 import { InnerHeader } from '../../components/InnerHeader'
+import { SmartEmptyState, EmbeddedHelp } from '../../components/SmartEmptyState'
 
 const isRTL = I18nManager.isRTL
 
@@ -39,13 +40,13 @@ export default function TransactionsScreen() {
   const router         = useRouter()
   const tabBarHeight   = useTabBarHeight()
 
-  const [filter, setFilter]       = useState<FilterKey>('all')
-  const [search, setSearch]       = useState('')
-  const [allTx, setAllTx]         = useState<Transaction[]>([])
-  const [stats, setStats]         = useState({ totalVolume: 0, totalCount: 0, successRate: '0' })
-  const [loading, setLoading]     = useState(true)
+  const [filter, setFilter]         = useState<FilterKey>('all')
+  const [search, setSearch]         = useState('')
+  const [allTx, setAllTx]           = useState<Transaction[]>([])
+  const [stats, setStats]           = useState({ totalVolume: 0, totalCount: 0, successRate: '0' })
+  const [loading, setLoading]       = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [error, setError]         = useState<string | null>(null)
+  const [error, setError]           = useState<string | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
@@ -61,9 +62,11 @@ export default function TransactionsScreen() {
   useEffect(() => { fetchData() }, [])
   const onRefresh = () => { setRefreshing(true); fetchData() }
 
-  const totalVolume  = stats.totalVolume
-  const successRate  = Number(stats.successRate)
-  const totalCount   = stats.totalCount
+  const totalVolume = stats.totalVolume
+  const successRate = Number(stats.successRate)
+  const totalCount  = stats.totalCount
+
+  const failedCount = useMemo(() => allTx.filter(tx => tx.status === 'failed').length, [allTx])
 
   const filtered = useMemo(() => allTx.filter((tx) => {
     const matchesFilter = filter === 'all' || tx.status === filter
@@ -74,6 +77,10 @@ export default function TransactionsScreen() {
 
   const handleRowPress = (id: string) => {
     router.push({ pathname: '/(merchant)/transaction-detail', params: { id } })
+  }
+
+  const handleFailedPress = () => {
+    router.push('/(merchant)/failed-transactions')
   }
 
   const renderItem = ({ item }: ListRenderItemInfo<Transaction>) => (
@@ -96,6 +103,23 @@ export default function TransactionsScreen() {
             <Text style={styles.csvBtnText}>{t('transactions.export_csv')}</Text>
           </TouchableOpacity>
         </View>
+
+        {/* زر المعاملات الفاشلة */}
+        <TouchableOpacity
+          style={styles.failedBtn}
+          onPress={handleFailedPress}
+          activeOpacity={0.75}
+        >
+          <View style={styles.failedBtnInner}>
+            <Text style={styles.failedBtnText}>⚠️ المعاملات الفاشلة وإعادة المحاولة</Text>
+            {failedCount > 0 && (
+              <View style={styles.failedBadge}>
+                <Text style={styles.failedBadgeText}>{failedCount}</Text>
+              </View>
+            )}
+            <Text style={styles.failedArrow}>{isRTL ? '←' : '→'}</Text>
+          </View>
+        </TouchableOpacity>
       </View>
 
       <View style={[styles.kpiRow, isRTL && styles.kpiRowRTL]}>
@@ -153,6 +177,15 @@ export default function TransactionsScreen() {
         />
       </View>
 
+      <EmbeddedHelp
+        context="المعاملات"
+        color="#06B6D4"
+        items={[
+          { q: 'كيف أصدّر المعاملات؟', a: 'اضغط زر CSV في الأعلى لتحميل جميع المعاملات بصيغة Excel.' },
+          { q: 'ما الفرق بين ناجح ومعلق؟', a: 'الناجح يعني اكتمل الدفع. المعلق يعني لا يزال قيد المعالجة.' },
+          { q: 'كيف أسترد مبلغ؟', a: 'اضغط على المعاملة ثم اختر "استرداد" لبدء عملية الاسترداد.' },
+        ]}
+      />
       <View style={styles.filterWrapper}>
         <View style={styles.filterRow}>
           {FILTERS.map((f) => {
@@ -184,9 +217,7 @@ export default function TransactionsScreen() {
         renderItem={renderItem}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={() => (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>—</Text>
-          </View>
+          <SmartEmptyState type="transactions" />
         )}
         contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight }]}
         showsVerticalScrollIndicator={false}
@@ -205,6 +236,15 @@ const styles = StyleSheet.create({
   textRight:      { textAlign: 'right' },
   csvBtn:         { backgroundColor: COLORS.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
   csvBtnText:     { color: COLORS.white, fontSize: 12, fontWeight: '700' },
+
+  // ─── Failed Button ─────────────────────────────
+  failedBtn:       { marginTop: 10, backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)', paddingHorizontal: 14, paddingVertical: 10 },
+  failedBtnInner:  { flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 },
+  failedBtnText:   { flex: 1, fontSize: 13, fontWeight: '700', color: '#EF4444', textAlign: isRTL ? 'right' : 'left' },
+  failedBadge:     { backgroundColor: '#EF4444', borderRadius: 12, minWidth: 22, height: 22, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  failedBadgeText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+  failedArrow:     { fontSize: 14, color: '#EF4444', fontWeight: '700' },
+
   kpiRow:         { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 12, gap: 8, backgroundColor: COLORS.darkBg },
   kpiRowRTL:      { flexDirection: 'row-reverse' },
   chartContainer: { flexDirection: isRTL ? 'row-reverse' : 'row', justifyContent: 'space-around', alignItems: 'flex-end', backgroundColor: COLORS.cardBg, marginHorizontal: 12, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, padding: 16, height: 130 },

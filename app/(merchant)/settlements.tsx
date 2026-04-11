@@ -63,6 +63,18 @@ export default function SettlementsScreen() {
     <SettlementRow {...item} onPress={() => Alert.alert(item.id)} />
   )
 
+  // Calculate next settlement prediction
+  const nextSettlementDate = () => {
+    const now = new Date()
+    const dayOfWeek = now.getDay()
+    const daysUntilThursday = (4 - dayOfWeek + 7) % 7 || 7
+    const next = new Date(now.getTime() + daysUntilThursday * 86400000)
+    return next.toLocaleDateString('ar-SA', { weekday: 'long', month: 'long', day: 'numeric' })
+  }
+
+  const avgNet = allSettlements.length > 0 ? totalNet / allSettlements.length : 0
+  const predictedNext = Math.round(avgNet * 1.05)
+
   const renderHeader = () => (
     <>
       <View style={st.exportRow}>
@@ -72,6 +84,26 @@ export default function SettlementsScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Settlement Forecast */}
+      <View style={st.forecastCard}>
+        <View style={[st.forecastRow, isRTL && { flexDirection: 'row-reverse' }]}>
+          <View style={st.forecastLeft}>
+            <Text style={st.forecastTitle}>📅 التسوية القادمة المتوقعة</Text>
+            <Text style={st.forecastDate}>{nextSettlementDate()}</Text>
+            <Text style={st.forecastSub}>كل خميس — تلقائي</Text>
+          </View>
+          <View style={st.forecastRight}>
+            <Text style={st.forecastLabel}>المبلغ المتوقع</Text>
+            <Text style={st.forecastAmount}>{fmt(predictedNext)}</Text>
+            <View style={st.forecastBadge}>
+              <Text style={st.forecastBadgeTxt}>+5% نمو</Text>
+            </View>
+          </View>
+        </View>
+        <View style={st.forecastBar}>
+          <View style={st.forecastBarFill} />
+        </View>
+      </View>
       <View style={[st.kpiRow, isRTL && st.kpiRowRTL]}>
         <KpiCard label={t('settlements.net')} value={fmt(totalNet)}
           icon="💰" color={COLORS.success} valueColor={COLORS.success}
@@ -184,4 +216,17 @@ const st = StyleSheet.create({
   emptyContainer: { alignItems: 'center', paddingVertical: 60, gap: 8 },
   emptyIcon: { fontSize: 36 },
   emptyText: { fontSize: 15, color: COLORS.textMuted },
+  forecastCard:    { marginHorizontal: 12, marginBottom: 10, backgroundColor: 'rgba(13,148,136,0.1)', borderRadius: 14, borderWidth: 1.5, borderColor: 'rgba(13,148,136,0.35)', padding: 14, overflow: 'hidden' },
+  forecastRow:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
+  forecastLeft:    { flex: 1, gap: 3 },
+  forecastTitle:   { fontSize: 12, fontWeight: '700', color: '#0D9488' },
+  forecastDate:    { fontSize: 15, fontWeight: '800', color: COLORS.textPrimary },
+  forecastSub:     { fontSize: 10, color: COLORS.textMuted },
+  forecastRight:   { alignItems: 'flex-end', gap: 3 },
+  forecastLabel:   { fontSize: 10, color: COLORS.textMuted, fontWeight: '600' },
+  forecastAmount:  { fontSize: 18, fontWeight: '800', color: '#0D9488' },
+  forecastBadge:   { backgroundColor: 'rgba(16,185,129,0.15)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  forecastBadgeTxt:{ fontSize: 10, color: '#10B981', fontWeight: '700' },
+  forecastBar:     { height: 4, backgroundColor: COLORS.surfaceBg, borderRadius: 2, overflow: 'hidden' },
+  forecastBarFill: { height: '100%', width: '72%', backgroundColor: '#0D9488', borderRadius: 2 },
 })

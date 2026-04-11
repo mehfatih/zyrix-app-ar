@@ -1,16 +1,8 @@
 // app/(merchant)/settings.tsx
 import React, { useState } from 'react'
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Switch,
-  I18nManager,
-  SafeAreaView,
-  Alert,
-  TextInput,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  Switch, I18nManager, SafeAreaView, Alert, TextInput,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { COLORS } from '../../constants/colors'
@@ -18,28 +10,23 @@ import { useTranslation } from '../../hooks/useTranslation'
 import { useAuth } from '../../hooks/useAuth'
 import { merchantApi } from '../../services/api'
 import Icon, { type IconName } from '../../components/Icon'
-import { InnerHeader } from '../../components/InnerHeader';
+import { InnerHeader } from '../../components/InnerHeader'
 
 const isRTL = I18nManager.isRTL
-
 type Language = 'ar' | 'en'
 
 interface ToggleState {
-  pushNotifications: boolean
-  emailReports: boolean
-  smsAlerts: boolean
-  twoFactor: boolean
-  biometric: boolean
-  autoLogout: boolean
+  pushNotifications: boolean; emailReports: boolean; smsAlerts: boolean;
+  twoFactor: boolean; biometric: boolean; autoLogout: boolean;
 }
 
 function SectionHeader({ title }: { title: string }) {
   return <Text style={[sh.text, isRTL && sh.textRTL]}>{title}</Text>
 }
 
-function SettingRow({ iconName, label, sublabel, onPress, rightElement, destructive, showChevron = true, bgColor }: {
+function SettingRow({ iconName, label, sublabel, onPress, rightElement, destructive, showChevron = true }: {
   iconName: IconName; label: string; sublabel?: string; onPress?: () => void;
-  rightElement?: React.ReactNode; destructive?: boolean; showChevron?: boolean; bgColor?: string;
+  rightElement?: React.ReactNode; destructive?: boolean; showChevron?: boolean;
 }) {
   return (
     <TouchableOpacity style={[rowS.container, isRTL && rowS.containerRTL]} onPress={onPress} activeOpacity={onPress ? 0.65 : 1}>
@@ -85,9 +72,7 @@ function SupportChat({ visible, onClose }: { visible: boolean; onClose: () => vo
   const [messages, setMessages] = useState<{ from: 'user' | 'support'; text: string }[]>([
     { from: 'support', text: 'مرحباً بك في دعم زايركس! كيف يمكننا مساعدتك؟' },
   ])
-
   if (!visible) return null
-
   const send = () => {
     if (!msg.trim()) return
     setMessages(prev => [...prev, { from: 'user', text: msg.trim() }])
@@ -96,7 +81,6 @@ function SupportChat({ visible, onClose }: { visible: boolean; onClose: () => vo
       setMessages(prev => [...prev, { from: 'support', text: 'شكراً لتواصلك. سيتم الرد عليك من قبل فريق الدعم قريباً.' }])
     }, 1000)
   }
-
   return (
     <View style={chatS.overlay}>
       <View style={chatS.container}>
@@ -152,162 +136,89 @@ export default function SettingsScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.body}>
 
-          {/* ── 1. الحساب والملف الشخصي ── */}
+          {/* ── 1. الحساب ── */}
           <SectionHeader title="الحساب" />
           <SettingsGroup bgColor="rgba(26, 86, 219, 0.1)">
-            <SettingRow
-              iconName="user"
-              label="الملف الشخصي"
-              sublabel="الاسم والبريد الإلكتروني"
-              onPress={() => router.push('/(merchant)/profile' as any)}
-            />
+            <SettingRow iconName="user" label="الملف الشخصي" sublabel="الاسم والبريد الإلكتروني" onPress={() => router.push('/(merchant)/profile' as any)} />
             <Divider />
-            <SettingRow
-              iconName="globe"
-              label={t('settings.language')}
-              sublabel={language === 'ar' ? 'العربية' : 'English'}
-              showChevron={false}
-              rightElement={
-                <LanguagePicker current={language} onChange={handleLanguageChange} />
-              }
-            />
+            <SettingRow iconName="globe" label={t('settings.language')} sublabel={language === 'ar' ? 'العربية' : 'English'} showChevron={false} rightElement={<LanguagePicker current={language} onChange={handleLanguageChange} />} />
           </SettingsGroup>
 
-          {/* ── 2. إدارة الفريق ── */}
+          {/* ── 2. الفريق ── */}
           <SectionHeader title="الفريق" />
           <SettingsGroup bgColor="rgba(59, 130, 246, 0.1)">
-            <SettingRow
-              iconName="users"
-              label="إدارة الفريق"
-              sublabel="الأدوار والصلاحيات"
-              onPress={() => router.push('/(merchant)/multi-user' as any)}
-            />
+            <SettingRow iconName="users" label="إدارة الفريق" sublabel="الأدوار والصلاحيات" onPress={() => router.push('/(merchant)/multi-user' as any)} />
           </SettingsGroup>
 
           {/* ── 3. الإشعارات ── */}
           <SectionHeader title={t('settings.notifications')} />
           <SettingsGroup bgColor="rgba(5, 150, 105, 0.1)">
-            <SettingRow
-              iconName="bell"
-              label="إشعارات الدفع"
-              sublabel="دائماً"
-              showChevron={false}
-              rightElement={<Switch value={toggles.pushNotifications} onValueChange={setToggle('pushNotifications')} trackColor={{ false: COLORS.border, true: COLORS.primary }} thumbColor={COLORS.textPrimary} />}
-            />
+            <SettingRow iconName="bell" label="إشعارات الدفع" sublabel="دائماً" showChevron={false} rightElement={<Switch value={toggles.pushNotifications} onValueChange={setToggle('pushNotifications')} trackColor={{ false: COLORS.border, true: COLORS.primary }} thumbColor={COLORS.textPrimary} />} />
             <Divider />
-            <SettingRow
-              iconName="mail"
-              label={t('settings.email_reports')}
-              sublabel="تقارير يومية"
-              showChevron={false}
-              rightElement={<Switch value={toggles.emailReports} onValueChange={setToggle('emailReports')} trackColor={{ false: COLORS.border, true: COLORS.primary }} thumbColor={COLORS.textPrimary} />}
-            />
+            <SettingRow iconName="mail" label={t('settings.email_reports')} sublabel="تقارير يومية" showChevron={false} rightElement={<Switch value={toggles.emailReports} onValueChange={setToggle('emailReports')} trackColor={{ false: COLORS.border, true: COLORS.primary }} thumbColor={COLORS.textPrimary} />} />
             <Divider />
-            <SettingRow
-              iconName="message-square"
-              label={t('settings.sms_alerts')}
-              sublabel={t('settings.sms_alerts_sub')}
-              showChevron={false}
-              rightElement={<Switch value={toggles.smsAlerts} onValueChange={setToggle('smsAlerts')} trackColor={{ false: COLORS.border, true: COLORS.primary }} thumbColor={COLORS.textPrimary} />}
-            />
+            <SettingRow iconName="message-square" label={t('settings.sms_alerts')} sublabel={t('settings.sms_alerts_sub')} showChevron={false} rightElement={<Switch value={toggles.smsAlerts} onValueChange={setToggle('smsAlerts')} trackColor={{ false: COLORS.border, true: COLORS.primary }} thumbColor={COLORS.textPrimary} />} />
           </SettingsGroup>
 
           {/* ── 4. الأمان ── */}
           <SectionHeader title={t('settings.security')} />
           <SettingsGroup bgColor="rgba(217, 119, 6, 0.1)">
-            <SettingRow
-              iconName="lock"
-              label={t('settings.two_factor')}
-              sublabel={toggles.twoFactor ? t('settings.two_factor_active') : t('settings.two_factor_inactive')}
-              showChevron={false}
-              rightElement={<Switch value={toggles.twoFactor} onValueChange={setToggle('twoFactor')} trackColor={{ false: COLORS.border, true: COLORS.success }} thumbColor={COLORS.textPrimary} />}
-            />
+            <SettingRow iconName="lock" label={t('settings.two_factor')} sublabel={toggles.twoFactor ? t('settings.two_factor_active') : t('settings.two_factor_inactive')} showChevron={false} rightElement={<Switch value={toggles.twoFactor} onValueChange={setToggle('twoFactor')} trackColor={{ false: COLORS.border, true: COLORS.success }} thumbColor={COLORS.textPrimary} />} />
             <Divider />
-            <SettingRow
-              iconName="fingerprint"
-              label={t('settings.biometric')}
-              sublabel="Touch ID / Face ID"
-              showChevron={false}
-              rightElement={<Switch value={toggles.biometric} onValueChange={setToggle('biometric')} trackColor={{ false: COLORS.border, true: COLORS.success }} thumbColor={COLORS.textPrimary} />}
-            />
+            <SettingRow iconName="fingerprint" label={t('settings.biometric')} sublabel="Touch ID / Face ID" showChevron={false} rightElement={<Switch value={toggles.biometric} onValueChange={setToggle('biometric')} trackColor={{ false: COLORS.border, true: COLORS.success }} thumbColor={COLORS.textPrimary} />} />
             <Divider />
-            <SettingRow
-              iconName="clock"
-              label={t('settings.auto_logout')}
-              sublabel={t('settings.auto_logout_sub')}
-              showChevron={false}
-              rightElement={<Switch value={toggles.autoLogout} onValueChange={setToggle('autoLogout')} trackColor={{ false: COLORS.border, true: COLORS.success }} thumbColor={COLORS.textPrimary} />}
-            />
+            <SettingRow iconName="clock" label={t('settings.auto_logout')} sublabel={t('settings.auto_logout_sub')} showChevron={false} rightElement={<Switch value={toggles.autoLogout} onValueChange={setToggle('autoLogout')} trackColor={{ false: COLORS.border, true: COLORS.success }} thumbColor={COLORS.textPrimary} />} />
             <Divider />
-            <SettingRow
-              iconName="key"
-              label={t('settings.change_password')}
-              onPress={() => router.push('/(merchant)/change-password' as any)}
-            />
+            <SettingRow iconName="key" label={t('settings.change_password')} onPress={() => router.push('/(merchant)/change-password' as any)} />
           </SettingsGroup>
 
-          {/* ── 5. التكامل والمطورين ── */}
+          {/* ── 5. التكامل ── */}
           <SectionHeader title={t('settings.integration')} />
           <SettingsGroup bgColor="rgba(13, 148, 136, 0.1)">
-            <SettingRow
-              iconName="settings"
-              label={t('settings.apiKeys')}
-              sublabel={t('settings.api_keys_sub')}
-              onPress={() => router.push('/(merchant)/api-keys' as any)}
-            />
+            <SettingRow iconName="settings" label={t('settings.apiKeys')} sublabel={t('settings.api_keys_sub')} onPress={() => router.push('/(merchant)/api-keys' as any)} />
             <Divider />
-            <SettingRow
-              iconName="link"
-              label={t('settings.webhooks')}
-              sublabel="ربط الأنظمة الخارجية"
-              onPress={() => router.push('/(merchant)/webhooks' as any)}
-            />
+            <SettingRow iconName="link" label={t('settings.webhooks')} sublabel="ربط الأنظمة الخارجية" onPress={() => router.push('/(merchant)/webhooks' as any)} />
           </SettingsGroup>
 
-          {/* ── 6. المظهر ── */}
-          <SectionHeader title="المظهر" />
-          <SettingsGroup bgColor="rgba(139, 92, 246, 0.1)">
+          {/* ── 6. إدارة الميزات ── */}
+          <SectionHeader title="الميزات والنمو" />
+          <SettingsGroup bgColor="rgba(124, 58, 237, 0.1)">
             <SettingRow
               iconName="zap"
-              label="الوضع الليلي"
-              sublabel="قريباً"
-              showChevron={false}
-              rightElement={<Switch value={false} disabled trackColor={{ false: COLORS.border, true: COLORS.primary }} thumbColor={COLORS.textMuted} />}
-            />
-          </SettingsGroup>
-
-          {/* ── 7. الدعم والمساعدة ── */}
-          <SectionHeader title={t('settings.support')} />
-          <SettingsGroup bgColor="rgba(99, 102, 241, 0.1)">
-            <SettingRow
-              iconName="message-square"
-              label={t('settings.support_label')}
-              sublabel="تحدث مع فريق الدعم"
-              onPress={() => setShowChat(true)}
+              label="إدارة الميزات"
+              sublabel="تفعيل وتعطيل ميزات التطبيق"
+              onPress={() => router.push('/(merchant)/feature-flags' as any)}
             />
             <Divider />
             <SettingRow
-              iconName="info"
-              label={t('settings.version_label')}
-              sublabel="1.0.0 (build 42)"
-              showChevron={false}
+              iconName="users"
+              label="النمو والأتمتة"
+              sublabel="تذكيرات · استرداد · شركاء · تقسيم"
+              onPress={() => router.push('/(merchant)/growth-automation' as any)}
             />
           </SettingsGroup>
 
-          {/* ── 8. تسجيل الخروج ── */}
+          {/* ── 7. المظهر ── */}
+          <SectionHeader title="المظهر" />
+          <SettingsGroup bgColor="rgba(139, 92, 246, 0.1)">
+            <SettingRow iconName="zap" label="الوضع الليلي" sublabel="قريباً" showChevron={false} rightElement={<Switch value={false} disabled trackColor={{ false: COLORS.border, true: COLORS.primary }} thumbColor={COLORS.textMuted} />} />
+          </SettingsGroup>
+
+          {/* ── 8. الدعم ── */}
+          <SectionHeader title={t('settings.support')} />
+          <SettingsGroup bgColor="rgba(99, 102, 241, 0.1)">
+            <SettingRow iconName="message-square" label={t('settings.support_label')} sublabel="تحدث مع فريق الدعم" onPress={() => setShowChat(true)} />
+            <Divider />
+            <SettingRow iconName="info" label={t('settings.version_label')} sublabel="1.0.0 (build 42)" showChevron={false} />
+          </SettingsGroup>
+
+          {/* ── 9. تسجيل الخروج ── */}
           <SettingsGroup bgColor="rgba(220, 38, 38, 0.08)">
-            <SettingRow
-              iconName="log-out"
-              label={t('settings.logout')}
-              onPress={handleLogout}
-              destructive
-              showChevron={false}
-            />
+            <SettingRow iconName="log-out" label={t('settings.logout')} onPress={handleLogout} destructive showChevron={false} />
           </SettingsGroup>
 
         </View>
       </ScrollView>
-
       <SupportChat visible={showChat} onClose={() => setShowChat(false)} />
     </SafeAreaView>
   )
@@ -318,16 +229,13 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 120 },
   body: { padding: 16, gap: 4 },
 })
-
 const sh = StyleSheet.create({
   text: { fontSize: 11, fontWeight: '700', color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 20, marginBottom: 6, marginLeft: 4 },
   textRTL: { textAlign: 'right', marginLeft: 0, marginRight: 4 },
 })
-
 const grpS = StyleSheet.create({
   container: { backgroundColor: COLORS.cardBg, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden', marginBottom: 4 },
 })
-
 const rowS = StyleSheet.create({
   container: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12, gap: 12 },
   containerRTL: { flexDirection: 'row-reverse' },
@@ -343,11 +251,9 @@ const rowS = StyleSheet.create({
   chevron: { fontSize: 18, color: COLORS.textMuted, fontWeight: '300' },
   chevronRTL: { transform: [{ scaleX: -1 }] },
 })
-
 const divS = StyleSheet.create({
   line: { height: 1, backgroundColor: COLORS.border, marginLeft: 58 },
 })
-
 const lpS = StyleSheet.create({
   row: { flexDirection: 'row', gap: 8 },
   rowRTL: { flexDirection: 'row-reverse' },
@@ -357,7 +263,6 @@ const lpS = StyleSheet.create({
   label: { fontSize: 12, fontWeight: '500', color: COLORS.textSecondary },
   labelActive: { color: COLORS.primaryLight, fontWeight: '700' },
 })
-
 const chatS = StyleSheet.create({
   overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
   container: { backgroundColor: COLORS.cardBg, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '70%' },

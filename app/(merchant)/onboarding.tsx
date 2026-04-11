@@ -1,178 +1,221 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from "react";
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput,
-  I18nManager, SafeAreaView, ScrollView, ActivityIndicator, Alert,
-} from 'react-native'
-import { useRouter } from 'expo-router'
-import { COLORS } from '../../constants/colors'
-import { useTranslation } from '../../hooks/useTranslation'
-import { merchantApi } from '../../services/api'
-import { useAuth } from '../../hooks/useAuth'
-import { InnerHeader } from '../../components/InnerHeader';
+  View, Text, TextInput, TouchableOpacity,
+  StyleSheet, Animated, Dimensions, ScrollView,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
+import { getOnboardingStatus, updateOnboardingStep, completeOnboarding, autoFillKYC } from "../../services/api";
 
-const isRTL = I18nManager.isRTL
+const { width } = Dimensions.get("window");
+
+const STEPS = [
+  { id: 1, key: "business_name",   icon: "🏪", fieldType: "text" },
+  { id: 2, key: "phone",           icon: "📱", fieldType: "phone" },
+  { id: 3, key: "business_type",   icon: "🏷️", fieldType: "select" },
+  { id: 4, key: "country",         icon: "🌍", fieldType: "select" },
+  { id: 5, key: "done",            icon: "🎉", fieldType: "done" },
+];
+
+const BUSINESS_TYPES = ["متجر إلكتروني", "خدمات", "مطعم", "تطبيق", "أخرى"];
+const COUNTRIES = ["السعودية", "الإمارات", "الكويت", "قطر", "العراق", "تركيا"];
 
 export default function OnboardingScreen() {
-  const { t } = useTranslation()
-  const router = useRouter()
-  const { completeOnboarding } = useAuth()
-  const [step, setStep] = useState(0)
-  const [loading, setLoading] = useState(false)
-  const [form, setForm] = useState({
-    company: '',
-    taxId: '',
-    iban: '',
-    name: '',
-    email: '',
-  })
+  const { t } = useTranslation();
+  const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+  const [autoFilled, setAutoFilled] = useState(false);
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
-  const steps = [
-    { key: 'step1_title', fields: ['company', 'name', 'email'] },
-    { key: 'step2_title', fields: ['iban', 'taxId'] },
-    { key: 'step3_title', fields: [] },
-  ]
+  useEffect(() => {
+    loadStatus();
+  }, []);
 
-  const handleNext = () => {
-    if (step < steps.length - 1) setStep(step + 1)
-  }
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: (currentStep - 1) / (STEPS.length - 1),
+      duration: 400,
+      useNativeDriver: false,
+    }).start();
+  }, [currentStep]);
 
-  const handleBack = () => {
-    if (step > 0) setStep(step - 1)
-  }
-
-  const handleFinish = async () => {
-    setLoading(true)
+  const loadStatus = async () => {
     try {
-      await merchantApi.updateProfile({
-        name: form.name || undefined,
-        email: form.email || undefined,
-        company: form.company || undefined,
-      })
-      router.replace('/(merchant)/dashboard')
-    } catch (err: unknown) {
-      Alert.alert(t('common.error'), err instanceof Error ? err.message : '')
+      const res = await getOnboardingStatus();
+      if (res?.data?.current_step) {
+        setCurrentStep(res.data.current_step);
+      }
+      if (res?.data?.kyc_data) {
+        setFormData(res.data.kyc_data);
+      }
+    } catch (_) {}
+  };
+
+  const handleAutoFill = async () => {
+    setLoading(true);
+    try {
+      const res = await autoFillKYC();
+      if (res?.autoData) {
+        setFormData(res.autoData);
+        setAutoFilled(true);
+      }
+    } catch (_) {}
+    setLoading(false);
+  };
+
+  const handleNext = async () => {
+    if (currentStep === STEPS.length) {
+      setLoading(true);
+      await completeOnboarding();
+      setLoading(false);
+      router.push("/(merchant)/dashboard" as any);
+      return;
     }
-    setLoading(false)
-  }
+    setLoading(true);
+    await updateOnboardingStep({ step: currentStep, data: formData });
+    setLoading(false);
 
-  const handleSkip = () => {
-    router.replace('/(merchant)/dashboard')
-  }
+    // Slide animation
+    Animated.sequence([
+      Animated.timing(slideAnim, { toValue: -width, duration: 200, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: width, duration: 0, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+    ]).start();
 
-  const updateField = (key: string, value: string) => {
-    setForm(prev => ({ ...prev, [key]: value }))
-  }
+    setCurrentStep((s) => s + 1);
+  };
 
-  const renderField = (key: string) => {
-    const labels: Record<string, string> = {
-      company: t('onboarding.company_name'),
-      name: t('profile.first_name'),
-      email: t('profile.email'),
-      iban: t('onboarding.iban'),
-      taxId: t('onboarding.tax_id'),
-    }
-    return (
-      <View key={key} style={styles.fieldWrap}>
-        <Text style={[styles.fieldLabel, isRTL && styles.rtl]}>{labels[key] || key}</Text>
-        <TextInput
-          style={[styles.input, isRTL && styles.inputRTL]}
-          value={form[key as keyof typeof form]}
-          onChangeText={(v) => updateField(key, v)}
-          placeholderTextColor={COLORS.textMuted}
-          placeholder={labels[key]}
-          keyboardType={key === 'email' ? 'email-address' : 'default'}
-          autoCapitalize={key === 'email' ? 'none' : 'words'}
-        />
-      </View>
-    )
-  }
+  const step = STEPS[currentStep - 1];
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0%", "100%"],
+  });
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Progress */}
-        <View style={styles.progressWrap}>
-          {steps.map((_, i) => (
-            <View key={i} style={[styles.progressDot, i <= step && styles.progressDotActive]} />
-          ))}
+    <SafeAreaView style={styles.container}>
+      {/* Progress Bar */}
+      <View style={styles.progressContainer}>
+        <View style={styles.progressTrack}>
+          <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
         </View>
+        <Text style={styles.progressText}>{currentStep}/{STEPS.length}</Text>
+      </View>
 
-        {/* Header */}
-        <Text style={[styles.welcomeText, isRTL && styles.rtl]}>
-          {step === 0 ? t('onboarding.welcome') : t(`onboarding.${steps[step].key}`)}
-        </Text>
-        <Text style={[styles.stepTitle, isRTL && styles.rtl]}>
-          {t(`onboarding.${steps[step].key}`)}
-        </Text>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <Animated.View style={{ transform: [{ translateX: slideAnim }] }}>
+          {/* Icon */}
+          <Text style={styles.stepIcon}>{step.icon}</Text>
 
-        {/* Fields */}
-        <View style={styles.fieldsWrap}>
-          {steps[step].fields.map(renderField)}
-          {step === steps.length - 1 && (
-            <View style={styles.summaryWrap}>
-              <Text style={[styles.summaryTitle, isRTL && styles.rtl]}>
-                {t('onboarding.welcome')}
-              </Text>
-              {form.company ? <Text style={styles.summaryItem}>{form.company}</Text> : null}
-              {form.name ? <Text style={styles.summaryItem}>{form.name}</Text> : null}
-              {form.email ? <Text style={styles.summaryItem}>{form.email}</Text> : null}
-              {form.iban ? <Text style={styles.summaryItem}>IBAN: {form.iban}</Text> : null}
+          {/* Title */}
+          <Text style={styles.stepTitle}>
+            {t(`onboarding.step_${step.id}_title`, { defaultValue: getDefaultTitle(step.id) })}
+          </Text>
+          <Text style={styles.stepSubtitle}>
+            {t(`onboarding.step_${step.id}_sub`, { defaultValue: getDefaultSub(step.id) })}
+          </Text>
+
+          {/* Auto-fill badge */}
+          {currentStep === 1 && !autoFilled && (
+            <TouchableOpacity style={styles.autoFillBtn} onPress={handleAutoFill}>
+              <Text style={styles.autoFillText}>⚡ تعبئة تلقائية من حسابك</Text>
+            </TouchableOpacity>
+          )}
+          {autoFilled && (
+            <View style={styles.autoFilledBadge}>
+              <Text style={styles.autoFilledText}>✅ تم التعبئة التلقائية</Text>
             </View>
           )}
-        </View>
 
-        {/* Actions */}
-        <View style={[styles.actions, isRTL && styles.actionsRTL]}>
-          {step > 0 ? (
-            <TouchableOpacity style={styles.backBtn} onPress={handleBack}>
-              <Text style={styles.backBtnText}>{t('onboarding.back')}</Text>
-            </TouchableOpacity>
+          {/* Input */}
+          {step.fieldType === "text" || step.fieldType === "phone" ? (
+            <TextInput
+              style={styles.input}
+              value={formData[step.key] || ""}
+              onChangeText={(v) => setFormData((d) => ({ ...d, [step.key]: v }))}
+              placeholder={getPlaceholder(step.key)}
+              placeholderTextColor="#555"
+              keyboardType={step.fieldType === "phone" ? "phone-pad" : "default"}
+              textAlign="right"
+            />
+          ) : step.fieldType === "select" ? (
+            <View style={styles.optionsGrid}>
+              {(step.key === "business_type" ? BUSINESS_TYPES : COUNTRIES).map((opt) => (
+                <TouchableOpacity
+                  key={opt}
+                  style={[styles.optionBtn, formData[step.key] === opt && styles.optionSelected]}
+                  onPress={() => setFormData((d) => ({ ...d, [step.key]: opt }))}
+                >
+                  <Text style={[styles.optionText, formData[step.key] === opt && styles.optionTextSelected]}>
+                    {opt}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           ) : (
-            <TouchableOpacity style={styles.backBtn} onPress={handleSkip}>
-              <Text style={styles.backBtnText}>{t('onboarding.skip')}</Text>
-            </TouchableOpacity>
+            // Done step
+            <View style={styles.doneContainer}>
+              <Text style={styles.doneTitle}>🚀 أنت جاهز!</Text>
+              <Text style={styles.doneSub}>تم إعداد حسابك في أقل من دقيقة</Text>
+            </View>
           )}
-
-          {step < steps.length - 1 ? (
-            <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
-              <Text style={styles.nextBtnText}>{t('onboarding.next')}</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity style={styles.nextBtn} onPress={handleFinish} disabled={loading}>
-              {loading ? (
-                <ActivityIndicator color={COLORS.white} size="small" />
-              ) : (
-                <Text style={styles.nextBtnText}>{t('onboarding.finish')}</Text>
-              )}
-            </TouchableOpacity>
-          )}
-        </View>
+        </Animated.View>
       </ScrollView>
+
+      {/* CTA Button */}
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={[styles.nextBtn, loading && styles.nextBtnDisabled]}
+          onPress={handleNext}
+          disabled={loading}
+        >
+          <Text style={styles.nextBtnText}>
+            {loading ? "..." : currentStep === STEPS.length ? "ابدأ الآن 🚀" : "التالي ←"}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
-  )
+  );
+}
+
+function getDefaultTitle(id: number) {
+  return ["اسم متجرك", "رقم جوالك", "نوع النشاط", "بلدك", "جاهز!"][id - 1];
+}
+function getDefaultSub(id: number) {
+  return ["سيظهر للعملاء", "للتحقق والإشعارات", "لتخصيص تجربتك", "للعملة والضرائب", "حساب Zyrix جاهز"][id - 1];
+}
+function getPlaceholder(key: string) {
+  return key === "business_name" ? "مثال: متجر الأناقة" : "+966 5XX XXX XXXX";
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.darkBg },
-  scroll: { padding: 24, paddingTop: 40 },
-  progressWrap: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 32 },
-  progressDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.border },
-  progressDotActive: { backgroundColor: COLORS.primary, width: 28 },
-  welcomeText: { fontSize: 26, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 8 },
-  stepTitle: { fontSize: 15, color: COLORS.textSecondary, marginBottom: 32 },
-  rtl: { textAlign: 'right' },
-  fieldsWrap: { gap: 16, marginBottom: 40 },
-  fieldWrap: {},
-  fieldLabel: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 8 },
-  input: { backgroundColor: COLORS.cardBg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, color: COLORS.textPrimary, fontSize: 16 },
-  inputRTL: { textAlign: 'right' },
-  summaryWrap: { backgroundColor: COLORS.cardBg, borderRadius: 14, padding: 20, borderWidth: 1, borderColor: COLORS.border },
-  summaryTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 12 },
-  summaryItem: { fontSize: 14, color: COLORS.textSecondary, marginBottom: 6 },
-  actions: { flexDirection: 'row', gap: 12 },
-  actionsRTL: { flexDirection: 'row-reverse' },
-  backBtn: { flex: 1, paddingVertical: 16, borderRadius: 12, alignItems: 'center', backgroundColor: COLORS.surfaceBg },
-  backBtnText: { fontSize: 16, fontWeight: '600', color: COLORS.textSecondary },
-  nextBtn: { flex: 1, paddingVertical: 16, borderRadius: 12, alignItems: 'center', backgroundColor: COLORS.primary },
-  nextBtnText: { fontSize: 16, fontWeight: '700', color: COLORS.white },
-})
+  container: { flex: 1, backgroundColor: "#0a0a0a" },
+  progressContainer: { flexDirection: "row", alignItems: "center", paddingHorizontal: 24, paddingTop: 16, gap: 12 },
+  progressTrack: { flex: 1, height: 4, backgroundColor: "#1a1a1a", borderRadius: 2, overflow: "hidden" },
+  progressFill: { height: "100%", backgroundColor: "#7C3AED", borderRadius: 2 },
+  progressText: { color: "#666", fontSize: 12 },
+  content: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 48, paddingBottom: 24 },
+  stepIcon: { fontSize: 56, textAlign: "center", marginBottom: 24 },
+  stepTitle: { fontSize: 28, fontWeight: "700", color: "#fff", textAlign: "right", marginBottom: 8 },
+  stepSubtitle: { fontSize: 15, color: "#888", textAlign: "right", marginBottom: 32 },
+  autoFillBtn: { backgroundColor: "#1a0a2e", borderWidth: 1, borderColor: "#7C3AED", borderRadius: 12, padding: 14, alignItems: "center", marginBottom: 20 },
+  autoFillText: { color: "#7C3AED", fontWeight: "600", fontSize: 14 },
+  autoFilledBadge: { backgroundColor: "#0a1f0a", borderWidth: 1, borderColor: "#22c55e", borderRadius: 12, padding: 12, alignItems: "center", marginBottom: 20 },
+  autoFilledText: { color: "#22c55e", fontSize: 14 },
+  input: { backgroundColor: "#111", borderWidth: 1, borderColor: "#222", borderRadius: 14, padding: 16, color: "#fff", fontSize: 16, marginBottom: 16 },
+  optionsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  optionBtn: { paddingHorizontal: 18, paddingVertical: 12, backgroundColor: "#111", borderWidth: 1, borderColor: "#222", borderRadius: 10 },
+  optionSelected: { backgroundColor: "#1a0a2e", borderColor: "#7C3AED" },
+  optionText: { color: "#aaa", fontSize: 14 },
+  optionTextSelected: { color: "#7C3AED", fontWeight: "600" },
+  doneContainer: { alignItems: "center", paddingTop: 24 },
+  doneTitle: { fontSize: 32, fontWeight: "700", color: "#fff", marginBottom: 12 },
+  doneSub: { fontSize: 16, color: "#888" },
+  footer: { padding: 24 },
+  nextBtn: { backgroundColor: "#7C3AED", borderRadius: 16, padding: 18, alignItems: "center" },
+  nextBtnDisabled: { opacity: 0.5 },
+  nextBtnText: { color: "#fff", fontSize: 17, fontWeight: "700" },
+});

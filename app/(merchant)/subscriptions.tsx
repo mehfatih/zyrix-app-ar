@@ -1,81 +1,115 @@
-// app/(merchant)/subscriptions.tsx
+// ─────────────────────────────────────────────────────────────
+// app/(merchant)/subscriptions.tsx — Elite (Smart Retry + Dunning + Churn)
+// ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useCallback } from 'react'
 import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput,
-  I18nManager, SafeAreaView, ActivityIndicator, RefreshControl,
-  Alert, Modal, ListRenderItemInfo,
+  View, Text, StyleSheet, TouchableOpacity, FlatList,
+  TextInput, I18nManager, ActivityIndicator, RefreshControl,
+  Modal, ListRenderItemInfo, ScrollView,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { useTabBarHeight } from '../../hooks/useTabBarHeight'
 import { subscriptionsApi } from '../../services/api'
-import { StatusBadge } from '../../components/StatusBadge'
 import { InnerHeader } from '../../components/InnerHeader'
+import { useToast } from '../../hooks/useToast'
 
 const isRTL = I18nManager.isRTL
 
+// ─── Types ────────────────────────────────────────────────────
+
 interface Sub {
-  id: string; subscriptionId: string; customerName: string;
-  amount: string; currency: string; interval: string; title: string;
-  status: string; nextBillingDate: string; billingCount: number; createdAt: string;
+  id: string
+  planName: string
+  amount: number
+  currency: string
+  interval: string
+  status: string
+  currentPeriodStart: string
+  currentPeriodEnd: string
+  createdAt: string
+  churnScore: number
+  churnRisk: string
+  churnFactors: string[]
 }
 
-// ─── Tier Themes — 4 باقات بألوان مختلفة ─────────
+interface RetryAttempt {
+  id: string
+  attempt: number
+  status: string
+  scheduledAt: string
+  executedAt: string | null
+  errorMessage: string | null
+}
+
+interface DunningLog {
+  id: string
+  step: number
+  channel: string
+  message: string
+  sentAt: string
+  opened: boolean
+}
+
+interface ChurnOverview {
+  summary: { critical: number; high: number; medium: number; low: number; avgScore: number }
+  atRisk: { subscriptionId: string; churnScore: number; riskLevel: string; factors: string[] }[]
+}
+
+// ─── Tier Themes ──────────────────────────────────────────────
 
 const TIER_THEMES = {
-  diamond:  { accent: '#06B6D4', bg: 'rgba(6,182,212,0.13)',   border: 'rgba(6,182,212,0.40)',   icon: '💎', label: 'الماسية',  features: 12, price: 'SAR 999' },
-  gold:     { accent: '#F59E0B', bg: 'rgba(245,158,11,0.13)',  border: 'rgba(245,158,11,0.40)',  icon: '🥇', label: 'الذهبية',  features: 8,  price: 'SAR 499' },
-  silver:   { accent: '#94A3B8', bg: 'rgba(148,163,184,0.13)', border: 'rgba(148,163,184,0.40)', icon: '🥈', label: 'الفضية',   features: 5,  price: 'SAR 249' },
-  bronze:   { accent: '#CD7C2F', bg: 'rgba(205,124,47,0.13)',  border: 'rgba(205,124,47,0.40)',  icon: '🥉', label: 'البرونزية', features: 3,  price: 'SAR 99'  },
+  diamond: { accent: '#06B6D4', bg: 'rgba(6,182,212,0.13)', border: 'rgba(6,182,212,0.40)', icon: '💎', label: 'الماسية', price: 'SAR 999' },
+  gold:    { accent: '#F59E0B', bg: 'rgba(245,158,11,0.13)', border: 'rgba(245,158,11,0.40)', icon: '🥇', label: 'الذهبية', price: 'SAR 499' },
+  silver:  { accent: '#94A3B8', bg: 'rgba(148,163,184,0.13)', border: 'rgba(148,163,184,0.40)', icon: '🥈', label: 'الفضية', price: 'SAR 249' },
+  bronze:  { accent: '#CD7C2F', bg: 'rgba(205,124,47,0.13)', border: 'rgba(205,124,47,0.40)', icon: '🥉', label: 'البرونزية', price: 'SAR 99' },
 }
 
-// ─── KPI Themes ───────────────────────────────────
+function getTierTheme(planName: string) {
+  if (planName.includes('ماس') || planName.toLowerCase().includes('diamond')) return TIER_THEMES.diamond
+  if (planName.includes('ذهب') || planName.toLowerCase().includes('gold'))    return TIER_THEMES.gold
+  if (planName.includes('فض')  || planName.toLowerCase().includes('silver'))  return TIER_THEMES.silver
+  return TIER_THEMES.bronze
+}
+
+// ─── KPI Data ─────────────────────────────────────────────────
 
 const KPI_THEMES = [
-  { bg: 'rgba(16,185,129,0.15)',  border: 'rgba(16,185,129,0.40)',  accent: '#10B981', label: 'نشطة'    },
-  { bg: 'rgba(99,102,241,0.15)',  border: 'rgba(99,102,241,0.40)',  accent: '#6366F1', label: 'متوقفة'  },
-  { bg: 'rgba(6,182,212,0.15)',   border: 'rgba(6,182,212,0.40)',   accent: '#06B6D4', label: 'إجمالي'  },
-  { bg: 'rgba(245,158,11,0.15)',  border: 'rgba(245,158,11,0.40)',  accent: '#F59E0B', label: 'الإيراد' },
+  { bg: 'rgba(16,185,129,0.15)', border: 'rgba(16,185,129,0.40)', accent: '#10B981', label: 'نشطة' },
+  { bg: 'rgba(99,102,241,0.15)', border: 'rgba(99,102,241,0.40)', accent: '#6366F1', label: 'متأخرة' },
+  { bg: 'rgba(6,182,212,0.15)',  border: 'rgba(6,182,212,0.40)',  accent: '#06B6D4', label: 'إجمالي' },
+  { bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.40)', accent: '#F59E0B', label: 'الإيراد' },
 ]
 
-// ─── Pivot Data — مميزات الباقات ─────────────────
+// ─── Churn Badge ──────────────────────────────────────────────
 
-const PIVOT_DATA = [
-  {
-    title: 'الاشتراكات النشطة — آخر 3 أشهر',
-    months: ['يناير', 'فبراير', 'مارس'],
-    values: [18, 22, 28],
-  },
-  {
-    title: 'الاشتراكات المتوقفة — آخر 3 أشهر',
-    months: ['يناير', 'فبراير', 'مارس'],
-    values: [4, 2, 1],
-  },
-  {
-    title: 'إجمالي الاشتراكات — آخر 3 أشهر',
-    months: ['يناير', 'فبراير', 'مارس'],
-    values: [22, 24, 29],
-  },
-  {
-    title: 'إيراد الاشتراكات — آخر 3 أشهر',
-    months: ['يناير', 'فبراير', 'مارس'],
-    values: [14200, 18700, 24600],
-  },
-]
+const CHURN_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
+  LOW:      { color: '#10B981', bg: 'rgba(16,185,129,0.15)',  label: 'خطر منخفض' },
+  MEDIUM:   { color: '#F59E0B', bg: 'rgba(245,158,11,0.15)',  label: 'خطر متوسط' },
+  HIGH:     { color: '#F97316', bg: 'rgba(249,115,22,0.15)',  label: 'خطر عالي' },
+  CRITICAL: { color: '#EF4444', bg: 'rgba(239,68,68,0.15)',   label: 'خطر حرج' },
+}
 
-// ─── Features Pivot — لتحفيز الترقية ─────────────
+function ChurnBadge({ score, risk }: { score: number; risk: string }) {
+  const cfg = CHURN_CONFIG[risk] ?? CHURN_CONFIG.LOW
+  return (
+    <View style={[chB.wrap, { backgroundColor: cfg.bg, borderColor: cfg.color + '50' }]}>
+      <Text style={[chB.score, { color: cfg.color }]}>{score}</Text>
+      <Text style={[chB.label, { color: cfg.color }]}>{cfg.label}</Text>
+    </View>
+  )
+}
+const chB = StyleSheet.create({
+  wrap:  { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 20, borderWidth: 1 },
+  score: { fontSize: 11, fontWeight: '800' },
+  label: { fontSize: 9, fontWeight: '600' },
+})
 
-const TIER_FEATURES = [
-  { tier: 'diamond', label: 'الماسية',  color: '#06B6D4', count: 12, items: ['API غير محدود', 'دعم 24/7 مخصص', 'لوحة تحليلات متقدمة', 'تقارير مخصصة', 'حماية من الاحتيال', 'تكاملات غير محدودة', 'مدير حساب خاص', 'SLA 99.99%', 'COD متقدم', 'أسعار صرف فورية', 'فواتير تلقائية', 'اشتراكات متعددة'] },
-  { tier: 'gold',    label: 'الذهبية',  color: '#F59E0B', count: 8,  items: ['API 10,000 طلب/يوم', 'دعم أولوية', 'تحليلات متوسطة', 'تقارير شهرية', 'حماية من الاحتيال', 'تكاملات 5', 'COD أساسي', 'اشتراكات متعددة'] },
-  { tier: 'silver',  label: 'الفضية',   color: '#94A3B8', count: 5,  items: ['API 2,000 طلب/يوم', 'دعم بريد إلكتروني', 'تحليلات أساسية', 'تقارير أسبوعية', 'COD أساسي'] },
-  { tier: 'bronze',  label: 'البرونزية', color: '#CD7C2F', count: 3,  items: ['API 500 طلب/يوم', 'دعم بريد إلكتروني', 'تحليلات أساسية'] },
-]
-
-// ─── KPI Card ─────────────────────────────────────
+// ─── KPI Card ─────────────────────────────────────────────────
 
 function KpiCard({ label, value, themeIdx, selected, onPress }: {
-  label: string; value: string; themeIdx: number; selected: boolean; onPress: () => void;
+  label: string; value: string; themeIdx: number; selected: boolean; onPress: () => void
 }) {
   const t = KPI_THEMES[themeIdx]
   return (
@@ -83,240 +117,121 @@ function KpiCard({ label, value, themeIdx, selected, onPress }: {
       style={[kS.card, { backgroundColor: t.bg, borderColor: selected ? t.accent : t.border }, selected && kS.sel]}
       onPress={onPress} activeOpacity={0.75}
     >
-      <Text style={kS.lbl} numberOfLines={1}>{label}</Text>
+      <Text style={[kS.lbl, { color: t.accent }]}>{label}</Text>
       <Text style={[kS.val, { color: t.accent }]} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
       <View style={[kS.bar, { backgroundColor: t.accent, opacity: selected ? 1 : 0.5 }]} />
       {selected && <View style={[kS.dot, { backgroundColor: t.accent }]} />}
     </TouchableOpacity>
   )
 }
-
 const kS = StyleSheet.create({
-  card: { flex: 1, borderRadius: 13, padding: 11, borderWidth: 1.5, overflow: 'hidden', minHeight: 80 },
+  card: { flex: 1, borderRadius: 13, padding: 11, borderWidth: 1.5, overflow: 'hidden', minHeight: 72 },
   sel:  { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 5 },
-  lbl:  { fontSize: 10, color: COLORS.textSecondary, fontWeight: '600', marginBottom: 6, textAlign: 'right' },
-  val:  { fontSize: 20, fontWeight: '800', textAlign: 'right' },
+  lbl:  { fontSize: 10, fontWeight: '600', marginBottom: 5, textAlign: 'right' },
+  val:  { fontSize: 22, fontWeight: '800', textAlign: 'right' },
   bar:  { position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, borderRadius: 2 },
   dot:  { position: 'absolute', top: 7, left: 7, width: 6, height: 6, borderRadius: 3 },
 })
 
-// ─── Pivot Chart (KPI) ────────────────────────────
+// ─── Churn Overview Card ──────────────────────────────────────
 
-function PivotChart({ idx }: { idx: number }) {
-  const theme = KPI_THEMES[idx]
-  const d     = PIVOT_DATA[idx]
-  const max   = Math.max(...d.values, 1)
-  const chg   = d.values[2] - d.values[1]
-  const pct   = d.values[1] !== 0 ? Math.abs(chg / d.values[1] * 100).toFixed(1) : '0'
-  const good  = chg >= 0
-  const shades = [`${theme.accent}55`, `${theme.accent}99`, theme.accent]
-  const fmt = (v: number) => v >= 1000 ? `${(v/1000).toFixed(1)}k` : String(v)
+function ChurnOverviewCard({ overview }: { overview: ChurnOverview | null }) {
+  if (!overview) return null
+  const { summary } = overview
+  const total = summary.critical + summary.high + summary.medium + summary.low
+  if (total === 0) return null
 
   return (
-    <View style={[pS.container, { borderColor: theme.border }]}>
-      <View style={pS.head}>
-        <View style={[pS.dot, { backgroundColor: theme.accent }]} />
-        <Text style={[pS.title, { color: theme.accent }]}>{d.title}</Text>
-        <View style={[pS.badge, { backgroundColor: good ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)' }]}>
-          <Text style={[pS.badgeTxt, { color: good ? '#10B981' : '#EF4444' }]}>
-            {good ? '▲' : '▼'} {pct}%
+    <View style={coS.container}>
+      <View style={coS.head}>
+        <View style={[coS.dot, { backgroundColor: '#EF4444' }]} />
+        <Text style={coS.title}>Churn Prediction — خطر الإلغاء</Text>
+        <View style={coS.badge}>
+          <Text style={coS.badgeTxt}>متوسط {summary.avgScore}</Text>
+        </View>
+      </View>
+
+      <View style={coS.bars}>
+        {[
+          { label: 'حرج', count: summary.critical, color: '#EF4444' },
+          { label: 'عالي', count: summary.high,     color: '#F97316' },
+          { label: 'متوسط', count: summary.medium,  color: '#F59E0B' },
+          { label: 'منخفض', count: summary.low,     color: '#10B981' },
+        ].map((item, i) => {
+          const pct = total > 0 ? (item.count / total) * 100 : 0
+          return (
+            <View key={i} style={coS.barRow}>
+              <Text style={[coS.barLabel, { color: item.color }]}>{item.label}</Text>
+              <View style={coS.barTrack}>
+                <View style={[coS.barFill, { width: `${pct}%`, backgroundColor: item.color }]} />
+              </View>
+              <Text style={[coS.barCount, { color: item.color }]}>{item.count}</Text>
+            </View>
+          )
+        })}
+      </View>
+
+      {overview.atRisk.length > 0 && (
+        <View style={coS.insight}>
+          <Text style={coS.insightTxt}>
+            ⚠️ {summary.critical + summary.high} اشتراك في خطر إلغاء — يُنصح بإرسال dunning فوراً
           </Text>
         </View>
-      </View>
-
-      <View style={pS.legendRow}>
-        {d.months.map((m, i) => (
-          <View key={i} style={pS.legItem}>
-            <View style={[pS.legDot, { backgroundColor: shades[i] }]} />
-            <Text style={pS.legTxt}>{m}</Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={pS.barsRow}>
-        {d.values.map((v, i) => {
-          const h = Math.max((v / max) * 100, 6)
-          return (
-            <View key={i} style={pS.barGroup}>
-              <Text style={[pS.barVal, { color: shades[i] }]}>{fmt(v)}</Text>
-              <View style={pS.barTrack}>
-                <View style={[pS.barFill, { height: `${h}%`, backgroundColor: shades[i] }]} />
-              </View>
-              <Text style={pS.barLbl}>{d.months[i]}</Text>
-            </View>
-          )
-        })}
-      </View>
-
-      <View style={pS.sumRow}>
-        {d.values.map((v, i) => (
-          <View key={i} style={[
-            pS.sumCell,
-            i < 2 && { borderRightWidth: 1, borderRightColor: COLORS.border },
-            i === 2 && { backgroundColor: `${theme.accent}12` },
-          ]}>
-            <Text style={pS.sumLbl}>{d.months[i]}</Text>
-            <Text style={[pS.sumVal, { color: i === 2 ? theme.accent : COLORS.textSecondary }]}>{fmt(v)}</Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={[pS.insight, { borderTopColor: theme.border }]}>
-        <Text style={pS.insightTxt}>
-          💡 {good
-            ? `تحسّن بنسبة ${pct}% مقارنةً بالشهر الماضي`
-            : `تراجع بنسبة ${pct}% مقارنةً بالشهر الماضي`}
-        </Text>
-      </View>
+      )}
     </View>
   )
 }
-
-// ─── Features Pivot — مقارنة مميزات الباقات ──────
-
-function FeaturesPivot() {
-  const max = Math.max(...TIER_FEATURES.map(t => t.count))
-
-  return (
-    <View style={fpS.container}>
-      <View style={fpS.head}>
-        <View style={[fpS.dot, { backgroundColor: '#06B6D4' }]} />
-        <Text style={[fpS.title, { color: '#06B6D4' }]}>مقارنة مميزات الباقات</Text>
-        <View style={fpS.topBadge}>
-          <Text style={fpS.topBadgeTxt}>💎 الماسية الأفضل</Text>
-        </View>
-      </View>
-
-      {/* Bars */}
-      <View style={fpS.barsRow}>
-        {TIER_FEATURES.map((tier, i) => {
-          const h = Math.max((tier.count / max) * 100, 10)
-          const isTop = i === 0
-          return (
-            <View key={i} style={fpS.barGroup}>
-              <Text style={[fpS.barCount, { color: tier.color }]}>{tier.count}</Text>
-              <View style={[fpS.barTrack, isTop && { borderWidth: 1, borderColor: `${tier.color}40` }]}>
-                <View style={[fpS.barFill, {
-                  height: `${h}%`,
-                  backgroundColor: tier.color,
-                  opacity: isTop ? 1 : 0.6,
-                }]} />
-              </View>
-              <Text style={[fpS.barLabel, { color: tier.color }]}>{tier.label.replace('ال', '')}</Text>
-            </View>
-          )
-        })}
-      </View>
-
-      {/* Summary */}
-      <View style={fpS.sumRow}>
-        {TIER_FEATURES.map((tier, i) => (
-          <View key={i} style={[
-            fpS.sumCell,
-            i < 3 && { borderRightWidth: 1, borderRightColor: COLORS.border },
-            i === 0 && { backgroundColor: `${tier.color}12` },
-          ]}>
-            <Text style={[fpS.sumPrice, { color: tier.color }]}>{TIER_THEMES[tier.tier as keyof typeof TIER_THEMES].price}</Text>
-            <Text style={fpS.sumFeatures}>{tier.count} ميزة</Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={fpS.insight}>
-        <Text style={fpS.insightTxt}>
-          💡 الباقة الماسية توفر 4× مميزات أكثر من البرونزية — استثمارك الأمثل
-        </Text>
-      </View>
-    </View>
-  )
-}
-
-const fpS = StyleSheet.create({
-  container:   { marginHorizontal: 12, marginBottom: 10, borderRadius: 13, borderWidth: 1.5, borderColor: 'rgba(6,182,212,0.35)', backgroundColor: COLORS.cardBg, overflow: 'hidden' },
-  head:        { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 7 },
-  dot:         { width: 7, height: 7, borderRadius: 4 },
-  title:       { flex: 1, fontSize: 11, fontWeight: '600', textAlign: 'right' },
-  topBadge:    { backgroundColor: 'rgba(6,182,212,0.15)', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 20 },
-  topBadgeTxt: { fontSize: 9, fontWeight: '700', color: '#06B6D4' },
-  barsRow:     { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end', paddingHorizontal: 12, paddingBottom: 6, height: 100 },
-  barGroup:    { alignItems: 'center', flex: 1, gap: 3 },
-  barCount:    { fontSize: 13, fontWeight: '800' },
-  barTrack:    { width: 32, height: 65, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 6, justifyContent: 'flex-end', overflow: 'hidden' },
-  barFill:     { width: '100%', borderRadius: 6 },
-  barLabel:    { fontSize: 9, fontWeight: '600' },
-  sumRow:      { flexDirection: 'row', borderTopWidth: 1, borderTopColor: COLORS.border },
-  sumCell:     { flex: 1, alignItems: 'center', paddingVertical: 8 },
-  sumPrice:    { fontSize: 11, fontWeight: '800', marginBottom: 2 },
-  sumFeatures: { fontSize: 9, color: COLORS.textMuted, fontWeight: '600' },
-  insight:     { paddingHorizontal: 12, paddingVertical: 8, borderTopWidth: 1, borderTopColor: 'rgba(6,182,212,0.2)' },
-  insightTxt:  { fontSize: 10, color: COLORS.textMuted, lineHeight: 15, textAlign: 'right' },
-})
-
-const pS = StyleSheet.create({
-  container:  { marginHorizontal: 12, marginBottom: 10, borderRadius: 13, borderWidth: 1.5, backgroundColor: COLORS.cardBg, overflow: 'hidden' },
+const coS = StyleSheet.create({
+  container:  { marginHorizontal: 12, marginBottom: 10, borderRadius: 13, borderWidth: 1.5, borderColor: 'rgba(239,68,68,0.35)', backgroundColor: COLORS.cardBg, overflow: 'hidden' },
   head:       { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 7 },
   dot:        { width: 7, height: 7, borderRadius: 4 },
-  title:      { flex: 1, fontSize: 11, fontWeight: '600', textAlign: 'right' },
-  badge:      { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 20 },
-  badgeTxt:   { fontSize: 10, fontWeight: '700' },
-  legendRow:  { flexDirection: 'row', paddingHorizontal: 12, paddingBottom: 6, gap: 10, justifyContent: 'flex-end' },
-  legItem:    { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  legDot:     { width: 8, height: 8, borderRadius: 4 },
-  legTxt:     { fontSize: 9, color: COLORS.textMuted },
-  barsRow:    { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end', paddingHorizontal: 12, paddingBottom: 6, height: 90 },
-  barGroup:   { alignItems: 'center', flex: 1, gap: 3 },
-  barVal:     { fontSize: 11, fontWeight: '700' },
-  barTrack:   { width: 28, height: 58, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 5, justifyContent: 'flex-end', overflow: 'hidden' },
-  barFill:    { width: '100%', borderRadius: 5 },
-  barLbl:     { fontSize: 9, color: COLORS.textMuted, fontWeight: '500' },
-  sumRow:     { flexDirection: 'row', borderTopWidth: 1, borderTopColor: COLORS.border },
-  sumCell:    { flex: 1, alignItems: 'center', paddingVertical: 7 },
-  sumLbl:     { fontSize: 8.5, color: COLORS.textMuted, fontWeight: '600', marginBottom: 2 },
-  sumVal:     { fontSize: 12, fontWeight: '700' },
-  insight:    { paddingHorizontal: 12, paddingVertical: 8, borderTopWidth: 1 },
+  title:      { flex: 1, fontSize: 11, fontWeight: '600', color: COLORS.textPrimary, textAlign: 'right' },
+  badge:      { backgroundColor: 'rgba(239,68,68,0.15)', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 20 },
+  badgeTxt:   { fontSize: 9, fontWeight: '700', color: '#EF4444' },
+  bars:       { paddingHorizontal: 12, paddingBottom: 10, gap: 8 },
+  barRow:     { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  barLabel:   { fontSize: 10, fontWeight: '700', width: 42, textAlign: 'right' },
+  barTrack:   { flex: 1, height: 8, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 4, overflow: 'hidden' },
+  barFill:    { height: '100%', borderRadius: 4 },
+  barCount:   { fontSize: 11, fontWeight: '800', width: 24, textAlign: 'left' },
+  insight:    { paddingHorizontal: 12, paddingVertical: 8, borderTopWidth: 1, borderTopColor: 'rgba(239,68,68,0.2)' },
   insightTxt: { fontSize: 10, color: COLORS.textMuted, lineHeight: 15, textAlign: 'right' },
 })
 
-// ─── Sub Card ─────────────────────────────────────
+// ─── Sub Card ─────────────────────────────────────────────────
 
 function SubCard({ sub, onAction }: {
   sub: Sub
-  onAction: (id: string, action: 'pause' | 'resume' | 'cancel') => void
+  onAction: (sub: Sub, action: 'cancel' | 'retry' | 'dunning' | 'detail') => void
 }) {
-  const { t } = useTranslation()
-
-  // تحديد ثيم الباقة حسب الاسم
-  const getTierTheme = (title: string) => {
-    if (title.includes('ماس'))    return TIER_THEMES.diamond
-    if (title.includes('ذهب'))   return TIER_THEMES.gold
-    if (title.includes('فض'))    return TIER_THEMES.silver
-    if (title.includes('برونز')) return TIER_THEMES.bronze
-    return TIER_THEMES.bronze
-  }
-
-  const tier = getTierTheme(sub.title)
+  const tier = getTierTheme(sub.planName)
 
   const statusMap: Record<string, { bg: string; color: string; label: string }> = {
-    active:    { bg: 'rgba(16,185,129,0.2)',  color: '#10B981', label: 'Active'  },
-    paused:    { bg: 'rgba(245,158,11,0.2)',  color: '#F59E0B', label: 'Paused'  },
-    cancelled: { bg: 'rgba(239,68,68,0.18)',  color: '#EF4444', label: 'Cancelled' },
-    expired:   { bg: 'rgba(107,114,128,0.18)', color: '#9CA3AF', label: 'Expired'  },
+    ACTIVE:    { bg: 'rgba(16,185,129,0.2)',  color: '#10B981', label: 'نشط' },
+    PAST_DUE:  { bg: 'rgba(249,115,22,0.2)',  color: '#F97316', label: 'متأخر' },
+    CANCELLED: { bg: 'rgba(239,68,68,0.18)',  color: '#EF4444', label: 'ملغي' },
   }
-  const st = statusMap[sub.status] ?? statusMap.active
+  const st = statusMap[sub.status] ?? statusMap.ACTIVE
+
+  const daysLeft = Math.max(0, Math.floor(
+    (new Date(sub.currentPeriodEnd).getTime() - Date.now()) / 86400000
+  ))
 
   return (
-    <View style={[sC.card, { backgroundColor: tier.bg, borderColor: tier.border }]}>
-
-      {/* Header الباقة */}
+    <TouchableOpacity
+      style={[sC.card, { backgroundColor: tier.bg, borderColor: tier.border }]}
+      onPress={() => onAction(sub, 'detail')}
+      activeOpacity={0.85}
+    >
+      {/* Header */}
       <View style={[sC.topRow, isRTL && sC.rowRTL]}>
         <View style={{ flex: 1 }}>
-          <View style={sC.titleRow}>
+          <View style={[sC.titleRow, isRTL && { flexDirection: 'row-reverse' }]}>
             <Text style={sC.tierIcon}>{tier.icon}</Text>
-            <Text style={[sC.title, { color: tier.accent }]}>{sub.title}</Text>
+            <Text style={[sC.title, { color: tier.accent }]}>{sub.planName}</Text>
           </View>
-          <Text style={[sC.customer, isRTL && { textAlign: 'right' }]}>{sub.customerName}</Text>
-          <Text style={sC.subId}>
-            {sub.subscriptionId} · {t(`subscriptions.${sub.interval}`)}
+          <Text style={[sC.subId, isRTL && { textAlign: 'right' }]}>
+            {sub.interval === 'MONTHLY' ? 'شهري' : 'سنوي'} · {daysLeft} يوم متبقي
           </Text>
         </View>
         <View style={{ alignItems: 'flex-start', gap: 5 }}>
@@ -327,98 +242,516 @@ function SubCard({ sub, onAction }: {
             <View style={[sC.statusDot, { backgroundColor: st.color }]} />
             <Text style={[sC.statusTxt, { color: st.color }]}>{st.label}</Text>
           </View>
-          <Text style={sC.date}>
-            الفاتورة القادمة: {new Date(sub.nextBillingDate).toLocaleDateString('ar-SA')}
-          </Text>
         </View>
       </View>
 
       <View style={[sC.divider, { backgroundColor: `${tier.accent}25` }]} />
 
-      {/* Features count */}
-      <View style={sC.featuresRow}>
-        {TIER_FEATURES.find(tf => sub.title.includes(tf.label.replace('ال','').replace('ة','')) || sub.title.includes(tf.label))?.items.slice(0, 3).map((feat, i) => (
-          <View key={i} style={[sC.featPill, { backgroundColor: `${tier.accent}15`, borderColor: `${tier.accent}30` }]}>
-            <Text style={[sC.featTxt, { color: tier.accent }]}>✓ {feat}</Text>
-          </View>
-        ))}
+      {/* Churn + تاريخ */}
+      <View style={[sC.metaRow, isRTL && sC.rowRTL]}>
+        <ChurnBadge score={sub.churnScore} risk={sub.churnRisk} />
+        <Text style={sC.dateText}>
+          التجديد: {new Date(sub.currentPeriodEnd).toLocaleDateString('ar-SA')}
+        </Text>
       </View>
 
-      <View style={sC.divider2} />
+      <View style={[sC.divider2]} />
 
       {/* Actions */}
       <View style={[sC.actions, isRTL && sC.rowRTL]}>
-        {sub.status === 'active' && (
+        {sub.status === 'PAST_DUE' && (
           <TouchableOpacity
-            style={[sC.actionBtn, { backgroundColor: 'rgba(99,102,241,0.15)', borderColor: 'rgba(99,102,241,0.3)' }]}
-            onPress={() => onAction(sub.subscriptionId, 'pause')}
+            style={[sC.actionBtn, { backgroundColor: 'rgba(16,185,129,0.15)', borderColor: 'rgba(16,185,129,0.35)' }]}
+            onPress={() => onAction(sub, 'retry')}
           >
-            <Text style={[sC.actionTxt, { color: '#6366F1' }]}>{t('subscriptions.pause')}</Text>
+            <Text style={[sC.actionTxt, { color: '#10B981' }]}>🔄 Smart Retry</Text>
           </TouchableOpacity>
         )}
-        {sub.status === 'paused' && (
+        {(sub.status === 'ACTIVE' || sub.status === 'PAST_DUE') && (
           <TouchableOpacity
-            style={[sC.actionBtn, { backgroundColor: 'rgba(16,185,129,0.15)', borderColor: 'rgba(16,185,129,0.3)' }]}
-            onPress={() => onAction(sub.subscriptionId, 'resume')}
+            style={[sC.actionBtn, { backgroundColor: 'rgba(245,158,11,0.15)', borderColor: 'rgba(245,158,11,0.35)' }]}
+            onPress={() => onAction(sub, 'dunning')}
           >
-            <Text style={[sC.actionTxt, { color: '#10B981' }]}>{t('subscriptions.resume')}</Text>
+            <Text style={[sC.actionTxt, { color: '#F59E0B' }]}>📢 Dunning</Text>
           </TouchableOpacity>
         )}
-        {(sub.status === 'active' || sub.status === 'paused') && (
+        {(sub.status === 'ACTIVE' || sub.status === 'PAST_DUE') && (
           <TouchableOpacity
             style={[sC.actionBtn, { backgroundColor: 'rgba(239,68,68,0.12)', borderColor: 'rgba(239,68,68,0.3)' }]}
-            onPress={() => onAction(sub.subscriptionId, 'cancel')}
+            onPress={() => onAction(sub, 'cancel')}
           >
-            <Text style={[sC.actionTxt, { color: '#EF4444' }]}>{t('subscriptions.cancel')}</Text>
+            <Text style={[sC.actionTxt, { color: '#EF4444' }]}>إلغاء</Text>
           </TouchableOpacity>
         )}
       </View>
-    </View>
+    </TouchableOpacity>
   )
 }
-
 const sC = StyleSheet.create({
   card:        { marginHorizontal: 12, marginBottom: 10, borderRadius: 14, borderWidth: 1.5, overflow: 'hidden', padding: 14 },
   topRow:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 },
   rowRTL:      { flexDirection: 'row-reverse' },
-  titleRow:    { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3, justifyContent: 'flex-end' },
+  titleRow:    { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 },
   tierIcon:    { fontSize: 16 },
-  title:       { fontSize: 16, fontWeight: '800' },
-  customer:    { fontSize: 12, color: COLORS.textSecondary, marginBottom: 3 },
-  subId:       { fontSize: 10, color: COLORS.textMuted, fontFamily: 'monospace', textAlign: 'right' },
-  amount:      { fontSize: 18, fontWeight: '800', marginBottom: 3 },
+  title:       { fontSize: 15, fontWeight: '800' },
+  subId:       { fontSize: 10, color: COLORS.textMuted, marginTop: 2 },
+  amount:      { fontSize: 17, fontWeight: '800', marginBottom: 3 },
   statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
   statusDot:   { width: 6, height: 6, borderRadius: 3 },
   statusTxt:   { fontSize: 11, fontWeight: '700' },
-  date:        { fontSize: 9, color: COLORS.textMuted, marginTop: 2 },
   divider:     { height: 1, marginVertical: 10 },
   divider2:    { height: 1, backgroundColor: 'rgba(255,255,255,0.07)', marginBottom: 10 },
-  featuresRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginBottom: 10, justifyContent: 'flex-end' },
-  featPill:    { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 20, borderWidth: 1 },
-  featTxt:     { fontSize: 9, fontWeight: '600' },
+  metaRow:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  dateText:    { fontSize: 10, color: COLORS.textMuted },
   actions:     { flexDirection: 'row', gap: 8 },
   actionBtn:   { flex: 1, paddingVertical: 9, borderRadius: 9, borderWidth: 1, alignItems: 'center' },
-  actionTxt:   { fontSize: 12, fontWeight: '700' },
+  actionTxt:   { fontSize: 11, fontWeight: '700' },
 })
 
-// ─── Main Screen ──────────────────────────────────
+// ─── Retry Modal ──────────────────────────────────────────────
+
+function RetryModal({ visible, sub, onClose, onConfirm, loading }: {
+  visible: boolean; sub: Sub | null; onClose: () => void
+  onConfirm: () => void; loading: boolean
+}) {
+  if (!sub) return null
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={mdS.overlay}>
+        <View style={mdS.container}>
+          <View style={mdS.head}>
+            <Text style={mdS.title}>🔄 Smart Retry</Text>
+            <TouchableOpacity onPress={onClose} style={mdS.closeBtn}>
+              <Text style={mdS.closeTxt}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={mdS.body}>
+            <Text style={mdS.desc}>
+              سيتم جدولة 3 محاولات تلقائية لتحصيل دفعة{' '}
+              <Text style={{ color: '#10B981', fontWeight: '700' }}>
+                {sub.currency} {Number(sub.amount).toLocaleString()}
+              </Text>
+            </Text>
+
+            <View style={mdS.scheduleBox}>
+              {[
+                { day: 'اليوم + 1', label: 'المحاولة الأولى', color: '#10B981' },
+                { day: 'اليوم + 3', label: 'المحاولة الثانية', color: '#F59E0B' },
+                { day: 'اليوم + 7', label: 'المحاولة الأخيرة', color: '#EF4444' },
+              ].map((item, i) => (
+                <View key={i} style={[mdS.scheduleRow, isRTL && { flexDirection: 'row-reverse' }]}>
+                  <View style={[mdS.schedDot, { backgroundColor: item.color }]} />
+                  <Text style={[mdS.schedLabel, { color: item.color }]}>{item.label}</Text>
+                  <Text style={mdS.schedDay}>{item.day}</Text>
+                </View>
+              ))}
+            </View>
+
+            <View style={[mdS.actions, isRTL && { flexDirection: 'row-reverse' }]}>
+              <TouchableOpacity style={mdS.cancelBtn} onPress={onClose}>
+                <Text style={{ color: COLORS.textSecondary, fontWeight: '600' }}>إلغاء</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[mdS.submitBtn, { backgroundColor: '#10B981' }, loading && { opacity: 0.6 }]}
+                onPress={onConfirm} disabled={loading}
+              >
+                <Text style={{ color: '#fff', fontWeight: '700' }}>
+                  {loading ? 'جاري الجدولة...' : 'تأكيد Smart Retry'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
+// ─── Dunning Modal ────────────────────────────────────────────
+
+function DunningModal({ visible, sub, onClose, onSend, loading }: {
+  visible: boolean; sub: Sub | null; onClose: () => void
+  onSend: (step: number, channel: string) => void; loading: boolean
+}) {
+  const [step, setStep] = useState(1)
+  const [channel, setChannel] = useState('PUSH')
+  if (!sub) return null
+
+  const stepLabels = ['تذكير أول', 'تحذير ثاني', 'إشعار إلغاء']
+  const stepColors = ['#F59E0B', '#F97316', '#EF4444']
+  const channels = ['PUSH', 'SMS', 'EMAIL', 'WHATSAPP']
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={mdS.overlay}>
+        <View style={mdS.container}>
+          <View style={mdS.head}>
+            <Text style={mdS.title}>📢 Dunning</Text>
+            <TouchableOpacity onPress={onClose} style={mdS.closeBtn}>
+              <Text style={mdS.closeTxt}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={mdS.body}>
+            <Text style={mdS.label}>خطوة التذكير</Text>
+            <View style={mdS.stepRow}>
+              {stepLabels.map((lbl, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={[mdS.stepBtn, step === i + 1 && { backgroundColor: stepColors[i] + '25', borderColor: stepColors[i] }]}
+                  onPress={() => setStep(i + 1)}
+                >
+                  <Text style={[mdS.stepTxt, { color: step === i + 1 ? stepColors[i] : COLORS.textMuted }]}>
+                    {lbl}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={[mdS.label, { marginTop: 12 }]}>قناة الإرسال</Text>
+            <View style={mdS.channelRow}>
+              {channels.map(ch => (
+                <TouchableOpacity
+                  key={ch}
+                  style={[mdS.channelBtn, channel === ch && mdS.channelActive]}
+                  onPress={() => setChannel(ch)}
+                >
+                  <Text style={[mdS.channelTxt, channel === ch && mdS.channelActiveTxt]}>{ch}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View style={[mdS.actions, isRTL && { flexDirection: 'row-reverse' }]}>
+              <TouchableOpacity style={mdS.cancelBtn} onPress={onClose}>
+                <Text style={{ color: COLORS.textSecondary, fontWeight: '600' }}>إلغاء</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[mdS.submitBtn, { backgroundColor: stepColors[step - 1] }, loading && { opacity: 0.6 }]}
+                onPress={() => onSend(step, channel)} disabled={loading}
+              >
+                <Text style={{ color: '#fff', fontWeight: '700' }}>
+                  {loading ? 'جاري الإرسال...' : 'إرسال التذكير'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
+// ─── Detail Modal (Retry Status + Dunning History) ────────────
+
+function DetailModal({ visible, sub, onClose }: {
+  visible: boolean; sub: Sub | null; onClose: () => void
+}) {
+  const [retries, setRetries] = useState<RetryAttempt[]>([])
+  const [dunningLogs, setDunningLogs] = useState<DunningLog[]>([])
+  const [tab, setTab] = useState<'retry' | 'dunning'>('retry')
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!visible || !sub) return
+    setLoading(true)
+    Promise.all([
+      subscriptionsApi.getRetryStatus(sub.id),
+      subscriptionsApi.getDunningHistory(sub.id),
+    ]).then(([r, d]) => {
+      setRetries(r?.data ?? [])
+      setDunningLogs(d?.data ?? [])
+    }).catch(() => {}).finally(() => setLoading(false))
+  }, [visible, sub])
+
+  if (!sub) return null
+
+  const retryColors: Record<string, string> = {
+    PENDING: '#6366F1', SUCCESS: '#10B981', FAILED: '#EF4444', EXHAUSTED: '#6B7280'
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={mdS.overlay}>
+        <View style={[mdS.container, { maxHeight: '75%' }]}>
+          <View style={mdS.head}>
+            <Text style={mdS.title}>{sub.planName}</Text>
+            <TouchableOpacity onPress={onClose} style={mdS.closeBtn}>
+              <Text style={mdS.closeTxt}>✕</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Tabs */}
+          <View style={dtS.tabs}>
+            <TouchableOpacity
+              style={[dtS.tab, tab === 'retry' && dtS.tabActive]}
+              onPress={() => setTab('retry')}
+            >
+              <Text style={[dtS.tabTxt, tab === 'retry' && dtS.tabActiveTxt]}>🔄 محاولات الدفع</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[dtS.tab, tab === 'dunning' && dtS.tabActive]}
+              onPress={() => setTab('dunning')}
+            >
+              <Text style={[dtS.tabTxt, tab === 'dunning' && dtS.tabActiveTxt]}>📢 سجل Dunning</Text>
+            </TouchableOpacity>
+          </View>
+
+          {loading ? (
+            <View style={{ padding: 30, alignItems: 'center' }}>
+              <ActivityIndicator color={COLORS.primary} />
+            </View>
+          ) : (
+            <ScrollView style={{ maxHeight: 320 }} contentContainerStyle={{ padding: 14, gap: 8 }}>
+              {tab === 'retry' && (
+                retries.length === 0 ? (
+                  <Text style={dtS.empty}>لا توجد محاولات retry بعد</Text>
+                ) : (
+                  retries.map(r => (
+                    <View key={r.id} style={[dtS.row, { borderColor: retryColors[r.status] + '40' }]}>
+                      <View style={[dtS.rowDot, { backgroundColor: retryColors[r.status] }]} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={[dtS.rowTitle, { color: retryColors[r.status] }]}>
+                          المحاولة {r.attempt} — {r.status}
+                        </Text>
+                        <Text style={dtS.rowSub}>
+                          {new Date(r.scheduledAt).toLocaleDateString('ar-SA')}
+                          {r.errorMessage ? ` · ${r.errorMessage}` : ''}
+                        </Text>
+                      </View>
+                    </View>
+                  ))
+                )
+              )}
+              {tab === 'dunning' && (
+                dunningLogs.length === 0 ? (
+                  <Text style={dtS.empty}>لا توجد رسائل dunning بعد</Text>
+                ) : (
+                  dunningLogs.map(d => (
+                    <View key={d.id} style={[dtS.row, { borderColor: 'rgba(245,158,11,0.3)' }]}>
+                      <View style={[dtS.rowDot, { backgroundColor: '#F59E0B' }]} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={[dtS.rowTitle, { color: '#F59E0B' }]}>
+                          خطوة {d.step} — {d.channel}
+                        </Text>
+                        <Text style={dtS.rowSub}>{d.message}</Text>
+                        <Text style={[dtS.rowSub, { marginTop: 2 }]}>
+                          {new Date(d.sentAt).toLocaleDateString('ar-SA')}
+                          {d.opened ? ' · تم الفتح' : ''}
+                        </Text>
+                      </View>
+                    </View>
+                  ))
+                )
+              )}
+            </ScrollView>
+          )}
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
+const dtS = StyleSheet.create({
+  tabs:       { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  tab:        { flex: 1, paddingVertical: 11, alignItems: 'center' },
+  tabActive:  { borderBottomWidth: 2, borderBottomColor: COLORS.primary },
+  tabTxt:     { fontSize: 12, color: COLORS.textMuted, fontWeight: '600' },
+  tabActiveTxt: { color: COLORS.primary },
+  row:        { borderRadius: 10, borderWidth: 1, padding: 10, flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: 'rgba(255,255,255,0.03)' },
+  rowDot:     { width: 8, height: 8, borderRadius: 4, marginTop: 4 },
+  rowTitle:   { fontSize: 12, fontWeight: '700', marginBottom: 2 },
+  rowSub:     { fontSize: 10, color: COLORS.textMuted, lineHeight: 15 },
+  empty:      { textAlign: 'center', color: COLORS.textMuted, fontSize: 13, paddingVertical: 20 },
+})
+
+const mdS = StyleSheet.create({
+  overlay:     { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  container:   { backgroundColor: COLORS.cardBg, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
+  head:        { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  title:       { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
+  closeBtn:    { width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
+  closeTxt:    { fontSize: 13, color: COLORS.textSecondary, fontWeight: '700' },
+  body:        { padding: 16, gap: 12 },
+  desc:        { fontSize: 13, color: COLORS.textSecondary, lineHeight: 20, textAlign: 'right' },
+  label:       { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary, textAlign: 'right' },
+  scheduleBox: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 12, gap: 10 },
+  scheduleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  schedDot:    { width: 8, height: 8, borderRadius: 4 },
+  schedLabel:  { flex: 1, fontSize: 12, fontWeight: '600' },
+  schedDay:    { fontSize: 11, color: COLORS.textMuted },
+  actions:     { flexDirection: 'row', gap: 10, marginTop: 4 },
+  cancelBtn:   { flex: 1, paddingVertical: 13, borderRadius: 10, alignItems: 'center', backgroundColor: COLORS.surfaceBg },
+  submitBtn:   { flex: 1, paddingVertical: 13, borderRadius: 10, alignItems: 'center', backgroundColor: COLORS.primary },
+  stepRow:     { flexDirection: 'row', gap: 7 },
+  stepBtn:     { flex: 1, paddingVertical: 9, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.border, alignItems: 'center' },
+  stepTxt:     { fontSize: 10, fontWeight: '700' },
+  channelRow:  { flexDirection: 'row', gap: 7, flexWrap: 'wrap' },
+  channelBtn:  { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border },
+  channelActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  channelTxt:  { fontSize: 11, color: COLORS.textMuted, fontWeight: '600' },
+  channelActiveTxt: { color: '#fff' },
+})
+
+// ─── Create Modal ─────────────────────────────────────────────
+
+const TIER_PLANS = [
+  { label: 'الباقة الماسية', value: 'diamond' },
+  { label: 'الباقة الذهبية', value: 'gold' },
+  { label: 'الباقة الفضية',  value: 'silver' },
+  { label: 'الباقة البرونزية', value: 'bronze' },
+]
+
+function CreateModal({ visible, onClose, onCreate, loading }: {
+  visible: boolean; onClose: () => void
+  onCreate: (data: { planName: string; amount: number; currency: string; interval: string; currentPeriodStart: string; currentPeriodEnd: string }) => void
+  loading: boolean
+}) {
+  const [form, setForm] = useState({ planName: '', amount: '', interval: 'MONTHLY', currency: 'SAR' })
+
+  const handleSubmit = () => {
+    if (!form.planName.trim() || !form.amount.trim()) return
+    const start = new Date()
+    const end = new Date()
+    if (form.interval === 'MONTHLY') end.setMonth(end.getMonth() + 1)
+    else end.setFullYear(end.getFullYear() + 1)
+    onCreate({
+      planName: form.planName,
+      amount: parseFloat(form.amount),
+      currency: form.currency,
+      interval: form.interval,
+      currentPeriodStart: start.toISOString(),
+      currentPeriodEnd: end.toISOString(),
+    })
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={mdS.overlay}>
+        <View style={mdS.container}>
+          <View style={mdS.head}>
+            <Text style={mdS.title}>+ اشتراك جديد</Text>
+            <TouchableOpacity onPress={onClose} style={mdS.closeBtn}>
+              <Text style={mdS.closeTxt}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={mdS.body}>
+            {/* اختيار الباقة */}
+            <Text style={mdS.label}>اختر الباقة</Text>
+            <View style={crS.tierGrid}>
+              {TIER_PLANS.map(plan => {
+                const tier = TIER_THEMES[plan.value as keyof typeof TIER_THEMES]
+                const active = form.planName === plan.label
+                return (
+                  <TouchableOpacity
+                    key={plan.value}
+                    style={[crS.tierBtn, { borderColor: active ? tier.accent : COLORS.border }, active && { backgroundColor: tier.bg }]}
+                    onPress={() => setForm({ ...form, planName: plan.label, amount: tier.price.replace('SAR ', '') })}
+                  >
+                    <Text style={crS.tierIcon}>{tier.icon}</Text>
+                    <Text style={[crS.tierLabel, { color: active ? tier.accent : COLORS.textSecondary }]}>
+                      {plan.label.replace('الباقة ', '')}
+                    </Text>
+                    <Text style={[crS.tierPrice, { color: active ? tier.accent : COLORS.textMuted }]}>
+                      {tier.price}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              })}
+            </View>
+
+            <TextInput
+              placeholder="المبلغ" value={form.amount}
+              onChangeText={v => setForm({ ...form, amount: v })}
+              style={crS.input} placeholderTextColor={COLORS.textMuted}
+              keyboardType="decimal-pad" textAlign={isRTL ? 'right' : 'left'}
+            />
+
+            {/* دورة الفوترة */}
+            <Text style={mdS.label}>دورة الفوترة</Text>
+            <View style={[crS.intervalRow, isRTL && { flexDirection: 'row-reverse' }]}>
+              {(['MONTHLY', 'YEARLY'] as const).map(iv => (
+                <TouchableOpacity
+                  key={iv}
+                  style={[crS.intervalBtn, form.interval === iv && crS.intervalActive]}
+                  onPress={() => setForm({ ...form, interval: iv })}
+                >
+                  <Text style={[crS.intervalTxt, form.interval === iv && crS.intervalActiveTxt]}>
+                    {iv === 'MONTHLY' ? 'شهري' : 'سنوي'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View style={[mdS.actions, isRTL && { flexDirection: 'row-reverse' }]}>
+              <TouchableOpacity style={mdS.cancelBtn} onPress={onClose}>
+                <Text style={{ color: COLORS.textSecondary, fontWeight: '600' }}>إلغاء</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[mdS.submitBtn, loading && { opacity: 0.6 }]}
+                onPress={handleSubmit} disabled={loading}
+              >
+                <Text style={{ color: '#fff', fontWeight: '700' }}>
+                  {loading ? 'جاري الإنشاء...' : 'إنشاء الاشتراك'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  )
+}
+const crS = StyleSheet.create({
+  tierGrid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  tierBtn:        { width: '47%', padding: 10, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.surfaceBg, alignItems: 'center', gap: 3 },
+  tierIcon:       { fontSize: 22 },
+  tierLabel:      { fontSize: 12, fontWeight: '700' },
+  tierPrice:      { fontSize: 11, fontWeight: '600' },
+  input:          { backgroundColor: COLORS.surfaceBg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 13, color: COLORS.textPrimary, fontSize: 14 },
+  intervalRow:    { flexDirection: 'row', gap: 8 },
+  intervalBtn:    { flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center' },
+  intervalActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  intervalTxt:    { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600' },
+  intervalActiveTxt: { color: '#fff' },
+})
+
+// ─── Main Screen ──────────────────────────────────────────────
 
 export default function SubscriptionsScreen() {
-  const { t }        = useTranslation()
+  const { t } = useTranslation()
   const tabBarHeight = useTabBarHeight()
+  const { showToast } = useToast()
 
-  const [subs, setSubs]             = useState<Sub[]>([])
-  const [loading, setLoading]       = useState(true)
+  const [subs, setSubs] = useState<Sub[]>([])
+  const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [showCreate, setShowCreate] = useState(false)
-  const [creating, setCreating]     = useState(false)
-  const [selKpi, setSelKpi]         = useState(0)
-  const [form, setForm] = useState({ customerName: '', amount: '', title: '', interval: 'monthly' })
+  const [churnOverview, setChurnOverview] = useState<ChurnOverview | null>(null)
 
+  const [selKpi, setSelKpi] = useState(0)
+  const [showCreate, setShowCreate] = useState(false)
+  const [creating, setCreating] = useState(false)
+
+  const [retryModal, setRetryModal] = useState<Sub | null>(null)
+  const [retryLoading, setRetryLoading] = useState(false)
+
+  const [dunningModal, setDunningModal] = useState<Sub | null>(null)
+  const [dunningLoading, setDunningLoading] = useState(false)
+
+  const [detailModal, setDetailModal] = useState<Sub | null>(null)
+
+  // ─── Fetch ──────────────────────────────────────
   const fetchData = useCallback(async () => {
     try {
-      const res = await subscriptionsApi.list()
-      setSubs(res.subscriptions)
+      const [subsRes, churnRes] = await Promise.allSettled([
+        subscriptionsApi.list(),
+        subscriptionsApi.getChurnOverview(),
+      ])
+      if (subsRes.status === 'fulfilled') {
+        const raw = subsRes.value?.data ?? subsRes.value?.subscriptions ?? []
+        setSubs(Array.isArray(raw) ? raw : [])
+      }
+      if (churnRes.status === 'fulfilled') {
+        setChurnOverview(churnRes.value?.data ?? null)
+      }
     } catch (_e) {}
     finally { setLoading(false); setRefreshing(false) }
   }, [])
@@ -426,99 +759,111 @@ export default function SubscriptionsScreen() {
   useEffect(() => { fetchData() }, [fetchData])
   const onRefresh = () => { setRefreshing(true); fetchData() }
 
-  const handleCreate = async () => {
-    if (!form.customerName.trim() || !form.amount.trim() || !form.title.trim()) return
+  // ─── KPI Values ─────────────────────────────────
+  const activeCount  = subs.filter(s => s.status === 'ACTIVE').length
+  const pastDueCount = subs.filter(s => s.status === 'PAST_DUE').length
+  const totalCount   = subs.length
+  const totalRevenue = subs.filter(s => s.status === 'ACTIVE').reduce((sum, s) => sum + Number(s.amount), 0)
+  const kpiValues = [
+    String(activeCount),
+    String(pastDueCount),
+    String(totalCount),
+    totalRevenue >= 1000 ? `${(totalRevenue / 1000).toFixed(1)}k` : String(totalRevenue),
+  ]
+
+  // ─── Handlers ───────────────────────────────────
+  const handleAction = (sub: Sub, action: 'cancel' | 'retry' | 'dunning' | 'detail') => {
+    if (action === 'cancel')  handleCancel(sub)
+    if (action === 'retry')   setRetryModal(sub)
+    if (action === 'dunning') setDunningModal(sub)
+    if (action === 'detail')  setDetailModal(sub)
+  }
+
+  const handleCancel = (sub: Sub) => {
+    subscriptionsApi.cancel(sub.id)
+      .then(() => { showToast('تم إلغاء الاشتراك', 'success'); fetchData() })
+      .catch(() => showToast('حدث خطأ', 'error'))
+  }
+
+  const handleCreate = async (data: Parameters<typeof subscriptionsApi.create>[0]) => {
     setCreating(true)
     try {
-      await subscriptionsApi.create({
-        customerName: form.customerName,
-        amount: parseFloat(form.amount),
-        interval: form.interval,
-        title: form.title,
-      })
+      await subscriptionsApi.create(data)
       setShowCreate(false)
-      setForm({ customerName: '', amount: '', title: '', interval: 'monthly' })
+      showToast('تم إنشاء الاشتراك بنجاح', 'success')
       fetchData()
     } catch (err: unknown) {
-      Alert.alert(t('common.error'), err instanceof Error ? err.message : '')
+      showToast(err instanceof Error ? err.message : 'حدث خطأ', 'error')
     }
     setCreating(false)
   }
 
-  const handleAction = async (subId: string, action: 'pause' | 'resume' | 'cancel') => {
+  const handleRetryConfirm = async () => {
+    if (!retryModal) return
+    setRetryLoading(true)
     try {
-      if (action === 'pause')       await subscriptionsApi.pause(subId)
-      else if (action === 'resume') await subscriptionsApi.resume(subId)
-      else                          await subscriptionsApi.cancel(subId)
+      await subscriptionsApi.triggerRetry(retryModal.id)
+      showToast('تم جدولة Smart Retry بنجاح', 'success')
+      setRetryModal(null)
       fetchData()
-    } catch (_e) {}
+    } catch {
+      showToast('حدث خطأ في جدولة Retry', 'error')
+    }
+    setRetryLoading(false)
   }
 
-  const activeCount  = subs.filter(s => s.status === 'active').length
-  const pausedCount  = subs.filter(s => s.status === 'paused').length
-  const totalCount   = subs.length
-  const totalRevenue = subs
-    .filter(s => s.status === 'active')
-    .reduce((sum, s) => sum + Number(s.amount), 0)
+  const handleDunningSend = async (step: number, channel: string) => {
+    if (!dunningModal) return
+    setDunningLoading(true)
+    try {
+      await subscriptionsApi.sendDunning(dunningModal.id, step, channel)
+      showToast('تم إرسال رسالة Dunning', 'success')
+      setDunningModal(null)
+      fetchData()
+    } catch {
+      showToast('حدث خطأ في الإرسال', 'error')
+    }
+    setDunningLoading(false)
+  }
 
-  const kpiValues = [
-    String(activeCount),
-    String(pausedCount),
-    String(totalCount),
-    totalRevenue >= 1000 ? `${(totalRevenue/1000).toFixed(1)}k` : String(totalRevenue),
-  ]
-
-  const TIER_PLANS = [
-    { label: 'الباقة الماسية',   value: 'diamond' },
-    { label: 'الباقة الذهبية',   value: 'gold'    },
-    { label: 'الباقة الفضية',    value: 'silver'  },
-    { label: 'الباقة البرونزية', value: 'bronze'  },
-  ]
-
+  // ─── Render ─────────────────────────────────────
   if (loading) {
     return (
-      <SafeAreaView style={sc.safe}>
-        <InnerHeader title={t('subscriptions.title')} accentColor="#10B981" />
-        <View style={sc.center}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
+      <SafeAreaView style={sc.safe} edges={['top']}>
+        <InnerHeader title={t('subscriptions.title') || 'الاشتراكات'} />
+        <View style={sc.center}><ActivityIndicator color={COLORS.primary} size="large" /></View>
       </SafeAreaView>
     )
   }
 
   const renderHeader = () => (
     <>
-      {/* KPI Cards */}
-      <View style={sc.kpiWrap}>
-        <View style={[sc.kpiRow, isRTL && sc.kpiRowRTL]}>
-          {[0, 1].map(i => (
-            <KpiCard key={i} label={KPI_THEMES[i].label} value={kpiValues[i]}
-              themeIdx={i} selected={selKpi === i} onPress={() => setSelKpi(i)} />
-          ))}
-        </View>
-        <View style={[sc.kpiRow, isRTL && sc.kpiRowRTL]}>
-          {[2, 3].map(i => (
-            <KpiCard key={i} label={KPI_THEMES[i].label} value={kpiValues[i]}
-              themeIdx={i} selected={selKpi === i} onPress={() => setSelKpi(i)} />
-          ))}
-        </View>
+      {/* KPI Row 1 */}
+      <View style={[sc.kpiRow, isRTL && sc.kpiRowRTL]}>
+        {[0, 1].map(i => (
+          <KpiCard key={i} label={KPI_THEMES[i].label} value={kpiValues[i]}
+            themeIdx={i} selected={selKpi === i} onPress={() => setSelKpi(i)} />
+        ))}
+      </View>
+      {/* KPI Row 2 */}
+      <View style={[sc.kpiRow, isRTL && sc.kpiRowRTL]}>
+        {[2, 3].map(i => (
+          <KpiCard key={i} label={KPI_THEMES[i].label} value={kpiValues[i]}
+            themeIdx={i} selected={selKpi === i} onPress={() => setSelKpi(i)} />
+        ))}
       </View>
 
-      {/* KPI Pivot Chart */}
-      <PivotChart idx={selKpi} />
-
-      {/* Features Pivot — مقارنة الباقات */}
-      <FeaturesPivot />
+      {/* Churn Overview */}
+      <ChurnOverviewCard overview={churnOverview} />
 
       {/* List Header */}
       <View style={[sc.listHeader, isRTL && sc.rowRTL]}>
         <Text style={sc.listTitle}>
-          الاشتراكات النشطة
-          {'  '}
+          الاشتراكات{' '}
           <Text style={{ color: COLORS.textMuted, fontSize: 12 }}>({totalCount})</Text>
         </Text>
         <TouchableOpacity style={sc.createBtn} onPress={() => setShowCreate(true)}>
-          <Text style={sc.createBtnTxt}>+ {t('subscriptions.create')}</Text>
+          <Text style={sc.createBtnTxt}>+ {t('subscriptions.create') || 'إنشاء'}</Text>
         </TouchableOpacity>
       </View>
     </>
@@ -527,20 +872,20 @@ export default function SubscriptionsScreen() {
   const renderEmpty = () => (
     <View style={sc.empty}>
       <Text style={sc.emptyIcon}>🔄</Text>
-      <Text style={sc.emptyTxt}>{t('subscriptions.no_subs')}</Text>
-      <TouchableOpacity style={sc.createBtn} onPress={() => setShowCreate(true)}>
-        <Text style={sc.createBtnTxt}>+ {t('subscriptions.create')}</Text>
+      <Text style={sc.emptyTxt}>لا توجد اشتراكات بعد</Text>
+      <TouchableOpacity style={[sc.createBtn, { marginTop: 8 }]} onPress={() => setShowCreate(true)}>
+        <Text style={sc.createBtnTxt}>+ إنشاء اشتراك</Text>
       </TouchableOpacity>
     </View>
   )
 
   return (
-    <SafeAreaView style={sc.safe}>
-      <InnerHeader title={t('subscriptions.title')} accentColor="#10B981" />
+    <SafeAreaView style={sc.safe} edges={['top']}>
+      <InnerHeader title={t('subscriptions.title') || 'الاشتراكات'} />
 
       <FlatList
         data={subs}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         renderItem={({ item }: ListRenderItemInfo<Sub>) => (
           <SubCard sub={item} onAction={handleAction} />
         )}
@@ -554,135 +899,47 @@ export default function SubscriptionsScreen() {
         }
       />
 
-      {/* Create Modal */}
-      <Modal visible={showCreate} transparent animationType="slide" onRequestClose={() => setShowCreate(false)}>
-        <View style={md.overlay}>
-          <View style={md.container}>
-            <View style={md.head}>
-              <Text style={md.title}>{t('subscriptions.create')}</Text>
-              <TouchableOpacity onPress={() => setShowCreate(false)} style={md.closeBtn}>
-                <Text style={md.closeTxt}>✕</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={md.body}>
-              <TextInput
-                placeholder={t('subscriptions.customer')} value={form.customerName}
-                onChangeText={v => setForm({...form, customerName: v})}
-                style={md.input} placeholderTextColor={COLORS.textMuted}
-                textAlign={isRTL ? 'right' : 'left'}
-              />
-
-              {/* اختيار الباقة */}
-              <Text style={[md.label, isRTL && { textAlign: 'right' }]}>اختر الباقة</Text>
-              <View style={md.tierGrid}>
-                {TIER_PLANS.map(plan => {
-                  const tier = TIER_THEMES[plan.value as keyof typeof TIER_THEMES]
-                  const isActive = form.title === plan.label
-                  return (
-                    <TouchableOpacity
-                      key={plan.value}
-                      style={[md.tierBtn,
-                        { borderColor: isActive ? tier.accent : COLORS.border },
-                        isActive && { backgroundColor: tier.bg }
-                      ]}
-                      onPress={() => setForm({
-                        ...form, title: plan.label,
-                        amount: tier.price.replace('SAR ', ''),
-                      })}
-                    >
-                      <Text style={md.tierIcon}>{tier.icon}</Text>
-                      <Text style={[md.tierLabel, { color: isActive ? tier.accent : COLORS.textSecondary }]}>
-                        {plan.label.replace('الباقة ', '')}
-                      </Text>
-                      <Text style={[md.tierPrice, { color: isActive ? tier.accent : COLORS.textMuted }]}>
-                        {tier.price}
-                      </Text>
-                    </TouchableOpacity>
-                  )
-                })}
-              </View>
-
-              <TextInput
-                placeholder="المبلغ" value={form.amount}
-                onChangeText={v => setForm({...form, amount: v})}
-                style={md.input} placeholderTextColor={COLORS.textMuted}
-                keyboardType="decimal-pad" textAlign={isRTL ? 'right' : 'left'}
-              />
-
-              <Text style={[md.label, isRTL && { textAlign: 'right' }]}>دورة الفوترة</Text>
-              <View style={[md.intervalRow, isRTL && { flexDirection: 'row-reverse' }]}>
-                {(['monthly', 'weekly', 'yearly'] as const).map(iv => (
-                  <TouchableOpacity
-                    key={iv}
-                    style={[md.intervalBtn, form.interval === iv && md.intervalActive]}
-                    onPress={() => setForm({...form, interval: iv})}
-                  >
-                    <Text style={[md.intervalTxt, form.interval === iv && md.intervalActiveTxt]}>
-                      {t(`subscriptions.${iv}`)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <View style={md.actions}>
-                <TouchableOpacity style={md.cancelBtn} onPress={() => setShowCreate(false)}>
-                  <Text style={{ color: COLORS.textSecondary, fontWeight: '600' }}>{t('common.cancel')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[md.submitBtn, creating && { opacity: 0.6 }]}
-                  onPress={handleCreate} disabled={creating}
-                >
-                  <Text style={{ color: COLORS.white, fontWeight: '700' }}>
-                    {creating ? t('common.loading') : t('subscriptions.create')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <CreateModal
+        visible={showCreate}
+        onClose={() => setShowCreate(false)}
+        onCreate={handleCreate}
+        loading={creating}
+      />
+      <RetryModal
+        visible={!!retryModal}
+        sub={retryModal}
+        onClose={() => setRetryModal(null)}
+        onConfirm={handleRetryConfirm}
+        loading={retryLoading}
+      />
+      <DunningModal
+        visible={!!dunningModal}
+        sub={dunningModal}
+        onClose={() => setDunningModal(null)}
+        onSend={handleDunningSend}
+        loading={dunningLoading}
+      />
+      <DetailModal
+        visible={!!detailModal}
+        sub={detailModal}
+        onClose={() => setDetailModal(null)}
+      />
     </SafeAreaView>
   )
 }
 
 const sc = StyleSheet.create({
-  safe:         { flex: 1, backgroundColor: COLORS.darkBg },
-  center:       { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  listContent:  { paddingTop: 4 },
-  kpiWrap:      { paddingHorizontal: 12, paddingTop: 12, gap: 8 },
-  kpiRow:       { flexDirection: 'row', gap: 8 },
-  kpiRowRTL:    { flexDirection: 'row-reverse' },
-  listHeader:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 14, paddingBottom: 6 },
-  rowRTL:       { flexDirection: 'row-reverse' },
-  listTitle:    { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'right' },
-  createBtn:    { backgroundColor: COLORS.primary, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 9 },
-  createBtnTxt: { color: COLORS.white, fontSize: 12, fontWeight: '700' },
-  empty:        { alignItems: 'center', paddingVertical: 60, gap: 12 },
-  emptyIcon:    { fontSize: 40 },
-  emptyTxt:     { fontSize: 14, color: COLORS.textMuted, fontWeight: '500' },
-})
-
-const md = StyleSheet.create({
-  overlay:          { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  container:        { backgroundColor: COLORS.cardBg, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
-  head:             { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  title:            { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
-  closeBtn:         { width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
-  closeTxt:         { fontSize: 13, color: COLORS.textSecondary, fontWeight: '700' },
-  body:             { padding: 16, gap: 10 },
-  label:            { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
-  input:            { backgroundColor: COLORS.surfaceBg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 13, color: COLORS.textPrimary, fontSize: 14 },
-  tierGrid:         { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  tierBtn:          { width: '47%', padding: 10, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.surfaceBg, alignItems: 'center', gap: 3 },
-  tierIcon:         { fontSize: 22 },
-  tierLabel:        { fontSize: 12, fontWeight: '700' },
-  tierPrice:        { fontSize: 11, fontWeight: '600' },
-  intervalRow:      { flexDirection: 'row', gap: 8 },
-  intervalBtn:      { flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center' },
-  intervalActive:   { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  intervalTxt:      { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600' },
-  intervalActiveTxt:{ color: COLORS.white },
-  actions:          { flexDirection: 'row', gap: 10, marginTop: 4 },
-  cancelBtn:        { flex: 1, paddingVertical: 13, borderRadius: 10, alignItems: 'center', backgroundColor: COLORS.surfaceBg },
-  submitBtn:        { flex: 1, paddingVertical: 13, borderRadius: 10, alignItems: 'center', backgroundColor: COLORS.primary },
+  safe:        { flex: 1, backgroundColor: COLORS.darkBg },
+  center:      { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  listContent: { paddingTop: 4 },
+  kpiRow:      { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 10 },
+  kpiRowRTL:   { flexDirection: 'row-reverse' },
+  listHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 14, paddingBottom: 6 },
+  rowRTL:      { flexDirection: 'row-reverse' },
+  listTitle:   { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'right' },
+  createBtn:   { backgroundColor: COLORS.primary, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 9 },
+  createBtnTxt:{ color: COLORS.white, fontSize: 12, fontWeight: '700' },
+  empty:       { alignItems: 'center', paddingVertical: 60, gap: 12 },
+  emptyIcon:   { fontSize: 40 },
+  emptyTxt:    { fontSize: 14, color: COLORS.textMuted, fontWeight: '500' },
 })

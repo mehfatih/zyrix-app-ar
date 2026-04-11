@@ -1,264 +1,516 @@
-// app/(merchant)/expenses.tsx
+// ─────────────────────────────────────────────────────────────
+// app/(merchant)/expenses.tsx — Elite (Analytics + Auto Import + Net Profit)
+// ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useCallback } from 'react'
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput,
-  I18nManager, SafeAreaView, ActivityIndicator, RefreshControl, Alert, Modal,
+  View, Text, StyleSheet, TouchableOpacity, FlatList,
+  TextInput, I18nManager, ActivityIndicator, RefreshControl,
+  Modal, ListRenderItemInfo,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
+import { useTabBarHeight } from '../../hooks/useTabBarHeight'
 import { expensesApi } from '../../services/api'
 import { InnerHeader } from '../../components/InnerHeader'
+import { useToast } from '../../hooks/useToast'
 
 const isRTL = I18nManager.isRTL
-const CATEGORIES = ['rent', 'salary', 'supplies', 'marketing', 'utilities', 'other'] as const
+
+// ─── Types ────────────────────────────────────────────────────
+
+interface Expense {
+  id: string
+  category: string
+  description: string
+  amount: number
+  currency: string
+  date: string
+}
+
+interface Analytics {
+  topCategory: string | null
+  totalExpenses: number
+  totalRevenue: number
+  netProfit: number
+  profitMargin: number
+  categoryBreakdown: Record<string, { total: number; count: number; percent: number }>
+  calculatedAt?: string
+}
+
+// ─── Constants ────────────────────────────────────────────────
 
 const CAT_ICONS: Record<string, string> = {
   rent: '🏢', salary: '💼', supplies: '📦',
   marketing: '📢', utilities: '⚡', other: '📋',
 }
 
-const DEMO_EXPENSES = [
-  { id: 'exp-001', amount: '4500', currency: 'SAR', category: 'salary',    title: 'رواتب الموظفين - مارس',        date: '2026-03-28' },
-  { id: 'exp-002', amount: '2200', currency: 'SAR', category: 'rent',      title: 'إيجار المكتب - أبريل',         date: '2026-04-01' },
-  { id: 'exp-003', amount: '850',  currency: 'SAR', category: 'marketing', title: 'حملة إعلانية - انستغرام',      date: '2026-03-25' },
-  { id: 'exp-004', amount: '320',  currency: 'SAR', category: 'utilities', title: 'فاتورة الكهرباء والانترنت',    date: '2026-03-20' },
-  { id: 'exp-005', amount: '180',  currency: 'SAR', category: 'supplies',  title: 'مستلزمات مكتبية',             date: '2026-03-15' },
-  { id: 'exp-006', amount: '1200', currency: 'SAR', category: 'other',     title: 'صيانة الأجهزة والمعدات',      date: '2026-03-10' },
-]
-
-const DEMO_SUMMARY = {
-  totalRevenue: 28500,
-  totalExpenses: 9250,
-  netProfit: 19250,
+const CAT_AR: Record<string, string> = {
+  rent: 'إيجار', salary: 'رواتب', supplies: 'مستلزمات',
+  marketing: 'تسويق', utilities: 'مرافق', other: 'أخرى',
 }
 
-const CARD_BG = [
-  { bg: 'rgba(26, 86, 219, 0.10)',  border: 'rgba(26, 86, 219, 0.25)' },
-  { bg: 'rgba(139, 92, 246, 0.10)', border: 'rgba(139, 92, 246, 0.25)' },
-  { bg: 'rgba(13, 148, 136, 0.10)', border: 'rgba(13, 148, 136, 0.25)' },
-  { bg: 'rgba(245, 158, 11, 0.10)', border: 'rgba(245, 158, 11, 0.25)' },
-  { bg: 'rgba(99, 102, 241, 0.10)', border: 'rgba(99, 102, 241, 0.25)' },
-  { bg: 'rgba(236, 72, 153, 0.10)', border: 'rgba(236, 72, 153, 0.25)' },
-]
+const CAT_COLORS: Record<string, string> = {
+  rent: '#6366F1', salary: '#F59E0B', supplies: '#06B6D4',
+  marketing: '#EC4899', utilities: '#10B981', other: '#94A3B8',
+}
 
-export default function ExpensesScreen() {
-  const { t } = useTranslation()
-  const [data, setData] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [showCreate, setShowCreate] = useState(false)
-  const [creating, setCreating] = useState(false)
-  const [form, setForm] = useState({ amount: '', title: '', category: 'other' })
+const CARD_ACCENTS = ['#1A56DB', '#8B5CF6', '#0D9488', '#F59E0B', '#06B6D4', '#EC4899']
 
-  const fetchData = useCallback(async () => {
-    try {
-      const res = await expensesApi.list()
-      if (res?.expenses?.length > 0) {
-        setData(res)
-      } else {
-        setData({ expenses: DEMO_EXPENSES, summary: DEMO_SUMMARY })
-      }
-    } catch (_e) {
-      setData({ expenses: DEMO_EXPENSES, summary: DEMO_SUMMARY })
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }, [])
+const CATEGORIES = ['rent', 'salary', 'supplies', 'marketing', 'utilities', 'other'] as const
 
-  useEffect(() => { fetchData() }, [fetchData])
+// ─── Analytics Card ───────────────────────────────────────────
 
-  const handleCreate = async () => {
-    if (!form.amount || !form.title) return
-    setCreating(true)
-    try {
-      await expensesApi.create({ amount: parseFloat(form.amount), category: form.category, title: form.title })
-      setShowCreate(false)
-      setForm({ amount: '', title: '', category: 'other' })
-      fetchData()
-    } catch (e: unknown) {
-      Alert.alert(t('common.error'), e instanceof Error ? e.message : '')
-    }
-    setCreating(false)
-  }
+function AnalyticsCard({ analytics, onRefresh, onAutoImport, loading }: {
+  analytics: Analytics | null
+  onRefresh: () => void
+  onAutoImport: () => void
+  loading: boolean
+}) {
+  if (!analytics) return null
 
-  if (loading) {
-    return (
-      <SafeAreaView style={st.safe}>
-        <InnerHeader title={t('expenses.title')} accentColor="#10B981" />
-        <View style={st.center}><ActivityIndicator size="large" color={COLORS.primary} /></View>
-      </SafeAreaView>
-    )
-  }
-
-  const summary  = data?.summary  || DEMO_SUMMARY
-  const expenses = data?.expenses || DEMO_EXPENSES
-  const maxKpi   = Math.max(summary.totalRevenue, summary.totalExpenses, summary.netProfit, 1)
+  const isProfit = analytics.netProfit >= 0
 
   return (
-    <SafeAreaView style={st.safe}>
-      {/* ── InnerHeader ── */}
-      <InnerHeader title={t('expenses.title')} accentColor="#10B981" />
+    <View style={anS.wrap}>
+      {/* Header */}
+      <View style={[anS.head, isRTL && { flexDirection: 'row-reverse' }]}>
+        <View style={[anS.dot, { backgroundColor: '#10B981' }]} />
+        <Text style={anS.title}>تحليل المصاريف الذكي</Text>
+        <TouchableOpacity
+          style={anS.refreshBtn}
+          onPress={onRefresh}
+          disabled={loading}
+        >
+          <Text style={anS.refreshTxt}>{loading ? '...' : '🔄'}</Text>
+        </TouchableOpacity>
+      </View>
 
-      <ScrollView
-        contentContainerStyle={st.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchData() }} tintColor={COLORS.primary} />}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* زر إضافة مصروف */}
-        <View style={st.addRow}>
-          <TouchableOpacity style={st.createBtn} onPress={() => setShowCreate(true)}>
-            <Text style={st.createBtnText}>+ {t('expenses.add')}</Text>
-          </TouchableOpacity>
+      {/* Net Profit Row */}
+      <View style={[anS.profitRow, isRTL && { flexDirection: 'row-reverse' }]}>
+        <View style={[anS.profitCard, { backgroundColor: isProfit ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', borderColor: isProfit ? '#10B981' : '#EF4444' }]}>
+          <Text style={[anS.profitLabel, { color: isProfit ? '#10B981' : '#EF4444' }]}>
+            {isProfit ? '📈 صافي الربح' : '📉 صافي الخسارة'}
+          </Text>
+          <Text style={[anS.profitVal, { color: isProfit ? '#10B981' : '#EF4444' }]}>
+            {analytics.netProfit.toLocaleString(undefined, { maximumFractionDigits: 0 })} ر.س
+          </Text>
+          <Text style={[anS.marginTxt, { color: isProfit ? '#10B981' : '#EF4444' }]}>
+            هامش {analytics.profitMargin}%
+          </Text>
         </View>
-
-        {/* KPI */}
-        <View style={st.kpiWrapper}>
-          <View style={[st.kpiRow, isRTL && st.kpiRowRTL]}>
-            <View style={[st.kpiCard, { backgroundColor: 'rgba(5, 150, 105, 0.15)', borderColor: 'rgba(5, 150, 105, 0.3)' }]}>
-              <Text style={st.kpiLabel}>{t('expenses.total_revenue')}</Text>
-              <Text style={[st.kpiValue, { color: COLORS.success }]}>{summary.totalRevenue.toLocaleString('en-US')} ر.س</Text>
-            </View>
-            <View style={[st.kpiCard, { backgroundColor: 'rgba(220, 38, 38, 0.15)', borderColor: 'rgba(220, 38, 38, 0.3)' }]}>
-              <Text style={st.kpiLabel}>{t('expenses.total_expenses')}</Text>
-              <Text style={[st.kpiValue, { color: COLORS.danger }]}>{summary.totalExpenses.toLocaleString('en-US')} ر.س</Text>
-            </View>
-            <View style={[st.kpiCard, { backgroundColor: 'rgba(26, 86, 219, 0.15)', borderColor: 'rgba(26, 86, 219, 0.3)' }]}>
-              <Text style={st.kpiLabel}>{t('expenses.net_profit')}</Text>
-              <Text style={[st.kpiValue, { color: summary.netProfit >= 0 ? COLORS.primaryLight : COLORS.danger }]}>
-                {summary.netProfit.toLocaleString('en-US')} ر.س
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Chart */}
-        <View style={st.chartContainer}>
+        <View style={{ flex: 1, gap: 6 }}>
           {[
-            { label: t('expenses.total_revenue'),  value: summary.totalRevenue,  color: COLORS.success },
-            { label: t('expenses.total_expenses'), value: summary.totalExpenses, color: COLORS.danger },
-            { label: t('expenses.net_profit'),     value: Math.abs(summary.netProfit), color: COLORS.primaryLight },
-          ].map((bar, i) => (
-            <View key={i} style={st.chartBarGroup}>
-              <View style={st.chartBarTrack}>
-                <View style={[st.chartBarFill, { backgroundColor: bar.color, height: `${Math.max((bar.value / maxKpi) * 100, 8)}%` }]} />
-              </View>
-              <Text style={[st.chartBarLabel, { color: bar.color }]}>{bar.label}</Text>
+            { label: 'الإيراد', value: analytics.totalRevenue, color: '#10B981' },
+            { label: 'المصاريف', value: analytics.totalExpenses, color: '#EF4444' },
+          ].map((item, i) => (
+            <View key={i} style={[anS.metricRow, isRTL && { flexDirection: 'row-reverse' }]}>
+              <Text style={[anS.metricLabel, { color: item.color }]}>{item.label}</Text>
+              <Text style={[anS.metricVal, { color: item.color }]}>
+                {item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </Text>
             </View>
           ))}
         </View>
+      </View>
 
-        {/* Expenses list */}
-        {expenses.map((exp: any, i: number) => {
-          const colors = CARD_BG[i % CARD_BG.length]
-          return (
-            <View key={exp.id} style={[st.card, { backgroundColor: colors.bg, borderColor: colors.border }]}>
-              <View style={[st.cardRow, isRTL && st.cardRowRTL]}>
-                <View style={st.cardIcon}>
-                  <Text style={{ fontSize: 18 }}>{CAT_ICONS[exp.category] || '📋'}</Text>
+      {/* Category Breakdown */}
+      {Object.keys(analytics.categoryBreakdown).length > 0 && (
+        <View style={anS.breakdown}>
+          {Object.entries(analytics.categoryBreakdown)
+            .sort(([, a], [, b]) => b.total - a.total)
+            .slice(0, 4)
+            .map(([cat, data]) => {
+              const color = CAT_COLORS[cat] ?? '#94A3B8'
+              return (
+                <View key={cat} style={anS.catRow}>
+                  <Text style={anS.catIcon}>{CAT_ICONS[cat] ?? '📋'}</Text>
+                  <View style={anS.catBarWrap}>
+                    <View style={[anS.catBarFill, { width: `${data.percent}%`, backgroundColor: color }]} />
+                  </View>
+                  <Text style={[anS.catPct, { color }]}>{data.percent}%</Text>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={st.cardTitle}>{exp.title}</Text>
-                  <Text style={st.cardCat}>
-                    {t(`expenses.${exp.category}`) || exp.category} · {new Date(exp.date).toLocaleDateString('ar-SA')}
-                  </Text>
-                </View>
-                <Text style={st.cardAmount}>-{Number(exp.amount).toLocaleString('en-US')} ر.س</Text>
-              </View>
-            </View>
-          )
-        })}
+              )
+            })}
+        </View>
+      )}
 
-        <View style={{ height: 100 }} />
-      </ScrollView>
+      {/* Auto Import */}
+      <TouchableOpacity
+        style={[anS.importBtn, loading && { opacity: 0.6 }]}
+        onPress={onAutoImport}
+        disabled={loading}
+      >
+        <Text style={anS.importTxt}>
+          {loading ? 'جاري الاستيراد...' : '🔗 استيراد تلقائي من المعاملات'}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  )
+}
+const anS = StyleSheet.create({
+  wrap:        { marginHorizontal: 12, marginBottom: 10, borderRadius: 13, borderWidth: 1.5, borderColor: 'rgba(16,185,129,0.35)', backgroundColor: COLORS.cardBg, overflow: 'hidden', padding: 12 },
+  head:        { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
+  dot:         { width: 7, height: 7, borderRadius: 4 },
+  title:       { flex: 1, fontSize: 12, fontWeight: '700', color: COLORS.textPrimary },
+  refreshBtn:  { width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
+  refreshTxt:  { fontSize: 14 },
+  profitRow:   { flexDirection: 'row', gap: 10, marginBottom: 12 },
+  profitCard:  { width: 120, borderRadius: 10, borderWidth: 1.5, padding: 10, alignItems: 'center', gap: 3 },
+  profitLabel: { fontSize: 10, fontWeight: '700', textAlign: 'center' },
+  profitVal:   { fontSize: 16, fontWeight: '800' },
+  marginTxt:   { fontSize: 9, fontWeight: '600' },
+  metricRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 4 },
+  metricLabel: { fontSize: 11, fontWeight: '600' },
+  metricVal:   { fontSize: 13, fontWeight: '800' },
+  breakdown:   { gap: 7, marginBottom: 12 },
+  catRow:      { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  catIcon:     { fontSize: 14, width: 20, textAlign: 'center' },
+  catBarWrap:  { flex: 1, height: 7, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 4, overflow: 'hidden' },
+  catBarFill:  { height: '100%', borderRadius: 4 },
+  catPct:      { fontSize: 10, fontWeight: '800', width: 30, textAlign: 'right' },
+  importBtn:   { backgroundColor: 'rgba(6,182,212,0.15)', borderRadius: 9, borderWidth: 1, borderColor: 'rgba(6,182,212,0.35)', paddingVertical: 10, alignItems: 'center' },
+  importTxt:   { fontSize: 12, fontWeight: '700', color: '#06B6D4' },
+})
 
-      {/* Modal إضافة مصروف */}
-      <Modal visible={showCreate} transparent animationType="slide">
-        <View style={st.modalOverlay}>
-          <View style={st.modal}>
-            <Text style={st.modalTitle}>{t('expenses.add')}</Text>
+// ─── Expense Card ─────────────────────────────────────────────
+
+function ExpenseCard({ exp, accent, onDelete }: {
+  exp: Expense; accent: string; onDelete: (id: string) => void
+}) {
+  const color = CAT_COLORS[exp.category] ?? accent
+  return (
+    <View style={[eC.card, { backgroundColor: accent + '12', borderColor: accent + '35' }]}>
+      <View style={[eC.row, isRTL && eC.rowRTL]}>
+        <View style={[eC.iconWrap, { backgroundColor: color + '20', borderColor: color + '40' }]}>
+          <Text style={eC.icon}>{CAT_ICONS[exp.category] ?? '📋'}</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={eC.desc} numberOfLines={1}>{exp.description}</Text>
+          <Text style={eC.meta}>
+            {CAT_AR[exp.category] ?? exp.category} · {new Date(exp.date).toLocaleDateString('ar-SA')}
+          </Text>
+        </View>
+        <View style={{ alignItems: 'flex-end', gap: 6 }}>
+          <Text style={eC.amount}>-{Number(exp.amount).toLocaleString()} {exp.currency === 'SAR' ? 'ر.س' : exp.currency}</Text>
+          <TouchableOpacity onPress={() => onDelete(exp.id)} style={eC.deleteBtn}>
+            <Text style={eC.deleteTxt}>🗑</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  )
+}
+const eC = StyleSheet.create({
+  card:      { marginHorizontal: 12, marginBottom: 8, borderRadius: 12, borderWidth: 1.5, padding: 13 },
+  row:       { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  rowRTL:    { flexDirection: 'row-reverse' },
+  iconWrap:  { width: 38, height: 38, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  icon:      { fontSize: 18 },
+  desc:      { fontSize: 13, fontWeight: '600', color: COLORS.textPrimary, marginBottom: 2, textAlign: 'right' },
+  meta:      { fontSize: 10, color: COLORS.textMuted, textAlign: 'right' },
+  amount:    { fontSize: 14, fontWeight: '800', color: '#EF4444' },
+  deleteBtn: { padding: 4 },
+  deleteTxt: { fontSize: 14 },
+})
+
+// ─── Create Modal ─────────────────────────────────────────────
+
+function CreateModal({ visible, onClose, onCreate, loading }: {
+  visible: boolean; onClose: () => void
+  onCreate: (data: any) => void; loading: boolean
+}) {
+  const [description, setDescription] = useState('')
+  const [amount, setAmount] = useState('')
+  const [category, setCategory] = useState('other')
+  const [currency, setCurrency] = useState('SAR')
+
+  const reset = () => { setDescription(''); setAmount(''); setCategory('other'); setCurrency('SAR') }
+
+  const handleSubmit = () => {
+    if (!description.trim() || !amount.trim()) return
+    onCreate({
+      description: description.trim(),
+      amount: parseFloat(amount),
+      category,
+      currency,
+      date: new Date().toISOString(),
+    })
+    reset()
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={() => { onClose(); reset() }}>
+      <View style={mdS.overlay}>
+        <View style={mdS.container}>
+          <View style={mdS.head}>
+            <Text style={mdS.title}>+ مصروف جديد</Text>
+            <TouchableOpacity onPress={() => { onClose(); reset() }} style={mdS.closeBtn}>
+              <Text style={mdS.closeTxt}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={mdS.body}>
             <TextInput
-              placeholder={t('expenses.title')}
-              value={form.title}
-              onChangeText={v => setForm({ ...form, title: v })}
-              style={st.input}
+              placeholder="وصف المصروف *"
+              value={description}
+              onChangeText={setDescription}
+              style={mdS.input}
               placeholderTextColor={COLORS.textMuted}
-              textAlign="right"
+              textAlign={isRTL ? 'right' : 'left'}
             />
             <TextInput
-              placeholder="المبلغ"
-              value={form.amount}
-              onChangeText={v => setForm({ ...form, amount: v })}
-              style={st.input}
-              placeholderTextColor={COLORS.textMuted}
+              placeholder="المبلغ *"
+              value={amount}
+              onChangeText={setAmount}
+              style={mdS.input}
               keyboardType="decimal-pad"
-              textAlign="right"
+              placeholderTextColor={COLORS.textMuted}
+              textAlign={isRTL ? 'right' : 'left'}
             />
-            <View style={st.catGrid}>
+
+            <Text style={mdS.label}>العملة</Text>
+            <View style={crS.row}>
+              {['SAR', 'AED', 'KWD', 'USD'].map(c => (
+                <TouchableOpacity key={c} style={[crS.btn, currency === c && crS.active]} onPress={() => setCurrency(c)}>
+                  <Text style={[crS.txt, currency === c && crS.activeTxt]}>{c}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={[mdS.label, { marginTop: 8 }]}>الفئة</Text>
+            <View style={crS.catGrid}>
               {CATEGORIES.map(c => (
                 <TouchableOpacity
                   key={c}
-                  style={[st.catBtn, form.category === c && st.catBtnActive]}
-                  onPress={() => setForm({ ...form, category: c })}
+                  style={[crS.catBtn, category === c && { backgroundColor: (CAT_COLORS[c] ?? COLORS.primary) + '25', borderColor: CAT_COLORS[c] ?? COLORS.primary }]}
+                  onPress={() => setCategory(c)}
                 >
-                  <Text style={[st.catBtnText, form.category === c && st.catBtnTextActive]}>
-                    {CAT_ICONS[c]} {t(`expenses.${c}`)}
+                  <Text style={crS.catIcon}>{CAT_ICONS[c]}</Text>
+                  <Text style={[crS.catTxt, category === c && { color: CAT_COLORS[c] ?? COLORS.primary }]}>
+                    {CAT_AR[c]}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
-            <View style={st.modalActions}>
-              <TouchableOpacity style={st.modalCancel} onPress={() => setShowCreate(false)}>
-                <Text style={{ color: COLORS.textSecondary }}>{t('common.cancel')}</Text>
+
+            <View style={[mdS.actions, isRTL && { flexDirection: 'row-reverse' }]}>
+              <TouchableOpacity style={mdS.cancelBtn} onPress={() => { onClose(); reset() }}>
+                <Text style={{ color: COLORS.textSecondary, fontWeight: '600' }}>إلغاء</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={st.modalSubmit} onPress={handleCreate} disabled={creating}>
-                <Text style={{ color: COLORS.white, fontWeight: '700' }}>
-                  {creating ? '...' : t('expenses.add')}
+              <TouchableOpacity
+                style={[mdS.submitBtn, loading && { opacity: 0.6 }]}
+                onPress={handleSubmit} disabled={loading}
+              >
+                <Text style={{ color: '#fff', fontWeight: '700' }}>
+                  {loading ? 'جاري الإضافة...' : 'إضافة'}
                 </Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
-      </Modal>
+      </View>
+    </Modal>
+  )
+}
+const crS = StyleSheet.create({
+  row:       { flexDirection: 'row', gap: 7, marginBottom: 8 },
+  btn:       { flex: 1, paddingVertical: 9, borderRadius: 8, borderWidth: 1.5, borderColor: COLORS.border, alignItems: 'center' },
+  active:    { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  txt:       { fontSize: 11, color: COLORS.textMuted, fontWeight: '700' },
+  activeTxt: { color: '#fff' },
+  catGrid:   { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 8 },
+  catBtn:    { width: '30%', paddingVertical: 9, borderRadius: 9, borderWidth: 1.5, borderColor: COLORS.border, alignItems: 'center', gap: 3 },
+  catIcon:   { fontSize: 18 },
+  catTxt:    { fontSize: 10, color: COLORS.textMuted, fontWeight: '600' },
+})
+
+const mdS = StyleSheet.create({
+  overlay:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  container: { backgroundColor: COLORS.cardBg, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
+  head:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  title:     { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
+  closeBtn:  { width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
+  closeTxt:  { fontSize: 13, color: COLORS.textSecondary, fontWeight: '700' },
+  body:      { padding: 16, gap: 10 },
+  label:     { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary, textAlign: 'right' },
+  input:     { backgroundColor: COLORS.surfaceBg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, color: COLORS.textPrimary, fontSize: 14 },
+  actions:   { flexDirection: 'row', gap: 10, marginTop: 4 },
+  cancelBtn: { flex: 1, paddingVertical: 13, borderRadius: 10, alignItems: 'center', backgroundColor: COLORS.surfaceBg },
+  submitBtn: { flex: 1, paddingVertical: 13, borderRadius: 10, alignItems: 'center', backgroundColor: COLORS.primary },
+})
+
+// ─── Main Screen ──────────────────────────────────────────────
+
+export default function ExpensesScreen() {
+  const { t } = useTranslation()
+  const tabBarHeight = useTabBarHeight()
+  const { showToast } = useToast()
+
+  const [expenses, setExpenses] = useState<Expense[]>([])
+  const [analytics, setAnalytics] = useState<Analytics | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [analyticsLoading, setAnalyticsLoading] = useState(false)
+  const [importLoading, setImportLoading] = useState(false)
+  const [showCreate, setShowCreate] = useState(false)
+  const [creating, setCreating] = useState(false)
+
+  // ─── Fetch ──────────────────────────────────────
+  const fetchData = useCallback(async () => {
+    try {
+      const [listRes, analyticsRes] = await Promise.allSettled([
+        expensesApi.list(),
+        expensesApi.getAnalytics(),
+      ])
+      if (listRes.status === 'fulfilled') {
+        const raw = listRes.value?.data ?? listRes.value?.expenses ?? []
+        setExpenses(Array.isArray(raw) ? raw : [])
+      }
+      if (analyticsRes.status === 'fulfilled') {
+        setAnalytics(analyticsRes.value?.data ?? null)
+      }
+    } catch (_e) {}
+    finally { setLoading(false); setRefreshing(false) }
+  }, [])
+
+  useEffect(() => { fetchData() }, [fetchData])
+
+  // ─── Handlers ───────────────────────────────────
+  const handleCreate = async (data: any) => {
+    setCreating(true)
+    try {
+      await expensesApi.create(data)
+      setShowCreate(false)
+      showToast('تم إضافة المصروف', 'success')
+      fetchData()
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'حدث خطأ', 'error')
+    }
+    setCreating(false)
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      await expensesApi.delete(id)
+      showToast('تم حذف المصروف', 'success')
+      fetchData()
+    } catch {
+      showToast('حدث خطأ في الحذف', 'error')
+    }
+  }
+
+  const handleRefreshAnalytics = async () => {
+    setAnalyticsLoading(true)
+    try {
+      await expensesApi.refreshAnalytics()
+      const res = await expensesApi.getAnalytics()
+      setAnalytics(res?.data ?? null)
+      showToast('تم تحديث التحليلات', 'success')
+    } catch {
+      showToast('حدث خطأ', 'error')
+    }
+    setAnalyticsLoading(false)
+  }
+
+  const handleAutoImport = async () => {
+    setImportLoading(true)
+    try {
+      const res = await expensesApi.autoImport(30)
+      showToast(res?.data?.message ?? 'تم الاستيراد', 'success')
+      fetchData()
+    } catch {
+      showToast('حدث خطأ في الاستيراد', 'error')
+    }
+    setImportLoading(false)
+  }
+
+  // ─── Render ─────────────────────────────────────
+  if (loading) {
+    return (
+      <SafeAreaView style={sc.safe} edges={['top']}>
+        <InnerHeader title={t('expenses.title') || 'المصاريف'} accentColor="#10B981" />
+        <View style={sc.center}><ActivityIndicator color={COLORS.primary} size="large" /></View>
+      </SafeAreaView>
+    )
+  }
+
+  const renderHeader = () => (
+    <>
+      {/* Analytics Elite Card */}
+      <AnalyticsCard
+        analytics={analytics}
+        onRefresh={handleRefreshAnalytics}
+        onAutoImport={handleAutoImport}
+        loading={analyticsLoading || importLoading}
+      />
+
+      {/* List Header */}
+      <View style={[sc.listHeader, isRTL && sc.rowRTL]}>
+        <Text style={sc.listTitle}>
+          المصاريف{' '}
+          <Text style={{ color: COLORS.textMuted, fontSize: 12 }}>({expenses.length})</Text>
+        </Text>
+        <TouchableOpacity style={sc.createBtn} onPress={() => setShowCreate(true)}>
+          <Text style={sc.createBtnTxt}>+ {t('expenses.add') || 'إضافة'}</Text>
+        </TouchableOpacity>
+      </View>
+    </>
+  )
+
+  const renderEmpty = () => (
+    <View style={sc.empty}>
+      <Text style={sc.emptyIcon}>💸</Text>
+      <Text style={sc.emptyTxt}>لا توجد مصاريف بعد</Text>
+      <TouchableOpacity style={[sc.createBtn, { marginTop: 8 }]} onPress={() => setShowCreate(true)}>
+        <Text style={sc.createBtnTxt}>+ إضافة مصروف</Text>
+      </TouchableOpacity>
+    </View>
+  )
+
+  return (
+    <SafeAreaView style={sc.safe} edges={['top']}>
+      <InnerHeader title={t('expenses.title') || 'المصاريف'} accentColor="#10B981" />
+
+      <FlatList
+        data={expenses}
+        keyExtractor={item => item.id}
+        renderItem={({ item, index }: ListRenderItemInfo<Expense>) => (
+          <ExpenseCard
+            exp={item}
+            accent={CARD_ACCENTS[index % CARD_ACCENTS.length]}
+            onDelete={handleDelete}
+          />
+        )}
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={renderEmpty}
+        contentContainerStyle={[sc.listContent, { paddingBottom: tabBarHeight }]}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchData() }}
+            tintColor={COLORS.primary} colors={[COLORS.primary]} />
+        }
+      />
+
+      <CreateModal
+        visible={showCreate}
+        onClose={() => setShowCreate(false)}
+        onCreate={handleCreate}
+        loading={creating}
+      />
     </SafeAreaView>
   )
 }
 
-const st = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: COLORS.darkBg },
-  scroll:  { paddingBottom: 40 },
-  center:  { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
-  addRow:  { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4, alignItems: isRTL ? 'flex-start' : 'flex-end' },
-  createBtn:     { backgroundColor: COLORS.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
-  createBtnText: { color: COLORS.white, fontSize: 13, fontWeight: '600' },
-  kpiWrapper: { paddingHorizontal: 12, paddingVertical: 12 },
-  kpiRow:    { flexDirection: 'row', gap: 8 },
-  kpiRowRTL: { flexDirection: 'row-reverse' },
-  kpiCard:   { flex: 1, borderRadius: 12, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 10, gap: 4 },
-  kpiLabel:  { fontSize: 9, fontWeight: '600', color: COLORS.textMuted },
-  kpiValue:  { fontSize: 14, fontWeight: '800' },
-  chartContainer: { flexDirection: isRTL ? 'row-reverse' : 'row', justifyContent: 'space-around', alignItems: 'flex-end', backgroundColor: COLORS.surfaceBg, marginHorizontal: 12, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, padding: 16, height: 130, marginBottom: 12 },
-  chartBarGroup:  { alignItems: 'center', flex: 1, gap: 4 },
-  chartBarTrack:  { width: 28, height: 70, backgroundColor: COLORS.cardBg, borderRadius: 6, justifyContent: 'flex-end', overflow: 'hidden' },
-  chartBarFill:   { width: '100%', borderRadius: 6 },
-  chartBarLabel:  { fontSize: 8, fontWeight: '700', textAlign: 'center' },
-  card:     { marginHorizontal: 16, marginBottom: 8, borderRadius: 12, borderWidth: 1, padding: 14 },
-  cardRow:  { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  cardRowRTL: { flexDirection: 'row-reverse' },
-  cardIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: COLORS.surfaceBg, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.border },
-  cardTitle:  { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary, marginBottom: 2 },
-  cardCat:    { fontSize: 11, color: COLORS.textMuted },
-  cardAmount: { fontSize: 15, fontWeight: '700', color: COLORS.danger },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-  modal:        { backgroundColor: COLORS.cardBg, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24 },
-  modalTitle:   { fontSize: 20, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 20, textAlign: 'center' },
-  input:        { backgroundColor: COLORS.surfaceBg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, color: COLORS.textPrimary, fontSize: 15, marginBottom: 12 },
-  catGrid:      { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
-  catBtn:       { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surfaceBg },
-  catBtnActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  catBtnText:       { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600' },
-  catBtnTextActive: { color: COLORS.white },
-  modalActions: { flexDirection: 'row', gap: 12, marginTop: 8 },
-  modalCancel:  { flex: 1, paddingVertical: 14, borderRadius: 10, alignItems: 'center', backgroundColor: COLORS.surfaceBg },
-  modalSubmit:  { flex: 1, paddingVertical: 14, borderRadius: 10, alignItems: 'center', backgroundColor: COLORS.primary },
+const sc = StyleSheet.create({
+  safe:        { flex: 1, backgroundColor: COLORS.darkBg },
+  center:      { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  listContent: { paddingTop: 8 },
+  listHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
+  rowRTL:      { flexDirection: 'row-reverse' },
+  listTitle:   { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'right' },
+  createBtn:   { backgroundColor: COLORS.primary, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 9 },
+  createBtnTxt:{ color: COLORS.white, fontSize: 12, fontWeight: '700' },
+  empty:       { alignItems: 'center', paddingVertical: 60, gap: 12 },
+  emptyIcon:   { fontSize: 40 },
+  emptyTxt:    { fontSize: 14, color: COLORS.textMuted, fontWeight: '500' },
 })

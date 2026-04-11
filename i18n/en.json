@@ -382,5 +382,95 @@
     "sent_tab": "Sent",
     "received_tab": "Received",
     "no_transfers": "No transfers"
+  },
+  "ctx": {
+    "payment_link": {
+      "empty_title": "No payment links yet",
+      "empty_desc": "Create your first link and start collecting payments",
+      "empty_cta": "Create payment link",
+      "success_create": "Link created successfully",
+      "success_copy": "Link copied",
+      "confirm_delete": "Delete this payment link?",
+      "hint_amount": "Enter amount in local currency",
+      "hint_expiry": "Links expire after 30 days by default"
+    },
+    "invoice": {
+      "empty_title": "No invoices yet",
+      "empty_desc": "Send professional invoices to your clients",
+      "empty_cta": "Create invoice",
+      "success_send": "Invoice sent successfully",
+      "success_paid": "Payment recorded",
+      "hint_due_date": "Set a due date to avoid delays",
+      "hint_zatca": "Required for businesses in Saudi Arabia"
+    },
+    "transaction": {
+      "empty_title": "No transactions yet",
+      "empty_desc": "Your transactions will appear here after the first payment",
+      "filter_all": "All",
+      "filter_success": "Successful",
+      "filter_failed": "Failed",
+      "filter_pending": "Pending",
+      "hint_export": "You can export transactions as CSV",
+      "status_success": "Successful",
+      "status_failed": "Failed",
+      "status_pending": "Pending",
+      "status_refunded": "Refunded"
+    },
+    "dashboard": {
+      "greeting_morning": "Good morning",
+      "greeting_afternoon": "Good afternoon",
+      "greeting_evening": "Good evening",
+      "kpi_revenue": "Revenue",
+      "kpi_transactions": "Transactions",
+      "kpi_success_rate": "Success Rate",
+      "kpi_disputes": "Open Disputes",
+      "hint_revenue": "Total revenue for the selected period",
+      "hint_success_rate": "Percentage of successful transactions"
+    },
+    "onboarding": {
+      "step_1_title": "Your store name",
+      "step_1_sub": "Shown to customers on the payment page",
+      "step_2_title": "Your phone number",
+      "step_2_sub": "For verification and transaction alerts",
+      "step_3_title": "Business type",
+      "step_3_sub": "To personalize your Zyrix experience",
+      "step_4_title": "Your country",
+      "step_4_sub": "To set currency and taxes automatically",
+      "step_5_title": "You're ready!",
+      "step_5_sub": "Your account is set up — start collecting now",
+      "autofill_cta": "Auto-fill from your account",
+      "autofill_done": "Auto-filled successfully"
+    },
+    "errors": {
+      "network": "Check your internet connection",
+      "server": "Server error — please try again",
+      "auth": "Session expired — please sign in again",
+      "not_found": "Item not found",
+      "validation": "Please check the entered data",
+      "limit": "You have exceeded the allowed limit"
+    },
+    "common": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "edit": "Edit",
+      "share": "Share",
+      "copy": "Copy",
+      "close": "Close",
+      "back": "Back",
+      "next": "Next",
+      "done": "Done",
+      "loading": "Loading...",
+      "retry": "Retry",
+      "search": "Search",
+      "filter": "Filter",
+      "sort": "Sort",
+      "export": "Export",
+      "create": "Create",
+      "send": "Send",
+      "confirm": "Confirm",
+      "yes": "Yes",
+      "no": "No"
+    }
   }
 }

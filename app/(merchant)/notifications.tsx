@@ -15,6 +15,7 @@ import { COLORS } from '../../constants/colors'
 import { useTranslation } from '../../hooks/useTranslation'
 import { notificationsApi } from '../../services/api'
 import { InnerHeader } from '../../components/InnerHeader';
+import { SmartEmptyState, EmbeddedHelp } from '../../components/SmartEmptyState'
 
 const isRTL = I18nManager.isRTL
 
@@ -172,6 +173,14 @@ export default function NotificationsScreen() {
     <>
 
 
+      <EmbeddedHelp
+        context="الإشعارات"
+        color="#3B82F6"
+        items={[
+          { q: 'كيف أفعّل الإشعارات الفورية؟', a: 'اذهب لإعدادات الجهاز ← التطبيقات ← Zyrix ← الإشعارات.' },
+          { q: 'كيف أحذف إشعار؟', a: 'اضغط مطولاً على الإشعار لتمييزه كمقروء.' },
+        ]}
+      />
       {/* Filter tabs — 2 rows of 3 */}
       <View style={styles.filterWrapper}>
         <View style={styles.filterGrid}>
@@ -202,10 +211,7 @@ export default function NotificationsScreen() {
   )
 
   const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyIcon}>🔕</Text>
-      <Text style={styles.emptyText}>{t('notifications.empty')}</Text>
-    </View>
+    <SmartEmptyState type="notifications" />
   )
 
   // Group into unread / earlier
