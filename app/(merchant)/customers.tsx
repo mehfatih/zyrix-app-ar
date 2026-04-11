@@ -527,7 +527,7 @@ export default function CustomersScreen() {
           {error
             ? <Text style={s.errorTxt}>{error}</Text>
             : filtered.length === 0
-              : <SmartEmptyState type="customers" compact />
+              ? <SmartEmptyState type="customers" compact />
               : filtered.map(item => (
                   <CustomerRow
                     key={item.id}
