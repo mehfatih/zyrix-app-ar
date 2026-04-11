@@ -208,7 +208,6 @@ export default function CODScreen() {
 
   const renderEmpty = () => (
     <SmartEmptyState type="cod" />
-    </View>
   )
 
   return (
