@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
-  TextInput, I18nManager, ActivityIndicator, RefreshControl,
+  TextInput, I18nManager, ActivityIndicator, Alert, RefreshControl,
   Modal, ListRenderItemInfo,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -13,7 +13,6 @@ import { useTranslation } from '../../hooks/useTranslation'
 import { useTabBarHeight } from '../../hooks/useTabBarHeight'
 import { expensesApi } from '../../services/api'
 import { InnerHeader } from '../../components/InnerHeader'
-import { useToast } from '../../hooks/useToast'
 
 const isRTL = I18nManager.isRTL
 
@@ -344,7 +343,6 @@ const mdS = StyleSheet.create({
 export default function ExpensesScreen() {
   const { t } = useTranslation()
   const tabBarHeight = useTabBarHeight()
-  const { showToast } = useToast()
 
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [analytics, setAnalytics] = useState<Analytics | null>(null)
@@ -381,10 +379,10 @@ export default function ExpensesScreen() {
     try {
       await expensesApi.create(data)
       setShowCreate(false)
-      showToast('تم إضافة المصروف', 'success')
+      Alert.alert('', 'تم إضافة المصروف')
       fetchData()
     } catch (err: unknown) {
-      showToast(err instanceof Error ? err.message : 'حدث خطأ', 'error')
+      Alert.alert('', err instanceof Error ? err.message : 'حدث خطأ')
     }
     setCreating(false)
   }
@@ -392,10 +390,10 @@ export default function ExpensesScreen() {
   const handleDelete = async (id: string) => {
     try {
       await expensesApi.delete(id)
-      showToast('تم حذف المصروف', 'success')
+      Alert.alert('', 'تم حذف المصروف')
       fetchData()
     } catch {
-      showToast('حدث خطأ في الحذف', 'error')
+      Alert.alert('', 'حدث خطأ في الحذف')
     }
   }
 
@@ -405,9 +403,9 @@ export default function ExpensesScreen() {
       await expensesApi.refreshAnalytics()
       const res = await expensesApi.getAnalytics()
       setAnalytics(res?.data ?? null)
-      showToast('تم تحديث التحليلات', 'success')
+      Alert.alert('', 'تم تحديث التحليلات')
     } catch {
-      showToast('حدث خطأ', 'error')
+      Alert.alert('', 'حدث خطأ')
     }
     setAnalyticsLoading(false)
   }
@@ -416,10 +414,10 @@ export default function ExpensesScreen() {
     setImportLoading(true)
     try {
       const res = await expensesApi.autoImport(30)
-      showToast(res?.data?.message ?? 'تم الاستيراد', 'success')
+      Alert.alert('', res?.data?.message ?? 'تم الاستيراد')
       fetchData()
     } catch {
-      showToast('حدث خطأ في الاستيراد', 'error')
+      Alert.alert('', 'حدث خطأ في الاستيراد')
     }
     setImportLoading(false)
   }

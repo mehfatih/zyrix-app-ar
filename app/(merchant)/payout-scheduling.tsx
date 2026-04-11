@@ -6,7 +6,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
   TextInput, I18nManager, ActivityIndicator, RefreshControl,
-  Modal, ListRenderItemInfo, ScrollView,
+  Modal, ListRenderItemInfo, Alert, ScrollView,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { COLORS } from '../../constants/colors'
@@ -14,7 +14,6 @@ import { useTranslation } from '../../hooks/useTranslation'
 import { useTabBarHeight } from '../../hooks/useTabBarHeight'
 import { payoutSchedulingApi } from '../../services/api'
 import { InnerHeader } from '../../components/InnerHeader'
-import { useToast } from '../../hooks/useToast'
 
 const isRTL = I18nManager.isRTL
 
@@ -468,7 +467,6 @@ const mdS = StyleSheet.create({
 export default function PayoutSchedulingScreen() {
   const { t } = useTranslation()
   const tabBarHeight = useTabBarHeight()
-  const { showToast } = useToast()
 
   const [schedules, setSchedules]   = useState<Schedule[]>([])
   const [history, setHistory]       = useState<PayoutHistory[]>([])
@@ -511,10 +509,10 @@ export default function PayoutSchedulingScreen() {
     try {
       await payoutSchedulingApi.create(data)
       setShowCreate(false)
-      showToast('تم إنشاء الجدولة بنجاح', 'success')
+      Alert.alert('', 'تم إنشاء الجدولة بنجاح')
       fetchData()
     } catch (err: unknown) {
-      showToast(err instanceof Error ? err.message : 'حدث خطأ', 'error')
+      Alert.alert('', err instanceof Error ? err.message : 'حدث خطأ')
     }
     setCreating(false)
   }
@@ -523,10 +521,10 @@ export default function PayoutSchedulingScreen() {
     setExecutingId(id)
     try {
       const res = await payoutSchedulingApi.execute(id)
-      showToast(res?.message ?? 'تم تنفيذ الدفع', 'success')
+      Alert.alert('', res?.message ?? 'تم تنفيذ الدفع')
       fetchData()
     } catch (err: unknown) {
-      showToast(err instanceof Error ? err.message : 'حدث خطأ', 'error')
+      Alert.alert('', err instanceof Error ? err.message : 'حدث خطأ')
     }
     setExecutingId(null)
   }
@@ -534,10 +532,10 @@ export default function PayoutSchedulingScreen() {
   const handleDelete = async (id: string) => {
     try {
       await payoutSchedulingApi.delete(id)
-      showToast('تم حذف الجدولة', 'success')
+      Alert.alert('', 'تم حذف الجدولة')
       fetchData()
     } catch {
-      showToast('حدث خطأ في الحذف', 'error')
+      Alert.alert('', 'حدث خطأ في الحذف')
     }
   }
 

@@ -6,14 +6,13 @@ import React, { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
   TextInput, I18nManager, ActivityIndicator, RefreshControl,
-  Modal, ScrollView, ListRenderItemInfo,
+  Modal, Alert, ScrollView, ListRenderItemInfo,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { COLORS } from '../../constants/colors'
 import { useTabBarHeight } from '../../hooks/useTabBarHeight'
 import { taxApi } from '../../services/api'
 import { InnerHeader } from '../../components/InnerHeader'
-import { useToast } from '../../hooks/useToast'
 
 const isRTL = I18nManager.isRTL
 
@@ -154,7 +153,6 @@ const mdS = StyleSheet.create({
 
 export default function TaxEngineScreen() {
   const tabBarHeight = useTabBarHeight()
-  const { showToast } = useToast()
   const [rules, setRules]           = useState<TaxRule[]>([])
   const [report, setReport]         = useState<PeriodReport | null>(null)
   const [loading, setLoading]       = useState(true)
@@ -184,7 +182,7 @@ export default function TaxEngineScreen() {
     try {
       const res = await taxApi.calculate(amount, calcRule.country)
       setCalcResult(res?.data ?? null)
-    } catch { showToast('حدث خطأ', 'error') }
+    } catch { Alert.alert('', 'حدث خطأ') }
     setCalcLoading(false)
   }
 

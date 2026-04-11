@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
   TextInput, I18nManager, ActivityIndicator, RefreshControl,
-  Modal, ScrollView, ListRenderItemInfo,
+  Modal, Alert, ScrollView, ListRenderItemInfo,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { COLORS } from '../../constants/colors'
@@ -13,7 +13,6 @@ import { useTranslation } from '../../hooks/useTranslation'
 import { useTabBarHeight } from '../../hooks/useTabBarHeight'
 import { invoicesApi } from '../../services/api'
 import { InnerHeader } from '../../components/InnerHeader'
-import { useToast } from '../../hooks/useToast'
 
 const isRTL = I18nManager.isRTL
 
@@ -638,7 +637,6 @@ const mdS = StyleSheet.create({
 export default function InvoicesScreen() {
   const { t } = useTranslation()
   const tabBarHeight = useTabBarHeight()
-  const { showToast } = useToast()
 
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
@@ -701,10 +699,10 @@ export default function InvoicesScreen() {
     try {
       if (action === 'send')     await invoicesApi.send(inv.id)
       if (action === 'markPaid') await invoicesApi.markPaid(inv.id)
-      showToast(action === 'send' ? 'تم إرسال الفاتورة' : 'تم تسجيل الدفع', 'success')
+      Alert.alert('', action === 'send' ? 'تم إرسال الفاتورة' : 'تم تسجيل الدفع')
       fetchData()
     } catch {
-      showToast('حدث خطأ', 'error')
+      Alert.alert('', 'حدث خطأ')
     }
   }
 
@@ -713,10 +711,10 @@ export default function InvoicesScreen() {
     try {
       await invoicesApi.create(data)
       setShowCreate(false)
-      showToast('تم إنشاء الفاتورة بنجاح', 'success')
+      Alert.alert('', 'تم إنشاء الفاتورة بنجاح')
       fetchData()
     } catch (err: unknown) {
-      showToast(err instanceof Error ? err.message : 'حدث خطأ', 'error')
+      Alert.alert('', err instanceof Error ? err.message : 'حدث خطأ')
     }
     setCreating(false)
   }
@@ -726,11 +724,11 @@ export default function InvoicesScreen() {
     setEinvoiceLoading(true)
     try {
       await invoicesApi.generateEInvoice(einvoiceModal.id, taxRate)
-      showToast('تم إنشاء الفاتورة الإلكترونية', 'success')
+      Alert.alert('', 'تم إنشاء الفاتورة الإلكترونية')
       setEinvoiceModal(null)
       fetchData()
     } catch {
-      showToast('حدث خطأ في إنشاء e-Invoice', 'error')
+      Alert.alert('', 'حدث خطأ في إنشاء e-Invoice')
     }
     setEinvoiceLoading(false)
   }
@@ -740,10 +738,10 @@ export default function InvoicesScreen() {
     setReminderLoading(true)
     try {
       await invoicesApi.sendReminder(reminderModal.id, triggerDay, channel)
-      showToast('تم إرسال التذكير', 'success')
+      Alert.alert('', 'تم إرسال التذكير')
       setReminderModal(null)
     } catch {
-      showToast('حدث خطأ في إرسال التذكير', 'error')
+      Alert.alert('', 'حدث خطأ في إرسال التذكير')
     }
     setReminderLoading(false)
   }

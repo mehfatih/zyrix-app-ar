@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
   TextInput, I18nManager, ActivityIndicator, RefreshControl,
-  Modal, ListRenderItemInfo, ScrollView,
+  Modal, ListRenderItemInfo, Alert, ScrollView,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { COLORS } from '../../constants/colors'
@@ -13,7 +13,6 @@ import { useTranslation } from '../../hooks/useTranslation'
 import { useTabBarHeight } from '../../hooks/useTabBarHeight'
 import { subscriptionsApi } from '../../services/api'
 import { InnerHeader } from '../../components/InnerHeader'
-import { useToast } from '../../hooks/useToast'
 
 const isRTL = I18nManager.isRTL
 
@@ -719,7 +718,6 @@ const crS = StyleSheet.create({
 export default function SubscriptionsScreen() {
   const { t } = useTranslation()
   const tabBarHeight = useTabBarHeight()
-  const { showToast } = useToast()
 
   const [subs, setSubs] = useState<Sub[]>([])
   const [loading, setLoading] = useState(true)
@@ -781,8 +779,8 @@ export default function SubscriptionsScreen() {
 
   const handleCancel = (sub: Sub) => {
     subscriptionsApi.cancel(sub.id)
-      .then(() => { showToast('تم إلغاء الاشتراك', 'success'); fetchData() })
-      .catch(() => showToast('حدث خطأ', 'error'))
+      .then(() => { Alert.alert('', 'تم إلغاء الاشتراك'); fetchData() })
+      .catch(() => Alert.alert('', 'حدث خطأ'))
   }
 
   const handleCreate = async (data: Parameters<typeof subscriptionsApi.create>[0]) => {
@@ -790,10 +788,10 @@ export default function SubscriptionsScreen() {
     try {
       await subscriptionsApi.create(data)
       setShowCreate(false)
-      showToast('تم إنشاء الاشتراك بنجاح', 'success')
+      Alert.alert('', 'تم إنشاء الاشتراك بنجاح')
       fetchData()
     } catch (err: unknown) {
-      showToast(err instanceof Error ? err.message : 'حدث خطأ', 'error')
+      Alert.alert('', err instanceof Error ? err.message : 'حدث خطأ')
     }
     setCreating(false)
   }
@@ -803,11 +801,11 @@ export default function SubscriptionsScreen() {
     setRetryLoading(true)
     try {
       await subscriptionsApi.triggerRetry(retryModal.id)
-      showToast('تم جدولة Smart Retry بنجاح', 'success')
+      Alert.alert('', 'تم جدولة Smart Retry بنجاح')
       setRetryModal(null)
       fetchData()
     } catch {
-      showToast('حدث خطأ في جدولة Retry', 'error')
+      Alert.alert('', 'حدث خطأ في جدولة Retry')
     }
     setRetryLoading(false)
   }
@@ -817,11 +815,11 @@ export default function SubscriptionsScreen() {
     setDunningLoading(true)
     try {
       await subscriptionsApi.sendDunning(dunningModal.id, step, channel)
-      showToast('تم إرسال رسالة Dunning', 'success')
+      Alert.alert('', 'تم إرسال رسالة Dunning')
       setDunningModal(null)
       fetchData()
     } catch {
-      showToast('حدث خطأ في الإرسال', 'error')
+      Alert.alert('', 'حدث خطأ في الإرسال')
     }
     setDunningLoading(false)
   }

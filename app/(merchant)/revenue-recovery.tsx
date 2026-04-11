@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
-  TextInput, I18nManager, ActivityIndicator, RefreshControl,
+  TextInput, I18nManager, ActivityIndicator, Alert, RefreshControl,
   Modal, ListRenderItemInfo,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -13,7 +13,6 @@ import { COLORS } from '../../constants/colors'
 import { useTabBarHeight } from '../../hooks/useTabBarHeight'
 import { recoveryApi } from '../../services/api'
 import { InnerHeader } from '../../components/InnerHeader'
-import { useToast } from '../../hooks/useToast'
 
 const isRTL = I18nManager.isRTL
 
@@ -257,8 +256,7 @@ const mdS = StyleSheet.create({
 
 export default function RevenueRecoveryScreen() {
   const tabBarHeight = useTabBarHeight()
-  const { showToast }   = useToast()
-  const [campaigns, setCampaigns] = useState<Campaign[]>([])
+    const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [stats, setStats]         = useState<Stats | null>(null)
   const [loading, setLoading]     = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -285,9 +283,9 @@ export default function RevenueRecoveryScreen() {
     try {
       await recoveryApi.createCampaign(data)
       setShowCreate(false)
-      showToast('تم إنشاء الحملة', 'success')
+      Alert.alert('', 'تم إنشاء الحملة')
       fetchData()
-    } catch { showToast('حدث خطأ', 'error') }
+    } catch { Alert.alert('', 'حدث خطأ') }
     setCreating(false)
   }
 
@@ -295,26 +293,26 @@ export default function RevenueRecoveryScreen() {
     setSendingId(id)
     try {
       const res = await recoveryApi.sendCampaign(id)
-      showToast(res?.data?.message ?? 'تم الإرسال', 'success')
+      Alert.alert('', res?.data?.message ?? 'تم الإرسال')
       fetchData()
-    } catch { showToast('حدث خطأ في الإرسال', 'error') }
+    } catch { Alert.alert('', 'حدث خطأ في الإرسال') }
     setSendingId(null)
   }
 
   const handleToggle = async (id: string, current: boolean) => {
     try {
       await recoveryApi.updateCampaign(id, { isActive: !current })
-      showToast(current ? 'تم إيقاف الحملة' : 'تم تفعيل الحملة', 'success')
+      Alert.alert('', current ? 'تم إيقاف الحملة' : 'تم تفعيل الحملة')
       fetchData()
-    } catch { showToast('حدث خطأ', 'error') }
+    } catch { Alert.alert('', 'حدث خطأ') }
   }
 
   const handleDelete = async (id: string) => {
     try {
       await recoveryApi.deleteCampaign(id)
-      showToast('تم الحذف', 'success')
+      Alert.alert('', 'تم الحذف')
       fetchData()
-    } catch { showToast('حدث خطأ', 'error') }
+    } catch { Alert.alert('', 'حدث خطأ') }
   }
 
   if (loading) {

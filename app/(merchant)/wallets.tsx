@@ -13,7 +13,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../constants/colors';
 import { FONT_WEIGHT, SPACING, RADIUS } from '../../constants/theme';
 import { InnerHeader } from '../../components/InnerHeader';
-import { useToast } from '../../hooks/useToast';
 import { walletsApi } from '../../services/api';
 
 const isRTL = I18nManager.isRTL;
@@ -37,7 +36,6 @@ const DEMO_WALLETS = {
 type Wallet = typeof DEMO_WALLETS.wallets[0];
 
 export default function WalletsScreen() {
-  const { showToast } = useToast();
 
   const [wallets, setWallets]         = useState<Wallet[]>([]);
   const [totalUSD, setTotalUSD]       = useState(0);
@@ -85,18 +83,18 @@ export default function WalletsScreen() {
   // ─── Convert ────────────────────────────────────────────────
   const handleConvert = async () => {
     if (!amount || Number(amount) <= 0) {
-      showToast('أدخل المبلغ', 'error');
+      Alert.alert('', 'أدخل المبلغ');
       return;
     }
     setConverting(true);
     try {
       const res = await walletsApi.convert(fromCcy, toCcy, Number(amount));
-      showToast(`تم: ${amount} ${fromCcy} → ${res.data.to.amount} ${toCcy} ✅`, 'success');
+      Alert.alert('', `تم: ${amount} ${fromCcy} → ${res.data.to.amount} ${toCcy} ✅`);
       setShowConvert(false);
       setAmount('');
       loadWallets(true);
     } catch (e: any) {
-      showToast(e.message || 'فشل التحويل', 'error');
+      Alert.alert('', e.message || 'فشل التحويل');
     } finally {
       setConverting(false);
     }

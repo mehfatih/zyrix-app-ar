@@ -6,14 +6,13 @@ import React, { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
   I18nManager, ActivityIndicator, RefreshControl,
-  Modal, ScrollView, ListRenderItemInfo,
+  Modal, Alert, ScrollView, ListRenderItemInfo,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { COLORS } from '../../constants/colors'
 import { useTabBarHeight } from '../../hooks/useTabBarHeight'
 import { financialReportsApi } from '../../services/api'
 import { InnerHeader } from '../../components/InnerHeader'
-import { useToast } from '../../hooks/useToast'
 
 const isRTL = I18nManager.isRTL
 
@@ -321,8 +320,7 @@ const mdS = StyleSheet.create({
 
 export default function FinancialReportsScreen() {
   const tabBarHeight = useTabBarHeight()
-  const { showToast }   = useToast()
-  const [reports, setReports]     = useState<Report[]>([])
+    const [reports, setReports]     = useState<Report[]>([])
   const [quickPNL, setQuickPNL]   = useState<PNLData | null>(null)
   const [loading, setLoading]     = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -349,9 +347,9 @@ export default function FinancialReportsScreen() {
     try {
       await financialReportsApi.generate(data)
       setShowGenerate(false)
-      showToast('تم إنشاء التقرير', 'success')
+      Alert.alert('', 'تم إنشاء التقرير')
       fetchData()
-    } catch { showToast('حدث خطأ', 'error') }
+    } catch { Alert.alert('', 'حدث خطأ') }
     setGenerating(false)
   }
 
@@ -359,15 +357,15 @@ export default function FinancialReportsScreen() {
     try {
       const res = await financialReportsApi.getById(id)
       setViewReport(res?.data ?? null)
-    } catch { showToast('حدث خطأ في تحميل التقرير', 'error') }
+    } catch { Alert.alert('', 'حدث خطأ في تحميل التقرير') }
   }
 
   const handleDelete = async (id: string) => {
     try {
       await financialReportsApi.delete(id)
-      showToast('تم الحذف', 'success')
+      Alert.alert('', 'تم الحذف')
       fetchData()
-    } catch { showToast('حدث خطأ', 'error') }
+    } catch { Alert.alert('', 'حدث خطأ') }
   }
 
   if (loading) {

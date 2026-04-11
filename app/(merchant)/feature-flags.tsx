@@ -13,7 +13,6 @@ import { useRouter } from 'expo-router';
 import { COLORS } from '../../constants/colors';
 import { FONT_WEIGHT, SPACING, RADIUS } from '../../constants/theme';
 import { InnerHeader } from '../../components/InnerHeader';
-import { useToast } from '../../hooks/useToast';
 import { featureFlagsApi } from '../../services/api';
 
 const isRTL = I18nManager.isRTL;
@@ -38,7 +37,6 @@ const CATEGORY_CONFIG: Record<string, { labelAr: string; icon: string; color: st
 
 export default function FeatureFlagsScreen() {
   const router = useRouter();
-  const { showToast } = useToast();
 
   const [flags, setFlags]       = useState<FeatureFlag[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -52,7 +50,7 @@ export default function FeatureFlagsScreen() {
       const res = await featureFlagsApi.list();
       setFlags(res.data.flags);
     } catch {
-      showToast('تعذر تحميل الإعدادات', 'error');
+      Alert.alert('', 'تعذر تحميل الإعدادات');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -83,10 +81,10 @@ export default function FeatureFlagsScreen() {
     setFlags(prev => prev.map(f => f.key === flag.key ? { ...f, enabled: newVal } : f));
     try {
       await featureFlagsApi.update(flag.key, newVal);
-      showToast(`${flag.label} ${newVal ? 'مفعّل ✅' : 'معطّل'}`, newVal ? 'success' : 'info');
+      Alert.alert('', `${flag.label} ${newVal ? 'مفعّل ✅' : 'معطّل'}`);
     } catch {
       setFlags(prev => prev.map(f => f.key === flag.key ? { ...f, enabled: !newVal } : f));
-      showToast('تعذر تحديث الإعداد', 'error');
+      Alert.alert('', 'تعذر تحديث الإعداد');
     } finally {
       setToggling(null);
     }

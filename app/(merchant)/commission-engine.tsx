@@ -6,14 +6,13 @@ import React, { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
   TextInput, I18nManager, ActivityIndicator, RefreshControl,
-  Modal, ScrollView, ListRenderItemInfo,
+  Modal, Alert, ScrollView, ListRenderItemInfo,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { COLORS } from '../../constants/colors'
 import { useTabBarHeight } from '../../hooks/useTabBarHeight'
 import { commissionApi } from '../../services/api'
 import { InnerHeader } from '../../components/InnerHeader'
-import { useToast } from '../../hooks/useToast'
 
 const isRTL = I18nManager.isRTL
 
@@ -336,7 +335,6 @@ const mdS = StyleSheet.create({
 
 export default function CommissionEngineScreen() {
   const tabBarHeight = useTabBarHeight()
-  const { showToast } = useToast()
 
   const [rules, setRules]       = useState<CommissionRule[]>([])
   const [summary, setSummary]   = useState<Summary | null>(null)
@@ -367,18 +365,18 @@ export default function CommissionEngineScreen() {
     try {
       await commissionApi.createRule(data)
       setShowCreate(false)
-      showToast('تم إنشاء القاعدة', 'success')
+      Alert.alert('', 'تم إنشاء القاعدة')
       fetchData()
-    } catch { showToast('حدث خطأ', 'error') }
+    } catch { Alert.alert('', 'حدث خطأ') }
     setCreating(false)
   }
 
   const handleDelete = async (id: string) => {
     try {
       await commissionApi.deleteRule(id)
-      showToast('تم الحذف', 'success')
+      Alert.alert('', 'تم الحذف')
       fetchData()
-    } catch { showToast('حدث خطأ', 'error') }
+    } catch { Alert.alert('', 'حدث خطأ') }
   }
 
   const handleCalc = async (amount: number) => {
@@ -387,7 +385,7 @@ export default function CommissionEngineScreen() {
     try {
       const res = await commissionApi.calculate(calcRule.id, amount)
       setCalcResult(res?.data ?? null)
-    } catch { showToast('حدث خطأ في الحساب', 'error') }
+    } catch { Alert.alert('', 'حدث خطأ في الحساب') }
     setCalcLoading(false)
   }
 
